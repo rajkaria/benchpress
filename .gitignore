@@ -1,0 +1,7 @@
+arga-twins-benchmark/
+.env
+.env.*
+!.env.example
+runs/
+*.log
+.DS_Store
