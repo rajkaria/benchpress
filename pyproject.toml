@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "benchpress-agent"
-version = "0.1.1"
+version = "0.2.0"
 description = "The reliability layer for AI agents with write access: policy-first, code-gated, read-back-verified multi-app execution"
 readme = "docs/PYPI.md"
 requires-python = ">=3.12"
