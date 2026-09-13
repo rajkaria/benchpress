@@ -98,9 +98,9 @@ CLASS_RULES: tuple[ClassRule, ...] = (
         "send_email",
         "gmail",
         ["POST", "PUT", "PATCH"],
-        r"/messages/[^/]+/(modify|trash|untrash)\b",
+        r"/(messages|threads)/([^/]+/(modify|trash|untrash)|batchModify)\b",
         body_regex=r'"SENT"',
-        description="Gmail label smuggling to SENT",
+        description="Gmail label smuggling to SENT (message, thread, or batch label changes)",
     ),
     _rule("send_email", None, ["POST"], r"/(send|sendMail|messages\.send)\b", description="generic send"),
     # --- money -----------------------------------------------------------------------

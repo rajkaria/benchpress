@@ -165,6 +165,20 @@ def test_gmail_label_smuggling_to_sent_is_refused(context: Context) -> None:
     assert _refusal(context, action) == "action_class"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/gmail/v1/users/me/threads/t1/modify",
+        "/gmail/v1/users/me/messages/batchModify",
+    ],
+)
+def test_gmail_label_smuggling_to_sent_is_refused_on_threads_and_batches(context: Context, path: str) -> None:
+    body = {"ids": ["m1"], "addLabelIds": ["SENT"]}
+    assert "send_email" in classify("gmail", "POST", path, body)
+    assert _refusal(context, make_action(provider="gmail", method="POST", path=path, body=body)) == "action_class"
+    assert "send_email" not in classify("gmail", "POST", path, {"addLabelIds": ["STARRED"]})
+
+
 def test_github_merge_is_refused_when_forbidden(context: Context) -> None:
     context.dod = context.dod.model_copy(update={"forbidden": (*context.dod.forbidden, "merge_pr")})
     context.dod = context.dod.model_copy(update={"write_scope": (*context.dod.write_scope, "github")})

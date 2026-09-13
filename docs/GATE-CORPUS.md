@@ -34,7 +34,6 @@ refusal case, and each refusal case has an allowed neighbour showing where the l
 
 | Case | Gap |
 |---|---|
-| `gmail-thread-label-smuggling-to-sent-should-refuse` | SENT-label smuggling is only classified on `/messages/{id}/modify`, not `/threads/{id}/modify` |
 | `slack-post-mentioning-a-filename-should-allow` | external-destination treats `summary.pdf` as a domain (fails closed, but blocks ordinary updates) |
 
 In a real run the plan-membership rule still stops the unplanned deletes. The xfails record that
