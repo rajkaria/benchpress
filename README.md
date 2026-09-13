@@ -557,6 +557,11 @@ What makes it hard to copy:
 
 ### From PyPI (no clone, no keys)
 
+<p align="center">
+  <img src="docs/img/demo-terminal.svg" alt="Terminal recording: uvx --from benchpress-agent benchpress demo runs the loop offline; the gate refuses the planted write to the look-alike and all seven checks pass" width="88%">
+  <br><sub>Real output of the published package (<code>benchpress demo</code>, then <code>gate check</code> and <code>policy list</code>). Step through the same run phase by phase: <a href="docs/demo/index.html">docs/demo/index.html</a>.</sub>
+</p>
+
 ```bash
 uvx --from benchpress-agent benchpress demo      # the whole loop offline: policy sweep, gate refusal, read-back, receipt
 pip install benchpress-agent                     # wrap your own tool layer
