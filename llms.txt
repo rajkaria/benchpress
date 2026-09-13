@@ -18,6 +18,8 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
 - `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`), `benchpress.shims.composio.guard_composio(...)` / `composio_executor(...)` (extra `[composio]`)
 
+- TypeScript: `npm install benchpress-guard` → `guardTools(tools, policy)` for Vercel AI SDK tools, byte-compatible policy/receipts with the Python shims ([package](https://www.npmjs.com/package/benchpress-guard))
+
 ## CLI
 - `benchpress demo`: offline end-to-end demo with receipts
 - `benchpress run --providers slack,gmail,hubspot,stripe --prompt ... [--policy-pack billing]`: real apps

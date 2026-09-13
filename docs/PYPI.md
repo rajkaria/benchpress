@@ -111,6 +111,12 @@ Composio runs it; refusals never execute, and every call leaves a receipt. `comp
 lets `benchpress.wrap(...)` drive Composio tools through the full loop.
 [docs/COMPOSIO.md](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
 
+## TypeScript / Vercel AI SDK
+
+`npm install benchpress-guard`: `guardTools(tools, policy)` wraps AI SDK tools with the same policy file, classifier,
+refusal text and receipt lines as the Python guards (80 cross-language parity cases).
+[npm](https://www.npmjs.com/package/benchpress-guard)
+
 ## Policy packs and the public gate-rule corpus
 
 ```bash

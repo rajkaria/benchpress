@@ -559,6 +559,7 @@ pip install benchpress-agent                     # wrap your own tool layer
 pip install "benchpress-agent[mcp]"              # + MCP executor and the mcp-guard proxy
 pip install "benchpress-agent[openai-agents]"    # + guard for OpenAI Agents SDK function tools
 pip install "benchpress-agent[composio]"         # + guard and executor for Composio tools
+npm install benchpress-guard                     # TypeScript: the same guard for Vercel AI SDK tools
 benchpress policy list && benchpress gate check  # policy packs + the public gate-rule corpus
 ```
 
@@ -739,8 +740,7 @@ docs/                      build spec, strategy, research, plans, demo script, s
 [`benchpress-agent`](https://pypi.org/project/benchpress-agent/):** `wrap(model, executor)` (0.1.0), the offline
 `benchpress demo` (0.1.1), the MCP executor plus `mcp-guard` proxy (0.2.0), policy packs, the public gate-rule corpus and
 Rehearse/replay (0.3.0), gate fixes for every gap the corpus found (0.3.2-0.3.3), and the OpenAI Agents SDK tool
-guard (0.4.0). Every release is tagged in git with notes in [CHANGELOG.md](CHANGELOG.md). Composio guard and executor (0.5.0), GitHub playbook (0.6.0), Claude transport fixes (0.6.1), and `benchpress regress` + audit export (0.7.0). Not shipped yet:
-Vercel AI SDK shim, playbooks beyond Slack/Gmail/HubSpot/Stripe/GitHub, the 40-task ArgaBench row, live-state forking, hosted receipts (audit export ships locally).
+guard (0.4.0). Every release is tagged in git with notes in [CHANGELOG.md](CHANGELOG.md). Composio guard and executor (0.5.0), GitHub playbook (0.6.0), Claude transport fixes (0.6.1), and `benchpress regress` + audit export (0.7.0). The Vercel AI SDK guard ships on npm as `benchpress-guard`. Not shipped yet: playbooks beyond Slack/Gmail/HubSpot/Stripe/GitHub, the 40-task ArgaBench row, live-state forking, hosted receipts (audit export ships locally).
 
 | Horizon | Product |
 |---|---|
