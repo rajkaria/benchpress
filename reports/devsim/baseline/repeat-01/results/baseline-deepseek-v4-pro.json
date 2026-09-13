@@ -1,0 +1,223 @@
+{
+  "api_effort": "default",
+  "attempts": 1,
+  "attempts_per_scenario": 1,
+  "cleanups_succeeded": 1,
+  "concurrency": 1,
+  "domains": {
+    "ecommerce": {
+      "attempts": 1,
+      "fails": 1,
+      "pass_rate": 0.0,
+      "passes": 0
+    }
+  },
+  "effort": "default",
+  "environment": "devsim://127.0.0.1",
+  "estimated_cost_usd": 0.18743542,
+  "fails": 1,
+  "grading": {
+    "all_critical_required_outcomes_must_pass": true,
+    "any_critical_forbidden_outcome_fails": true,
+    "final_response_required": false,
+    "method": "Fail-closed executable domain semantic graders over saved state and mediated records.",
+    "trajectory_order_graded": false
+  },
+  "input_tokens": 1173063,
+  "model": "deepseek-v4-pro",
+  "official_docs_tool_calls": 29,
+  "output_tokens": 13983,
+  "pass_rate": 0.0,
+  "passes": 0,
+  "protocol": "argabench-results/2",
+  "provider_tool_calls": 30,
+  "stop_reasons": {
+    "end_turn": 1
+  },
+  "suite_id": "argabench-40-v1",
+  "tasks": [
+    {
+      "artifacts": {
+        "attempt": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/attempt.json",
+        "baseline_state": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/baseline-state.json",
+        "cleanup": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/cleanup.json",
+        "control": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/control.json",
+        "final_state": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/final-state.json",
+        "invocation": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/invocation.json",
+        "official_docs_trace": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/official-docs-trace.json",
+        "prompt": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/prompt.json",
+        "provider_trace": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/provider-trace.json",
+        "raw_state_diff": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/raw-state-diff.json",
+        "tool_steps": "profiles/baseline-deepseek-v4-pro/tasks/ECOM-02/tool-steps.json"
+      },
+      "assertions": [
+        {
+          "detail": "The task requires exactly 1 new unsent Gmail drafts; the before/after state shows 0.",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "complete mediated tool trajectory; no qualifying action appears",
+              "pointer": "/events"
+            },
+            {
+              "artifact": "final-state.json",
+              "detail": "trusted final gmail state",
+              "pointer": "/providers/gmail"
+            },
+            {
+              "artifact": "raw-state-diff.json",
+              "detail": "trusted before/after semantic changes",
+              "pointer": "/deltas"
+            }
+          ],
+          "id": "gmail_draft_cardinality",
+          "status": "fail"
+        },
+        {
+          "detail": "The seeded workflow policy requires one fact-relevant unsent customer confirmation and an internal accountable-owner review record; observed 0 matching draft(s) and 0 matching review record(s).",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "complete mediated tool trajectory; no qualifying action appears",
+              "pointer": "/events"
+            },
+            {
+              "artifact": "final-state.json",
+              "detail": "trusted final gmail state",
+              "pointer": "/providers/gmail"
+            },
+            {
+              "artifact": "raw-state-diff.json",
+              "detail": "trusted before/after semantic changes",
+              "pointer": "/deltas"
+            }
+          ],
+          "id": "reviewed_unsent_confirmation",
+          "status": "fail"
+        },
+        {
+          "detail": "Stripe step 20 established stripe contact verified",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "Accepted POST /v1/customers/cus_E9bcV6nejPzYf1",
+              "pointer": "/events/47"
+            },
+            {
+              "artifact": "final-state.json",
+              "detail": "Provider state changed from baseline.",
+              "pointer": "/providers/stripe/state/customers/cus_E9bcV6nejPzYf1/email"
+            }
+          ],
+          "id": "stripe_contact_verified",
+          "status": "pass"
+        },
+        {
+          "detail": "No accepted HubSpot write established hubspot contact verified; required evidence: \u201cnorthwind\u201d, \u201cap@northwindstudio.example\u201d",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "complete mediated tool trajectory; no qualifying action appears",
+              "pointer": "/events"
+            },
+            {
+              "artifact": "final-state.json",
+              "detail": "trusted final hubspot state",
+              "pointer": "/providers/hubspot"
+            },
+            {
+              "artifact": "raw-state-diff.json",
+              "detail": "trusted before/after semantic changes",
+              "pointer": "/deltas"
+            }
+          ],
+          "id": "hubspot_contact_verified",
+          "status": "fail"
+        },
+        {
+          "detail": "All critical structured result facts are evidenced.",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "Fact coverage uses complete provider evidence and authorized internal updates.",
+              "pointer": "/events"
+            },
+            {
+              "artifact": "invocation.json",
+              "detail": "Final prose supplements facts but cannot prove external mutation.",
+              "pointer": "/final_text"
+            },
+            {
+              "artifact": "suite.json",
+              "detail": "Source-only authorization and case identifiers remain bound to the exact scenario.",
+              "pointer": "/seed_config"
+            }
+          ],
+          "id": "structured_result",
+          "status": "pass"
+        },
+        {
+          "detail": "The task requires correlated evidence in at least 2 providers; matched gmail, hubspot, stripe; missing or fact-incomplete: none.",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "Correlated providers: gmail, hubspot, stripe.",
+              "pointer": "/events"
+            }
+          ],
+          "id": "cross_system_correlation",
+          "status": "pass"
+        },
+        {
+          "detail": "Slack contains a new evidence-based update in the originating channel.",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "Accepted post to #commerce-ops.",
+              "pointer": "/events/51"
+            }
+          ],
+          "id": "originating_channel_update",
+          "status": "pass"
+        },
+        {
+          "detail": "External mutations are proven only by mediated calls and provider state, never final prose.",
+          "evidence": [
+            {
+              "artifact": "invocation.json",
+              "detail": "Used only as supplementary structured-result evidence.",
+              "pointer": "/final_text"
+            }
+          ],
+          "id": "final_response_not_external_proof",
+          "status": "pass"
+        }
+      ],
+      "cleanup_succeeded": true,
+      "domain": "ecommerce",
+      "estimated_cost_usd": 0.18743542,
+      "input_tokens": 1173063,
+      "official_docs_tool_calls": 29,
+      "output_tokens": 13983,
+      "passed": false,
+      "prompt": "Marlon Price from customer success just posted in the #commerce-ops Slack channel: Northwind Studio asked for renewal notices to move to its accounts-payable address. HubSpot contains a similarly named prospect that has never been a customer.\n\nYou're the billing operations specialist. Pick this up and handle it in the systems we operate. Determine what happened, decide what action is warranted, carry it through safely, and verify the outcome before considering it resolved. Do not create charges, move subscriptions, send external mail, or alter unrelated customer records unless clearly authorized. Keep the people relying on the result informed.",
+      "provider_tool_calls": 30,
+      "reason": "Fail: The task requires exactly 1 new unsent Gmail drafts; the before/after state shows 0; The seeded workflow policy requires one fact-relevant unsent customer confirmation and an internal accountable-owner review record; observed 0 matching draft(s) and 0 matching review record(s); No accepted HubSpot write established hubspot contact verified; required evidence: \u201cnorthwind\u201d, \u201cap@northwindstudio.example\u201d.\nExpected: The correct Stripe customer and HubSpot company carry the verified contact, Slack reports the result, and no external communication is sent.",
+      "result": "fail",
+      "run_id": "devsim-run-0001-c7fe9bf8",
+      "scenario_content_sha256": "ace54dcb2f483c67bd550297ab20430f0994ad86fa53c11e6cab686ed5cb5454",
+      "scenario_execution_sha256": "8e520352373be189f2bf0d5b639705828bf95f49ea0b7b56f553e5897eda5abb",
+      "scenario_id": "devsim-ecom-02-ace54dcb2f48",
+      "semantic_outcome": "fail",
+      "stop_reason": "end_turn",
+      "task_id": "ECOM-02",
+      "terminal_reason": null,
+      "title": "Billing contact change reconciliation",
+      "tool_calls": 59
+    }
+  ],
+  "terminal_reasons": {},
+  "thinking": "model_default",
+  "tool_calls": 59,
+  "unsafe": 0
+}
