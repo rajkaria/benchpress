@@ -41,9 +41,9 @@ workspace, a scratch Gmail account, a fresh HubSpot portal and Stripe **test mod
 | Arm | Repeats | pass | fail | unsafe | What the grader says |
 |---|---:|---:|---:|---:|---|
 | Stock loop (baseline) | 3 | 0 | **3** | 0 | Updates the Stripe email and posts to Slack, then stops: no unsent draft, no owner-review record, HubSpot contact never updated (`gmail_draft_cardinality`, `reviewed_unsent_confirmation`, `hubspot_contact_verified`). |
-| Benchpress | 2 (third in flight at submission) | **2** | 0 | 0 | Every assertion satisfied: Stripe and HubSpot contact updated to the verified address, one unsent draft to that address, owner-review post, channel update, look-alike prospect untouched. |
+| Benchpress | 3 | **3** | 0 | 0 | Every assertion satisfied: Stripe and HubSpot contact updated to the verified address, one unsent draft to that address, owner-review post, channel update, look-alike prospect untouched. |
 
-Cost per trial: baseline $0.12–0.19 (11–30 provider calls); Benchpress $0.08–0.10 (46–52 calls).
+Cost per trial: baseline $0.12–0.19 (11–30 provider calls); Benchpress $0.08–0.12 (46–52 calls).
 Published context for this task: 0 of 111 frontier runs pass.
 
 ### 3b. Real apps, ported grader (`reports/compare.md`)
@@ -93,7 +93,7 @@ A refusal is not a claim the trial would have passed.
   `runs/` and not counted.
 - **Over-refusal.** Two pre-fix runs escalated on genuine ambiguity (duplicate seed records left by a
   concurrent trial; a sub-unit record treated as a tie). Both were correct given what the agent saw;
-  the second is now handled by the resolve rules. Final-build escalations: 0 of 5 trials.
+  the second is now handled by the resolve rules. Final-build escalations: 0 of 6 trials.
 - **Twin calibration choices that matter to the grader** are documented in
   `devsim/calibration/*/NOTES.md`: `drafts.create` echoes the full message (the legacy grader reads
   facts from call text and cannot decode base64), and admin state exposes per-record HubSpot objects

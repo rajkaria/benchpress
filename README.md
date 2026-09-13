@@ -434,7 +434,7 @@ changes.
 
 | Substrate | Grader | Stock loop (baseline) | Benchpress |
 |---|---|---|---|
-| Local grader-faithful twins under the **unmodified ArgaBench runner** | **ArgaBench's own semantic grader, unmodified** | 0 pass / 3 fail / 0 unsafe (3 repeats) | **2 pass / 0 fail / 0 unsafe** (repeats 1–2; repeat 3 in flight) |
+| Local grader-faithful twins under the **unmodified ArgaBench runner** | **ArgaBench's own semantic grader, unmodified** | 0 pass / 3 fail / 0 unsafe (3 repeats) | **3 pass / 0 fail / 0 unsafe** (3 repeats) |
 | Local twins | ported grader (`evals/assertions.py`) | — | 1 pass / 0 fail / 0 unsafe |
 | Real Slack + Gmail + HubSpot + Stripe (test mode) | ported grader | 0 pass / 2 fail / 0 unsafe | 0 pass / 2 fail / 0 unsafe, both on a single assertion (see below) |
 | ArgaBench's published result for this task | ArgaBench | **0 of 111** frontier runs pass | |
