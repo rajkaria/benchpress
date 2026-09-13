@@ -56,7 +56,7 @@ def twin_trials(reports: Path) -> list[dict[str, Any]]:
         report = _read(report_path)
         for attempt in cast(list[dict[str, Any]], report.get("attempts", [])):
             profile = str(attempt.get("profile_id", ""))
-            if not profile.startswith(arm):
+            if not profile.startswith(arm.split("+", 1)[0]):  # `benchpress+no_gate` runs under the benchpress profile
                 continue
             assertions = cast(list[dict[str, Any]], attempt.get("assertions", []))
             failing = [

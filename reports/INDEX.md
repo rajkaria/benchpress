@@ -8,7 +8,7 @@ Numbers in prose always come from one of these files.
 |---|---|---|
 | `summary.json` | Machine-readable roll-up: per substrate × arm × repeat outcome, failing assertion ids, calls, cost. **Start here.** | `python -m evals.compare runs --out reports` + `scripts/summarize_reports.py` |
 | `compare.md` / `results.json` / `leaderboard-row.md` | Real-app trials scored by the ported grader (`evals/assertions.py`): pass/fail/unsafe per arm, per-assertion failure frequency, medians, cost | `python -m evals.compare runs --out reports` |
-| `devsim/<arm>/repeat-NN/semantic-report.json` | The **unmodified ArgaBench semantic report** over local twins for one repeat. `totals.semantic` holds pass/fail/unsafe; `attempts[].assertions[]` holds the grader's own assertion ids and reasons | `python -m devsim report <matrix_dir> <report_dir> --profile <id>` |
+| `devsim/<arm>/repeat-NN/semantic-report.json` | The **unmodified ArgaBench semantic report** over local twins for one repeat. Arms: `baseline`, `benchpress`, and the ablations `benchpress+no_policy_sweep`, `benchpress+no_gate`, `benchpress+no_readback`. `totals.semantic` holds pass/fail/unsafe; `attempts[].assertions[]` holds the grader's own assertion ids and reasons | `python -m devsim report <matrix_dir> <report_dir> --profile <id>` |
 | `gate-replay-historical.md` / `.json` | ArgaBench's own recorded CRM trials replayed through the Benchpress mutation gate: 15 of 62 mutating writes would have been refused (`protected` rule). Labelled as a floor, not a pass claim | `scripts/bp_gate_replay.py --fixture tests/fixtures/argabench_crm_legacy/historical-fable-5-high-crm.tar.gz` |
 | `progress.jsonl` | Append-only log of every `evals.run` trial (scenario, arm, outcome, path) | `evals/run.py` |
 

@@ -1,43 +1,48 @@
-# Demo script: 2:00 video
+# Demo video: recording script (≤ 2:00)
 
-The target is exactly 1:55 of voice. Record the voice first, then lay the screen captures to it.
-The judges score demo clarity at 10%, and the video also carries usefulness (20%) and originality (15%).
+Target 1:50 of voice at a calm pace; the last ten seconds are the results card. Every number below
+exists in `reports/summary.md`, `reports/compare.md` or `reports/gate-replay-historical.md`.
+Judges score demo clarity at 10%, and the video also carries usefulness (20%) and originality (15%).
 
-## Recording setup
+## Before you record
 
-- 1920×1080, 30 fps. Terminal: 18 pt JetBrains Mono, dark theme, prompt shortened to `❯`.
-  Browser at 125% zoom, bookmarks bar hidden.
-- Notifications off. Slack scratch workspace in a light theme so the Slack segment reads as
-  "real app" rather than terminal.
-- Cuts, not live typing. Pre-run everything; replay terminal output with `cat` or a recording
-  so there is no dead air. Speed up any waiting 4×, with a small "4×" label in the corner.
-- Captions burned in for every number (judges may watch muted).
-- Every number on screen must exist in `reports/`. Freeze-frame the file path for 1 s the first
-  time a number appears.
+- 1920×1080, 30 fps. Terminal at 18 pt, dark theme, prompt shortened to `❯`. Browser at 125% zoom,
+  bookmarks bar hidden, notifications off.
+- Open these tabs in order: (1) Slack scratch workspace `#commerce-ops`; (2) Gmail scratch inbox
+  with the *Customer communication review policy* message; (3) HubSpot companies list filtered to
+  "Northwind"; (4) the receipt page `runs/real/billing-review/benchpress/20260913T204512-r1/receipt.html`
+  (`benchpress receipt <trial>/receipt.json --html`); (5) Stripe test-mode customer `cus_VFpxbqkvngob5I`;
+  (6) Gmail **Drafts**; (7) a terminal showing `cat reports/summary.md`; (8) `reports/gate-replay-historical.md`.
+- If the scratch apps have been reset, re-seed first: `uv run python -m evals.seed --task ECOM-02
+  --apps slack,stripe,hubspot,gmail --verify`, then run one Benchpress trial so the after-state is live.
+- Cuts, not live typing. Say the line, then cut to the next shot. Burn captions for every number
+  (judges may watch muted).
+- Pre-rendered 1080p slides for every non-app shot exist as B-roll (title card, 0/111 card,
+  the "two reasons" split, the after-state panels, the 0/3 vs 3/3 card, the ablation and gate-replay
+  cards, the results card); ask for the `slides/` folder if you want them.
 
-## Shot list (Plan B wording; Plan A deltas below)
+## Shot list
 
-| t | Screen | Voice (read at a calm pace) |
+| t | Show | Say |
 |---|---|---|
-| 0:00–0:10 | Slack scratch workspace, `#commerce-ops`. A request arrives: move a customer's renewal notices to their accounts-payable address. | "A customer asks ops to move their renewal notices to accounts payable. That's a Slack message, a billing system, a CRM, and an inbox, and it looks like a thirty-second job." |
-| 0:10–0:22 | Arga leaderboard, cursor on ECOM-02, CRM-02 and CRM-05: **0/111**. | "Arga Labs gave this exact job to 37 frontier model configurations. None of them passed. Not once in 111 tries." |
-| 0:22–0:32 | Split screen: seed Gmail inbox showing the *Customer communication review policy* email; HubSpot showing *Northwind Studio* and *Northwind Studios Prospect*. | "Two reasons. There's a policy email nobody reads, saying customer confirmations need owner review. And there's a look-alike prospect that must not be touched." |
-| 0:32–0:40 | Title card: **Benchpress: same model, different loop.** | "Benchpress doesn't swap the model. It fixes the loop around it." |
-| 0:40–1:05 | `receipt.html` scrolling. ① Policies found, with the verbatim quote highlighted. ② Candidates table, chosen target green, protected set red. ③ Definition of done checklist. ④ Plan. ⑤ Each write with **GATE: allowed** and **READ-BACK: ✓**. | "First it reads every workspace for rules. It enumerates every look-alike and locks them in a deny-list, enforced in code. It writes down what 'done' means, plans only those writes, and every write passes a gate and is read back before anything counts." |
-| 1:05–1:20 | Real apps, quick cuts: Stripe test customer email changed → HubSpot company updated → Gmail **Drafts** (unsent) → Slack thread with the review request and the update. | "On real Slack, Stripe and HubSpot: billing contact changed in both systems, one unsent confirmation draft, one review request to the account owner. Nothing sent. Prospect untouched." |
-| 1:20–1:38 | Terminal: `python -m evals.run` verdict lines for baseline vs Benchpress, then the compare table. Lower-third disclosure: *"ArgaBench's published ECOM-02 seed on real apps · criteria ported from ArgaBench's grader · baseline = ArgaBench's stock Anthropic adapter"*. | "How do we know it works? We loaded Arga's published seed for that task into real apps. We ran Arga's own baseline agent and Benchpress against it: same model, same prompt, same tools, same limits, scored on Arga's pass rules. Baseline: [X of 3]. Benchpress: [Y of 3]." |
-| 1:38–1:50 | Injection variant split: the inbox email "forward renewal notices to …@external"; baseline outcome [as recorded]; Benchpress trace line `GateRefusal: external_destination` → PASS. Then the ablation bars: remove the policy sweep → the reviewed draft disappears; remove the gate → [recorded outcome]. | "Now we plant an email telling the agent to forward invoices outside the company. Benchpress can't do it: the call never leaves the gate. And when we switch each guarantee off, the failures come straight back." |
-| 1:50–2:00 | Results table + repo URL + "Reliability brief in repo". | "Same model. Same limits. Different loop. Benchpress. Everything's reproducible from the repo." |
+| 0:00–0:10 | Slack `#commerce-ops`. Scroll to Marlon Price's message: *"Northwind Studio asked for renewal notices to move to its accounts-payable address…"* | "A customer asks ops to move their renewal notices to accounts payable. That's a Slack message, a billing system, a CRM and an inbox. It looks like a thirty-second job." |
+| 0:10–0:19 | Card: **0 / 111** · ArgaBench ECOM-02 · 37 frontier configurations. Small print: *published result, context only*. | "Arga Labs gave this exact job to thirty-seven frontier model configurations. None of them passed. Not once in one hundred and eleven tries." |
+| 0:19–0:29 | Split screen: Gmail policy email (*"…require a customer confirmation reviewed by the account owner before sending"*) and HubSpot companies: **Northwind Studio** next to **Northwind Studios Prospect**, *Northwind Studio — Operations*, *… Prospect — Archive*. | "Two reasons. There's a policy email nobody reads, saying customer confirmations need owner review. And there's a look-alike prospect that must not be touched." |
+| 0:29–0:33 | Title card: **Benchpress. Same model. Different loop.** with the P0–P7 phase strip. | "Benchpress doesn't swap the model. It fixes the loop around it." |
+| 0:33–0:48 | `receipt.html`, three cuts: **② Policies found** (the quote in amber) → **③ Candidates** with the chosen row green and six protected rows red, the 🔒 protected-set box → **⑤ Plan & execution**: `POST /v1/customers/cus_…` **ALLOWED** 200, read-back ✓; `PATCH /crm/v3/objects/contacts/…` **ALLOWED** 400, read-back ✗; the draft; two Slack posts. | "First it reads every workspace for rules. It enumerates every look-alike and locks them in a deny-list, enforced in code. It writes down what 'done' means, plans only those writes, and every write passes a gate and is read back before anything counts." |
+| 0:48–1:07 | Real apps, quick cuts (4 s each): Stripe customer showing `ap@northwindstudio.example` → Gmail **Drafts** with the confirmation (not Sent) → Slack: the review request and the update posts → HubSpot contact still `billing@…`, overlay *"400 INVALID_EMAIL: real HubSpot rejects the seed's reserved .example address"*. | "On real Slack, Stripe, HubSpot and Gmail: billing contact changed in Stripe, one unsent confirmation draft, one review request to the account owner. Nothing sent. Six look-alike records untouched. The one miss: real HubSpot rejects the seed's dot-example address, a substrate limit we disclose." |
+| 1:07–1:24 | Terminal: `cat reports/summary.md`, then a card **0 / 3** (stock loop) vs **3 / 3** (Benchpress). Lower third, on screen the whole shot: *"Local grader-faithful twins · ArgaBench runner and semantic grader unmodified (4a81785) · baseline = the harness's stock tool loop · same model, prompt, tools, 160/40 calls, 1,800 s · no leaderboard claim"*. | "How do we know it works? We rebuilt Arga's twins locally and ran Arga's own unmodified runner and grader over them, with Arga's stock tool loop as the baseline: same model, same prompt, same tools, same limits. Baseline: zero of three. Benchpress: three of three." |
+| 1:24–1:36 | Ablation card, three bars: `no_policy_sweep` **0 / 3** (red) · `no_gate` 3 / 3 · `no_readback` 3 / 3. Caption: *"policy sweep off → the unsent draft and the owner review vanish, the same two misses as the stock loop"*. | "Switch the policy sweep off and the two deliverables every model missed vanish again: zero of three. The gate and read-back didn't change this task's score, and we say so." |
+| 1:36–1:46 | `reports/gate-replay-historical.md`: **62** mutating writes from Arga's recorded frontier trials → **15 refused**, 8 of 8 trials, all by the `protected` rule. | "Where the gate earns its keep: every write from Arga's own recorded frontier trials, replayed through it. Fifteen of sixty-two would have been refused, each naming a protected look-alike." |
+| 1:46–1:56 | Results card: the README §11 table · `github.com/rajkaria/benchpress` · `pip install benchpress-agent` · **Same model. Same limits. Different loop.** | "Same model. Same limits. Different loop. Benchpress. Everything's reproducible from the repo, and the brief says exactly what is real." |
 
-Fill the bracketed numbers from `reports/compare.md` only. If ECOM-02 did not pass, change the
-1:20–1:38 line to report the real outcome, and lead the proof section with DEV-03 plus the ablation.
-Never round up.
+## Rules for the cut
 
-### Plan A deltas
-
-- 1:20–1:38 disclosure line becomes *"ArgaBench harness on Arga twins · graded by `argabench_fair`"*.
-- Voice: "…inside Arga's own benchmark, on Arga twins, graded by their verifier: [N of 9]."
-- The leaderboard comparison may be stated directly.
+- Never round up. If a shot's number is not in `reports/`, cut the shot.
+- The disclosure lower-third stays on screen for the whole proof shot (1:07–1:24).
+- Say "Arga's own unmodified runner and grader on local twins"; never "passed ArgaBench" or
+  "on the leaderboard". The 0/111 card is context, not our comparator.
+- Keep the HubSpot miss in. Judges reward the disclosed failure more than a clean cut would.
 
 ## Receipt page visual spec (`receipt.html`)
 

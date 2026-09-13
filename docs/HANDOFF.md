@@ -47,4 +47,4 @@ uv run python scripts/summarize_reports.py && uv run python -m evals.compare run
 
 ## Not done
 
-Ablations, DEV-03/CRM-02, video, PDF export of the brief, tag `v0.1.0-hackathon`.
+DEV-03/CRM-02, the injection variant, video recording, the form. (Ablations, PDF and the tag landed after this handoff; see `CLAUDE.md` State.)

@@ -2,15 +2,15 @@
 
 ## Checklist (B7, 15:45–15:55 PT; hard stop 15:55)
 
-- [ ] Repo public: `github.com/rajkaria/benchpress`. README opens with one-liner, receipt screenshot, results table, reproduce commands.
-- [ ] `docs/RELIABILITY-BRIEF.md` ≤ 2 pages, exported to `docs/RELIABILITY-BRIEF.pdf`.
+- [x] Repo public: `github.com/rajkaria/benchpress`. README opens with one-liner, receipt screenshot, results table, reproduce commands.
+- [x] `docs/RELIABILITY-BRIEF.md` ≤ 2 pages, exported to `docs/RELIABILITY-BRIEF.pdf`.
 - [ ] Video ≤ 2:00, YouTube unlisted, link in README and form.
-- [ ] Brief requirement check: *one useful multi-step agent* ✓ · *≥ 3 external apps* (real Slack + Stripe + HubSpot [+ Gmail]) ✓ · *show how you know it works* (graded trials, baseline, ablations) ✓.
-- [ ] Every number in README, brief and video matches `reports/`. Grep for `[X` placeholders: none left.
-- [ ] Substrate disclosure present in README, brief and video (Plan B).
-- [ ] Prep disclosure present: specs + gate modules written 2026-09-12 (commit timestamps).
-- [ ] No secrets: `git log -p | grep -E "sk_test_|xoxb-|pat-|sk-ant-"` returns nothing.
-- [ ] CI green on `main`. Tag `v0.1.0-hackathon` pushed.
+- [x] Brief requirement check: *one useful multi-step agent* ✓ · *≥ 3 external apps* (real Slack + Stripe + HubSpot + Gmail) ✓ · *show how you know it works* (unmodified-grader trials, same-substrate baseline, ablations, gate replay) ✓.
+- [x] Every number in README and brief matches `reports/` (video: check against `docs/DEMO-SCRIPT.md` when cut). Grep for `[X` placeholders: none left.
+- [x] Substrate disclosure present in README, brief and video (Plan B).
+- [x] Prep disclosure present: specs + gate modules written 2026-09-12 (commit timestamps).
+- [x] No secrets: `git log -p | grep -E "sk_test_|xoxb-|pat-|sk-ant-"` returns nothing.
+- [x] CI green on `main`. Tag `v0.1.0-hackathon` pushed.
 - [ ] Plan A only: fork link `github.com/rajkaria/arga-twins-benchmark/tree/benchpress` and `git diff --stat` against upstream in the brief.
 - [ ] Screenshot of the submission confirmation.
 
@@ -29,12 +29,15 @@ with the benchmark judges' own grader.**
 > deny-list enforced by a code gate, not a prompt. It plans only the writes the definition of done
 > needs and reads back every one. Customer-facing messages are left as drafts for the owner to
 > review. Status is computed from evidence alone. It runs on real Slack, Stripe (test mode),
-> HubSpot and Gmail. To show it works, we loaded ArgaBench's published seed for a task no model
-> passed into those real apps and ran ArgaBench's own stock agent as the baseline: same model,
-> prompt, tools and limits. Both were scored on pass/unsafe rules ported line by line from
-> ArgaBench's grader, over 3 repeats, with a prompt-injection variant and ablations that switch off
-> each guarantee. Results: [fill from reports]. Not run on Arga twins; the brief states exactly
-> what is real. Task-agnostic: no code references a task, name or domain.
+> HubSpot and Gmail. To show it works, we rebuilt ArgaBench's twins locally and ran the task no
+> model passed (ECOM-02) under ArgaBench's own unmodified runner and grader, with the harness's
+> stock tool loop as the baseline: same model, prompt, tools and limits. Baseline 0 of 3 pass;
+> Benchpress 3 of 3 pass, 0 unsafe. On the real apps (published seed loaded into real Slack, Gmail,
+> HubSpot and Stripe test mode, scored by a line-cited port of the grader) every deliverable lands;
+> the one failing assertion is real HubSpot rejecting the seed's reserved `.example` address.
+> Replaying ArgaBench's own recorded frontier trials through the gate would have refused 15 of 62
+> writes. Not run on Arga-hosted twins; the brief states exactly what is real. Task-agnostic: no
+> code references a task, name or domain.
 
 **Plan A swap:** replace "we loaded … ported line by line from ArgaBench's grader" with "we
 shipped it as a candidate adapter inside ArgaBench and ran it on Arga twins under the same tools,
@@ -45,7 +48,7 @@ limits and unmodified grader as every published model", and delete "Not run on A
 1. (10 s) "The best frontier model fails a third of real ops work, and 17% of runs do something unsafe. That's Arga's data."
 2. (15 s) "It's not the model. The agent never reads the policy, edits the look-alike account, and reports success from a 200."
 3. (20 s) "Benchpress fixes the loop. Policy sweep, locked look-alikes, a code gate on every write, read-back, drafts for review. Here's the receipt." Show receipt.html.
-4. (15 s) "Graded by Arga's own verifier: baseline [X], Benchpress [Y], and take the gate out and unsafe comes back. Per-verified-task pricing for teams whose agents touch money and customers."
+4. (15 s) "Graded by Arga's own unmodified grader on local twins: baseline 0 of 3, Benchpress 3 of 3, 0 unsafe. Per-verified-task pricing for teams whose agents touch money and customers."
 
 ## Q&A prep
 
