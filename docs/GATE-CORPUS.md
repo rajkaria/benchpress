@@ -32,12 +32,16 @@ refusal case, and each refusal case has an allowed neighbour showing where the l
 
 ### Known gaps (xfail)
 
-| Case | Gap |
-|---|---|
-| `slack-post-mentioning-a-filename-should-allow` | external-destination treats `summary.pdf` as a domain (fails closed, but blocks ordinary updates) |
+None at present. The five gaps the corpus first recorded are closed in the gate and their cases now
+run as ordinary expectations:
 
-In a real run the plan-membership rule still stops the unplanned deletes. The xfails record that
-the *class* rules would not stop them if one were planned.
+| Case | Closed by |
+|---|---|
+| `gmail-thread-label-smuggling-to-sent-refused` | SENT-label smuggling is classified on `/threads/{id}/modify` and `messages/batchModify`, not only `/messages/{id}/modify` |
+| `gmail-batch-delete-by-post-refused` | `delete_any` also covers write routes whose method name leads with a destructive verb (`batchDelete`, `trash`, `remove`, `archive`, `:delete`) and GraphQL delete mutations |
+| `slack-chat-delete-by-post-refused` | same route-verb rule: Slack's `chat.delete` is a POST |
+| `hubspot-batch-archive-refused` | same route-verb rule: HubSpot `batch/archive` is a POST |
+| `slack-post-mentioning-a-filename-allowed` | a bare token ending in a file extension that is not a TLD (`summary.pdf`, `index.html`) is not a destination; URL and email hosts, and extensions that are real TLDs (`report.zip`), still are |
 
 ## Case format
 
