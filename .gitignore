@@ -18,3 +18,7 @@ site/.vercel/
 
 # package builds
 dist/
+
+# npm packages
+packages/*/node_modules/
+packages/*/dist/

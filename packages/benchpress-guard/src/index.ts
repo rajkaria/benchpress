@@ -1,0 +1,25 @@
+export {
+  DESTRUCTIVE_VERBS,
+  READ_VERBS,
+  ToolGuard,
+  argumentsDigest,
+  classifyToolName,
+  createGuard,
+  guardTools,
+  receiptLine,
+  refusalMessage,
+  type Decision,
+  type GuardOptions,
+  type Receipt,
+  type ReceiptSink,
+} from "./guard.js";
+export {
+  PolicyError,
+  loadPolicy,
+  type DecisionRule,
+  type GuardPolicy,
+  type GuardRule,
+  type LoadedPolicy,
+  type LoadedRule,
+  type ToolClass,
+} from "./policy.js";
