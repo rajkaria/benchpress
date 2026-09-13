@@ -170,14 +170,62 @@ def classify(provider: str, method: str, path: str, body: object) -> frozenset[s
 
 
 def _body_text(body: object) -> str:
+    """Everything a body says, including text hidden inside base64url `raw` fields.
+
+    Gmail drafts carry the recipient and the message inside an RFC 2822 blob encoded as
+    base64url. A deny-list that only read the JSON envelope would be blind to it, so the
+    decoded text is appended to the searchable body.
+    """
     if body is None:
         return ""
     if isinstance(body, str):
         return body
     try:
-        return json.dumps(body, ensure_ascii=False, sort_keys=True, default=str)
+        rendered = json.dumps(body, ensure_ascii=False, sort_keys=True, default=str)
     except (TypeError, ValueError):
         return str(body)
+    decoded = "\n".join(_decoded_raw_fields(body))
+    return f"{rendered}\n{decoded}" if decoded else rendered
+
+
+def _decoded_raw_fields(value: object) -> list[str]:
+    found: list[str] = []
+    if isinstance(value, Mapping):
+        for raw_key, item in cast(Mapping[object, object], value).items():
+            if str(raw_key) == "raw" and isinstance(item, str):
+                text = decode_base64url_text(item)
+                if text:
+                    found.append(text)
+            else:
+                found.extend(_decoded_raw_fields(item))
+    elif isinstance(value, (list, tuple)):
+        for item in cast(Sequence[object], value):
+            found.extend(_decoded_raw_fields(item))
+    return found
+
+
+def decode_base64url_text(value: str) -> str:
+    """Decode a base64url (or base64) string to text, or return '' if it is not one."""
+    import base64
+    import binascii
+
+    stripped = value.strip()
+    if len(stripped) < 8:
+        return ""
+    padded = stripped + "=" * (-len(stripped) % 4)
+    try:
+        data = base64.urlsafe_b64decode(padded.encode("ascii"))
+    except (binascii.Error, ValueError, UnicodeEncodeError):
+        try:
+            data = base64.b64decode(padded.encode("ascii"), validate=False)
+        except (binascii.Error, ValueError, UnicodeEncodeError):
+            return ""
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return ""
+    printable = sum(1 for ch in text if ch.isprintable() or ch in "\r\n\t")
+    return text if text and printable / len(text) > 0.95 else ""
 
 
 def request_text(action_provider: str, path: str, query: Mapping[str, str], body: object) -> str:
@@ -225,6 +273,8 @@ _TRANSPARENT_FIELD_KEYS: frozenset[str] = frozenset(
         "values",
         "update",
         "patch",
+        "message",
+        "raw",
     }
 )
 

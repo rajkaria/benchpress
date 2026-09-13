@@ -96,6 +96,7 @@ class ToolBus:
     _phase_started: dict[str, float] = field(default_factory=dict[str, float])
     _sequence: int = 0
     _events: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
+    _harness_events: list[dict[str, Any]] = field(default_factory=list[dict[str, Any]])
 
     # -- phase control -----------------------------------------------------------------
 
@@ -162,12 +163,15 @@ class ToolBus:
         payload: dict[str, Any] = {"action": action, **kwargs}
         self.docs_calls += 1
         self._phase_docs[self.phase] = self._phase_docs.get(self.phase, 0) + 1
+        started = time.monotonic()
         try:
             raw = await self.execute(PROVIDER_DOCS, payload)
         except Exception as exc:  # noqa: BLE001 - a docs failure must never end a run
             self._record_event("docs", payload, None, error=str(exc))
+            self._record_harness_event(PROVIDER_DOCS, payload, {"error": {"type": type(exc).__name__}}, True, started)
             return ToolResult(ok=False, status_code=None, body=None, error=str(exc))
         self._record_event("docs", payload, raw)
+        self._record_harness_event(PROVIDER_DOCS, payload, raw, False, started)
         return ToolResult(ok=True, status_code=200, body=raw)
 
     # -- writes ------------------------------------------------------------------------
@@ -241,17 +245,20 @@ class ToolBus:
         self.provider_calls += 1
         self._phase_provider[self.phase] = self._phase_provider.get(self.phase, 0) + 1
 
+        started = time.monotonic()
         try:
             raw = await self.execute(PROVIDER_API, payload)
         except Exception as exc:  # noqa: BLE001 - transport failures are data, not crashes
             result = ToolResult(ok=False, status_code=None, body=None, error=str(exc))
             self._append_ledger(provider, method, path, _digest(payload), result, gate_verdict, action_id)
             self._record_event("api", payload, None, error=str(exc))
+            self._record_harness_event(PROVIDER_API, payload, {"error": {"type": type(exc).__name__}}, True, started)
             return result
 
         result = _interpret(raw)
         self._append_ledger(provider, method, path, _digest(payload), result, gate_verdict, action_id)
         self._record_event("api", payload, raw)
+        self._record_harness_event(PROVIDER_API, payload, raw, not result.ok, started)
         return result
 
     # -- bookkeeping -------------------------------------------------------------------
@@ -319,9 +326,32 @@ class ToolBus:
             with open(self.trace_path, "a", encoding="utf-8") as handle:
                 handle.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")
 
+    def _record_harness_event(
+        self, name: str, arguments: dict[str, Any], output: object, is_error: bool, started: float
+    ) -> None:
+        """The shape ArgaBench's own adapters emit per tool call (PLAN-B §9); `output` is
+        the executor's dict verbatim so trace sequence and fingerprints survive."""
+        index = len(self._harness_events) + 1
+        self._harness_events.append(
+            {
+                "type": "tool_call",
+                "provider_call_index": index,
+                "tool_use_id": f"bp-{index}",
+                "name": name,
+                "arguments": dict(arguments),
+                "output": output,
+                "is_error": is_error,
+                "latency_ms": round((time.monotonic() - started) * 1000),
+            }
+        )
+
     @property
     def events(self) -> tuple[dict[str, Any], ...]:
         return tuple(self._events)
+
+    @property
+    def harness_events(self) -> tuple[dict[str, Any], ...]:
+        return tuple(self._harness_events)
 
     def usage(self) -> dict[str, Any]:
         return {

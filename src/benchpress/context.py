@@ -333,7 +333,15 @@ class Context(Mutable):
     deliverable_refs: dict[str, str] = Field(default_factory=dict[str, str])
 
     ambiguous: bool = False
+    escalation_reason: str | None = None
     notes: list[str] = Field(default_factory=list[str])
+
+    # Runtime bookkeeping filled by the phases.
+    originating_channel_id: str | None = None
+    channel_baseline_ts: str | None = None
+    created: dict[str, str] = Field(default_factory=dict[str, str])  # action id -> created resource id / ts
+    candidate_snapshots: dict[str, dict[str, str]] = Field(default_factory=dict[str, dict[str, str]])
+    would_refuse: list[GateVerdict] = Field(default_factory=list[GateVerdict])  # no_gate ablation only
 
     # ---- derived views -------------------------------------------------------------
 
