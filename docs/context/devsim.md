@@ -3,34 +3,28 @@ feature: devsim
 globs:
   - devsim/**
   - tests/devsim/**
-updated: 2026-09-13
+updated: 2026-09-14
 ---
-
 # devsim — local twins under the unmodified ArgaBench runner (Track D)
 
-## Current state
-- Working: scaffold (`lifecycle.py` FakeArgaCli, `server.py` uvicorn port blocks, `runner.py` importlib
-  `run_task` with only `SubprocessArgaCli`/`invoke_model`/`load_profile` swapped, `matrix.py` 37-profile
-  copy, `candidates.py` stub/scripted, `cli.py`: serve/run/grade/report), Slack twin (calibrated to the
-  CRM fixture; messages live in admin `events[]`), Gmail twin (28 tests), `benchpress_candidate.py`
-  (Benchpress as `module:devsim.benchpress_candidate:benchpress`).
-- Proven: stub trial → `exact_completed / valid / score_eligible`; a Benchpress smoke trial graded
-  by the real grader (`unsafe: irrelevant_additive_write` — fixed in the agent).
-- Working (cont.): Stripe twin (D5, pyright strict, 75 tests, `devsim/calibration/stripe/NOTES.md`) — admin
-  collections are dicts keyed by id, asserted against the vendored grader's own `_removed_mapping_count` /
-  `_protected_change` helpers; Stripe search-query subset, form bodies, `Idempotency-Key`, real error
-  envelopes, unsafe routes (delete / charge / payment intent / refund / invoice send) that work.
-- Done (D4): HubSpot twin (`twins/hubspot.py`, 30 tests, pyright strict, calibration notes in
-  `devsim/calibration/hubspot/NOTES.md`); four of its tests run the unmodified ArgaBench canonicalizer
-  and ECOM legacy grader helpers over the twin's admin state.
-- Missing: golden contract (D6), `baseline_candidate.py`, scored runs (D7).
+## Current state — what's working
+- All four twins finished and strict (Slack, Gmail, HubSpot, Stripe; 175+ twin tests). `devsim serve --empty`
+  starts unseeded twins for `evals.run`/`evals.contract`; `devsim run` spins its own twins per trial.
+- Candidates: `devsim/benchpress_candidate.py`, `devsim/baseline_candidate.py`.
+- **Results under the unmodified ArgaBench semantic report:** Benchpress **3/3 pass**, baseline 0/3 fail
+  (`reports/devsim/<arm>/repeat-NN/semantic-report.json`).
+
+## Recent changes — files touched and why
+- `devsim/twins/gmail.py`: `drafts.create` echoes `format=full` (headers + snippet). The legacy grader reads task
+  facts from call text and cannot decode base64, so a minimal echo (real Gmail's shape) can never satisfy
+  `reviewed_unsent_confirmation` or bind the draft to the target. Documented in the code; add to calibration notes.
+- `devsim/cli.py`: `serve --empty`. `devsim/baseline_candidate.py`: new.
 
 ## Key decisions
-- Never edit the harness; swap module globals via importlib. Profiles in `devsim/profiles.json`
-  (`benchpress-deepseek-v4-pro`, `baseline-deepseek-v4-pro`, flash variants).
-- Seed key = scenario content sha, so ids are deterministic per task.
+- Never edit the harness; calibrate twins to what the graders can observe, and say so in the brief (§5/§7).
+- Harness runs use `BENCHPRESS_MAX_TOKENS=16000` exported in the shell (devsim CLI does not load `.env`).
 
 ## Next steps
-1. Finish the HubSpot twin (D4 spec in `docs/AGENT-TASKS.md`). Stripe (D5) is done.
-2. D6 golden contract: scripted oracle/prospect/no-draft/sent → pass/unsafe/fail/unsafe via `devsim report`.
-3. D7: `python -m devsim run --task ECOM-02 --profile benchpress-deepseek-v4-pro --candidate module:devsim.benchpress_candidate:benchpress --repeat 3`, baseline likewise; report + compare.
+1. D6 golden contract on devsim (scripted oracle/prospect/no-draft/sent → pass/unsafe/fail/unsafe via `devsim report`).
+2. Add the `drafts.create` echo decision to `devsim/calibration/gmail/NOTES.md`.
+3. More repeats (5×) per arm if credits allow.
