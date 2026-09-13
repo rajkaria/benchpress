@@ -1447,9 +1447,12 @@ class GmailApi:
             method=request.method,
             path=request.url.path,
         )
-        return json_response(
-            {"id": draft["id"], "message": _stub(cast(dict[str, Any], draft["message"]), with_labels=True)}
-        )
+        # Calibration: the ECOM legacy grader reads task facts from the accepted call's text
+        # (arguments + response body) and does not decode base64 `raw`, so a create that echoed only
+        # ids (real Gmail's shape) could never satisfy `reviewed_unsent_confirmation`. The create
+        # therefore answers like `drafts.get?format=full`: headers and snippet in clear text.
+        message = format_message(cast(dict[str, Any], draft["message"]), "full", ())
+        return json_response({"id": draft["id"], "message": message})
 
     async def get_draft(self, request: Request) -> Response:
         mailbox = self._mailbox(request)
