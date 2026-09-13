@@ -4,6 +4,12 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.3.2 (2026-09-13)
+- **Gate gaps found by the public corpus, closed.** Deletes spelled as write routes (`chat.delete`,
+  `batchDelete`, `batch/archive`, `:delete`, GraphQL deletes) are now classified as deletes, and marking mail
+  SENT through `threads/{id}/modify` or `messages/batchModify` is classified as sending email. Corpus: 147 case(s): 146 passed, 1 xfail, 0 failed, 0 xpass.
+  These make the gate stricter; trials graded before this release ran on the earlier gate.
+
 ## 0.3.1 (2026-09-13)
 - `benchpress run --policy-pack NAME` (repeatable) enforces policy packs in the gate. Unknown or malformed
   packs are a usage error before any provider call.
