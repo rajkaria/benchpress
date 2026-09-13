@@ -179,6 +179,12 @@ def _protected(ctx: Context, value: str) -> bool:
     return ctx.protected.hit(value) is not None
 
 
+def _citable_facts(ctx: Context) -> list[tuple[str, str]]:
+    """DoD facts a deliverable may quote: never a protected identifier (the gate would refuse the
+    whole message, and the look-alike must not be named in customer-facing or channel text)."""
+    return [(key, value) for key, value in ctx.dod.facts.items() if value and not _protected(ctx, value)]
+
+
 def change_lines(ctx: Context) -> list[str]:
     lines: list[str] = []
     for item in ctx.latest_evidence().values():
@@ -189,7 +195,7 @@ def change_lines(ctx: Context) -> list[str]:
 
 def confirmation_text(ctx: Context, recipient: str) -> tuple[str, str]:
     entity = ctx.targets[0].display if ctx.targets else "your account"
-    facts = ", ".join(f"{key}: {value}" for key, value in ctx.dod.facts.items())
+    facts = ", ".join(f"{key}: {value}" for key, value in _citable_facts(ctx))
     subject = f"Confirmation: {ctx.dod.summary or 'account update'} for {entity}"[:120]
     body = (
         f"Hello {entity} team,\n\n"
@@ -205,7 +211,7 @@ def confirmation_text(ctx: Context, recipient: str) -> tuple[str, str]:
 def review_text(ctx: Context) -> str:
     entity = ctx.targets[0].display if ctx.targets else "the account"
     owner = ctx.dod.account_owner or ctx.frame.reporter or "account owner"
-    facts = "; ".join(f"{key}: {value}" for key, value in ctx.dod.facts.items())
+    facts = "; ".join(f"{key}: {value}" for key, value in _citable_facts(ctx))
     draft_ref = ctx.deliverable_refs.get("unsent_confirmation", "gmail draft")
     return (
         f"Review request for the account owner ({owner}): {entity} — the customer confirmation for "
@@ -238,7 +244,7 @@ def update_text(ctx: Context) -> str:
         lines.append(f"Unverified: {len(unverified)} check(s) did not match on read-back; see the receipt.")
     if pending:
         lines.append("Pending for humans: " + "; ".join(pending) + ".")
-    facts = ", ".join(f"{key}={value}" for key, value in ctx.dod.facts.items())
+    facts = ", ".join(f"{key}={value}" for key, value in _citable_facts(ctx))
     if facts:
         lines.append(f"Facts: {facts}.")
     return "\n".join(lines)
