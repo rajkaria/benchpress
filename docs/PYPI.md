@@ -87,7 +87,7 @@ client config and limits: [docs/MCP.md](https://github.com/rajkaria/benchpress/b
 ```bash
 benchpress policy list                 # billing, customer-success, it-offboarding, release-engineering
 benchpress policy show billing
-benchpress gate check                  # 139 bundled cases: what the gate allows and refuses, and why
+benchpress gate check                  # 150+ bundled cases: what the gate allows and refuses, and why
 benchpress gate check my-cases/        # add your own YAML cases
 ```
 
@@ -97,7 +97,7 @@ and names the rule id in every refusal:
 `benchpress.wrap(model, executor, providers=[...], policy_packs=benchpress.load_policy_packs(["billing"]))`. From the CLI:
 `benchpress run --providers stripe,gmail --policy-pack billing --prompt "..."`.
 Packs only ever add refusals; with no pack the gate behaves exactly as before. The corpus documents the gate's
-real behavior, including five known gaps recorded as strict xfails.
+real behavior; the five gaps it originally recorded as strict xfails were fixed in 0.3.2 and 0.3.3.
 [Packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md) ·
 [corpus format](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
 

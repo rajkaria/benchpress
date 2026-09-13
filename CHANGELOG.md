@@ -4,6 +4,12 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.3.3 (2026-09-13)
+- **Last corpus gap closed: fewer false refusals.** A bare filename in a message (`summary.pdf`, `index.html`) is
+  no longer mistaken for an external domain; real external domains, external URLs and external email addresses
+  are still refused (new cases prove both directions; `report.zip` stays refused because `.zip` is a real TLD).
+  Corpus: 152 case(s): 152 passed, 0 xfail, 0 failed, 0 xpass. Every known gate gap found by the public corpus is now fixed.
+
 ## 0.3.2 (2026-09-13)
 - **Gate gaps found by the public corpus, closed.** Deletes spelled as write routes (`chat.delete`,
   `batchDelete`, `batch/archive`, `:delete`, GraphQL deletes) are now classified as deletes, and marking mail
