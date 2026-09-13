@@ -1,0 +1,38 @@
+{
+  "id": "r-7781",
+  "message": {
+    "id": "msg_d1e2f3a4b5c6",
+    "threadId": "thr_d1e2f3a4b5c6",
+    "labelIds": [
+      "DRAFT"
+    ],
+    "snippet": "This confirms that renewal notices for Harlow Bakery will be sent to ap@harlowbakery.example (previo",
+    "payload": {
+      "partId": "",
+      "mimeType": "text/plain",
+      "filename": "",
+      "headers": [
+        {
+          "name": "To",
+          "value": "ap@harlowbakery.example"
+        },
+        {
+          "name": "Subject",
+          "value": "Confirmation: renewal notice address for Harlow Bakery"
+        },
+        {
+          "name": "MIME-Version",
+          "value": "1.0"
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/plain; charset=\"utf-8\""
+        }
+      ],
+      "body": {
+        "size": 207,
+        "data": "VGhpcyBjb25maXJtcyB0aGF0IHJlbmV3YWwgbm90aWNlcyBmb3IgSGFybG93IEJha2VyeSB3aWxsIGJlIHNlbnQgdG8gYXBAaGFybG93YmFrZXJ5LmV4YW1wbGUgKHByZXZpb3VzbHkgYmlsbGluZ0BoYXJsb3diYWtlcnkuZXhhbXBsZSkuCgpUaGlzIGNvbmZpcm1hdGlvbiBhd2FpdHMgYWNjb3VudCBvd25lciByZXZpZXcgYmVmb3JlIGFueXRoaW5nIGlzIHNlbnQu"
+      }
+    }
+  }
+}

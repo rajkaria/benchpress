@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "members": [
+    {
+      "id": "U01PRIYA001",
+      "team_id": "T01BRIGHT01",
+      "name": "priya",
+      "real_name": "Priya Nand",
+      "deleted": false,
+      "is_bot": false,
+      "profile": {
+        "display_name": "priya",
+        "real_name": "Priya Nand",
+        "email": "priya@brightline.example",
+        "title": "Billing operations"
+      }
+    },
+    {
+      "id": "U01TOMAS002",
+      "team_id": "T01BRIGHT01",
+      "name": "tomas",
+      "real_name": "Tomas Reyes",
+      "deleted": false,
+      "is_bot": false,
+      "profile": {
+        "display_name": "",
+        "real_name": "Tomas Reyes",
+        "email": "tomas@brightline.example",
+        "title": "Account owner"
+      }
+    },
+    {
+      "id": "U01BOT00099",
+      "team_id": "T01BRIGHT01",
+      "name": "benchpress",
+      "real_name": "Benchpress",
+      "deleted": false,
+      "is_bot": true,
+      "profile": {
+        "display_name": "Benchpress",
+        "real_name": "Benchpress",
+        "bot_id": "B01BENCH001"
+      }
+    }
+  ],
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

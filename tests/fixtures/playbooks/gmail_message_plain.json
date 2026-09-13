@@ -1,0 +1,52 @@
+{
+  "id": "msg_b2c4d6e8f0a1",
+  "threadId": "thr_b2c4d6e8f0a1",
+  "labelIds": [
+    "INBOX",
+    "UNREAD"
+  ],
+  "snippet": "Please route renewal notices to ap@harlowbakery.example going forward.",
+  "historyId": "48214",
+  "internalDate": "1756808100000",
+  "sizeEstimate": 912,
+  "raw": "RnJvbTogRGFuYSBPa2Fmb3IgPGFwQGhhcmxvd2Jha2VyeS5leGFtcGxlPg0KVG86IGJpbGxpbmctZGVza0BicmlnaHRsaW5lLmV4YW1wbGUNClN1YmplY3Q6IFJlbmV3YWwgbm90aWNlcyBmb3IgSGFybG93IEJha2VyeQ0KRGF0ZTogVHVlLCAyIFNlcCAyMDI2IDEwOjE1OjAwICswMDAwDQpNSU1FLVZlcnNpb246IDEuMA0KQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PSJ1dGYtOCINCkNvbnRlbnQtVHJhbnNmZXItRW5jb2Rpbmc6IDdiaXQNCg0KUGxlYXNlIHJvdXRlIHJlbmV3YWwgbm90aWNlcyB0byBhcEBoYXJsb3diYWtlcnkuZXhhbXBsZSBnb2luZyBmb3J3YXJkLg0KDQpEYW5hIE9rYWZvcg0KQWNjb3VudHMgUGF5YWJsZSwgSGFybG93IEJha2VyeQ==",
+  "payload": {
+    "partId": "",
+    "mimeType": "text/plain",
+    "filename": "",
+    "headers": [
+      {
+        "name": "From",
+        "value": "Dana Okafor <ap@harlowbakery.example>"
+      },
+      {
+        "name": "To",
+        "value": "billing-desk@brightline.example"
+      },
+      {
+        "name": "Subject",
+        "value": "Renewal notices for Harlow Bakery"
+      },
+      {
+        "name": "Date",
+        "value": "Tue, 2 Sep 2026 10:15:00 +0000"
+      },
+      {
+        "name": "Content-Type",
+        "value": "text/plain; charset=\"utf-8\""
+      },
+      {
+        "name": "Content-Transfer-Encoding",
+        "value": "7bit"
+      },
+      {
+        "name": "MIME-Version",
+        "value": "1.0"
+      }
+    ],
+    "body": {
+      "size": 115,
+      "data": "UGxlYXNlIHJvdXRlIHJlbmV3YWwgbm90aWNlcyB0byBhcEBoYXJsb3diYWtlcnkuZXhhbXBsZSBnb2luZyBmb3J3YXJkLgoKRGFuYSBPa2Fmb3IKQWNjb3VudHMgUGF5YWJsZSwgSGFybG93IEJha2VyeQ=="
+    }
+  }
+}

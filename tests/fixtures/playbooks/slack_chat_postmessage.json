@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "channel": "C01BILL0001",
+  "ts": "1757691000.000300",
+  "message": {
+    "type": "message",
+    "user": "U01BOT00099",
+    "bot_id": "B01BENCH001",
+    "ts": "1757691000.000300",
+    "text": "Verified: Harlow Bakery renewal notices now go to ap@harlowbakery.example.",
+    "team": "T01BRIGHT01"
+  }
+}

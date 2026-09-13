@@ -1,0 +1,52 @@
+{
+  "results": [
+    {
+      "id": "9001",
+      "properties": {
+        "name": "Harlow Bakery",
+        "domain": "harlowbakery.example",
+        "description": "Customer since 2024. Procurement asked that renewal notices go to ap@harlowbakery.example; confirmations need account owner review.",
+        "lifecyclestage": "customer",
+        "hs_lastmodifieddate": "2026-09-01T09:00:00.000Z",
+        "hs_object_id": "9001"
+      },
+      "createdAt": "2025-03-04T12:00:00.000Z",
+      "updatedAt": "2026-09-01T09:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "9002",
+      "properties": {
+        "name": "Harlow Bakeries Prospect",
+        "domain": "harlow-bakeries.example",
+        "description": "Prospect. Never a customer.",
+        "lifecyclestage": "lead",
+        "hs_lastmodifieddate": "2026-09-01T09:00:00.000Z",
+        "hs_object_id": "9002"
+      },
+      "createdAt": "2025-03-04T12:00:00.000Z",
+      "updatedAt": "2026-09-01T09:00:00.000Z",
+      "archived": false
+    },
+    {
+      "id": "9003",
+      "properties": {
+        "name": "Cobalt Ridge Optics",
+        "domain": "cobaltridge.example",
+        "description": "Optics manufacturer, annual plan.",
+        "lifecyclestage": "customer",
+        "hs_lastmodifieddate": "2026-09-01T09:00:00.000Z",
+        "hs_object_id": "9003"
+      },
+      "createdAt": "2025-03-04T12:00:00.000Z",
+      "updatedAt": "2026-09-01T09:00:00.000Z",
+      "archived": false
+    }
+  ],
+  "paging": {
+    "next": {
+      "after": "3",
+      "link": "?after=3"
+    }
+  }
+}
