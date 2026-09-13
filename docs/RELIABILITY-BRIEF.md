@@ -1,14 +1,20 @@
 # Benchpress: system and reliability brief
 
 Written 2026-09-14 (build day 2, 02:30 IST / 14:00 PT; ablations added 14:20 PT). Every number below is produced by a
-committed file under `reports/` or `runs/` and can be regenerated with the commands in
-`README.md` §13. The final tables are `reports/compare.md` and `reports/summary.json`; `reports/INDEX.md` says how to
-verify any cell.
+committed file under `reports/` (`summary.md`, `compare.md`, `results.json`, `devsim/`) derived from raw trial data
+under the gitignored `runs/`. `reports/INDEX.md` says how to verify any cell.
 
 **Benchpress** is a task-agnostic control loop around a model (`deepseek-v4-pro` on both arms via
-an OpenAI-compatible endpoint; the Anthropic transport exists but was not exercised) for multi-app
+an OpenAI-compatible endpoint) for multi-app
 operational work. Apps: Slack, Gmail, HubSpot, Stripe. Real-app mode ran on a scratch Slack
 workspace, a scratch Gmail account, a fresh HubSpot portal and Stripe **test mode**.
+
+**Build under test.** Trial timestamps run from 2026-09-13 13:12 to 14:36 PT (`reports/summary.md`). The headline
+results (3a, 3b on the published seed) were committed at 13:58 PT, tagged `v0.1.0-hackathon`; ablations followed at
+14:20 PT and the routable and injection trials at 14:40 PT. Receipts record no build commit, and every trial started within
+50 minutes of the `v0.3.2` gate release (commit time 14:01 PT), so treat all numbers as produced by the pre-0.3.2 gate. Gate fixes from `v0.3.2` onward (deletes spelled as write routes,
+SENT-label modifies, bare filenames read as domains, GitHub look-alike matching) make the gate stricter or narrower
+and are **not reflected** in these numbers; no trial was re-run on a later release.
 
 ## 1. System
 
@@ -70,7 +76,7 @@ sweep classifying the injection, not the gate refusing it.
 
 On ECOM-02 the lift over the stock loop is caused by the policy sweep and the definition of done it
 feeds. The gate and read-back are backstops whose value shows where writes go wrong: the gate on
-ArgaBench's recorded frontier trials (§3c), read-back on the real apps, where it caught the HubSpot
+ArgaBench's recorded frontier trials (§3d), read-back on the real apps, where it caught the HubSpot
 `400` and kept the status at `partial` (§3b). We do not claim they raised the pass rate here.
 
 ### 3d. Gate replay on ArgaBench's own recordings (`reports/gate-replay-historical.md`)
@@ -136,16 +142,19 @@ A refusal is not a claim the trial would have passed.
 
 ## 7. Disclosure
 
-**Substrate.** We did not run on Arga-hosted twins. Track D replaces them with local twins under
-the unmodified ArgaBench runner and graders; our twins expose per-record admin state, which makes
-the local graders *stricter* than the hosted ones (`devsim/calibration/hubspot/NOTES.md`). Track B
+**Substrate.** We did not run on Arga-hosted twins. The devsim substrate replaces them with local twins under
+the unmodified ArgaBench runner and graders (devsim); our twins expose per-record admin state, which makes
+the local graders *stricter* than the hosted ones (`devsim/calibration/hubspot/NOTES.md`). The real-app substrate
 loads the published seed into real apps and scores with a cited port. **We make no claim about the
 official leaderboard.**
 **Seed adaptation.** `billing-review-routable` rewrites `.example` → `-example.com` in the seed and the task's facts and protected terms (real HubSpot rejects `.example` e-mails); Gmail recipients are re-addressed to the scratch mailbox in every real-app scenario.
-**Prep.** Specs and the `normalize/context/gate/tools` modules (61 tests) were written 2026-09-12
-(`d15b9cb`, `c9af32a`). Phases, playbooks, seeders, twins, assertions, run loop and reports were
-built on 2026-09-13/14.
-**Model.** DeepSeek `deepseek-v4-pro` for both arms (no Anthropic credits on the build day).
+**Prep.** Before the build window opened, the design specs (`d15b9cb`, 2026-09-12 00:49 PT) and the
+`normalize/context/gate/tools` modules with 61 tests (`c9af32a`, 2026-09-13 08:34 PT) were written; the planning
+specs were later removed from the tree and remain in git history. Phases, playbooks, seeders, twins, assertions, run
+loop and reports were built during the build window on 2026-09-13 (PT).
+**Model.** DeepSeek `deepseek-v4-pro` for both arms (no Anthropic credits on the build day). The Anthropic Messages
+transport (`claude-*`) has offline contract tests since 0.6.1 (`httpx.MockTransport`; they found and fixed five
+bugs) but has never been exercised against the live API, and no trial here used it.
 **Cost.** $0.08–0.19 per twin trial under the harness; real-app trials are model cost only (test
 modes and scratch accounts). Total model spend on the build day was under $15.
 **Keys.** All tokens are scratch/test and are rotated after the event.
