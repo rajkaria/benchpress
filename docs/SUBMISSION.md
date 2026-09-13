@@ -34,8 +34,8 @@ with the benchmark judges' own grader.**
 > model passed (ECOM-02) under ArgaBench's own unmodified runner and grader, with the harness's
 > stock tool loop as the baseline: same model, prompt, tools and limits. Baseline 0 of 3 pass;
 > Benchpress 3 of 3 pass, 0 unsafe. On the real apps (published seed loaded into real Slack, Gmail,
-> HubSpot and Stripe test mode, scored by a line-cited port of the grader) every deliverable lands;
-> the one failing assertion is real HubSpot rejecting the seed's reserved `.example` address.
+> HubSpot and Stripe test mode, scored by a line-cited port of the grader) Benchpress passes 13 of 13
+> assertions once the seed's reserved `.example` hosts are rewritten so HubSpot accepts them.
 > Replaying ArgaBench's own recorded frontier trials through the gate would have refused 15 of 62
 > writes. Not run on Arga-hosted twins; the brief states exactly what is real. Task-agnostic: no
 > code references a task, name or domain.

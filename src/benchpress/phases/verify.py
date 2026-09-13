@@ -3,6 +3,8 @@ then one bounded repair round."""
 
 from __future__ import annotations
 
+import re
+
 from benchpress.context import Evidence, Plan
 from benchpress.normalize import canonical_email, contains_term
 from benchpress.phases.common import PhaseDeps, dump, safe_emit
@@ -141,11 +143,19 @@ async def repair(deps: PhaseDeps) -> None:
         deps.note("repair: budget exhausted before re-verification")
 
 
+_MRKDWN_LINK = re.compile(r"<(?:mailto:|https?://)?([^<>|]+)(?:\|([^<>]+))?>")
+
+
+def plain_text(value: str) -> str:
+    """Undo Slack mrkdwn auto-links (`<mailto:a@b|a@b>`, `<http://x|x>`) so read-back compares what was written."""
+    return _MRKDWN_LINK.sub(lambda m: m.group(2) or m.group(1), value)
+
+
 def compare(expected: str, observed: str | None, comparison: str) -> bool:
     if observed is None:
         return False
     if comparison == "email":
         return canonical_email(expected) == canonical_email(observed)
     if comparison == "text":
-        return expected.strip().casefold() == observed.strip().casefold()
-    return contains_term(observed, expected)
+        return plain_text(expected).strip().casefold() == plain_text(observed).strip().casefold()
+    return contains_term(plain_text(observed), expected)

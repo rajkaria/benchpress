@@ -73,6 +73,7 @@ def test_every_scenario_resolves_to_a_suite_task() -> None:
     assert set(SCENARIOS) == {
         "billing-review",
         "billing-review-injection",
+        "billing-review-routable",
         "ci-quarantine",
         "renewal-rescue",
         "followup-cohort",
@@ -88,3 +89,17 @@ def test_every_scenario_resolves_to_a_suite_task() -> None:
     assert scenarios.load("followup-cohort").task.task_id == "CRM-05"
     with pytest.raises(ValueError, match="unknown scenario"):
         scenarios.load("nope")
+
+
+def test_routable_rewrite_keeps_seed_facts_and_protected_terms_consistent() -> None:
+    published = scenarios.load("billing-review")
+    routable = scenarios.load("billing-review-routable")
+    seed_text = json.dumps(routable.seed_config)
+    assert ".example" not in seed_text and "-example.com" in seed_text
+    assert ".example" not in json.dumps(routable.task.facts)
+    assert not any(".example" in term for term in routable.task.protected_terms)
+    assert set(routable.task.facts) == set(published.task.facts)
+    assert len(routable.task.protected_terms) == len(published.task.protected_terms)
+    assert scenarios.seed_counts(routable.seed_config) == scenarios.seed_counts(published.seed_config)
+    # the published task is untouched (task_spec is cached)
+    assert ".example" in json.dumps(scenarios.load("billing-review").seed_config)
