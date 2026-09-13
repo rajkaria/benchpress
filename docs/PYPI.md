@@ -55,7 +55,7 @@ print(result.context.refusals)        # every write the gate refused, with the r
   OpenAI-compatible endpoint, `ANTHROPIC_API_KEY` for `claude-*`), a `benchpress.ModelConfig`, or
   `None` to read `BENCHPRESS_MODEL`.
 - `executor` is an async `execute_tool(tool_name, tool_input)` function or any object exposing one.
-- Built-in playbooks cover **Slack, Gmail, HubSpot and Stripe**; pass `playbooks=` for your own systems.
+- Built-in playbooks cover **Slack, Gmail, HubSpot, Stripe and GitHub**; pass `playbooks=` for your own systems.
 - `transport=` swaps the model wire protocol (bring your own client, or a scripted one in tests).
 - `agent.run_sync(...)` for synchronous callers.
 
@@ -116,7 +116,7 @@ lets `benchpress.wrap(...)` drive Composio tools through the full loop.
 ```bash
 benchpress policy list                 # billing, customer-success, it-offboarding, release-engineering
 benchpress policy show billing
-benchpress gate check                  # 150+ bundled cases: what the gate allows and refuses, and why
+benchpress gate check                  # 178 bundled cases: what the gate allows and refuses, and why
 benchpress gate check my-cases/        # add your own YAML cases
 ```
 

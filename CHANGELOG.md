@@ -4,6 +4,17 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.6.0 (2026-09-13)
+- **GitHub playbook** (`github`, also registered as the `code_host` role): issue and pull-request search with look-alike
+  evidence, policy sources from CONTRIBUTING / SECURITY / CODEOWNERS and policy-labelled issues, issue updates
+  (including add-only labels) and comments, each with a read-back. The `release-engineering` policy pack now has a
+  real provider behind it. See [docs/PLAYBOOK-GITHUB.md](docs/PLAYBOOK-GITHUB.md).
+- Gate: `owner/repo#N` identifiers are matched against the request path, so a look-alike issue is refused even
+  without a declared target; `merge-upstream`, `update-branch` and issue close are classified (merge, push,
+  close). Corpus: 178 cases, all passing (26 GitHub).
+- Offline end-to-end test: the full loop on an in-memory GitHub picks the right issue among look-alikes, the gate
+  refuses the planted write, and the change is read back.
+
 ## 0.5.0 (2026-09-13)
 - **Composio** (optional `[composio]` extra, verified against `composio` 0.21.1):
   `benchpress.shims.composio.guard_composio(Composio(), policy, receipts=...)` checks every tool execution against
