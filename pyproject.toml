@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "benchpress-agent"
-version = "0.1.1"
+version = "0.2.0"
 description = "The reliability layer for AI agents with write access: policy-first, code-gated, read-back-verified multi-app execution"
 readme = "docs/PYPI.md"
 requires-python = ">=3.12"
@@ -37,6 +37,11 @@ Documentation = "https://github.com/rajkaria/benchpress#readme"
 [project.scripts]
 benchpress = "benchpress.cli:main"
 
+[project.optional-dependencies]
+mcp = [
+    "mcp>=2.2.0",
+]
+
 [dependency-groups]
 dev = [
     "pyright>=1.1.400",
@@ -50,6 +55,8 @@ dev = [
     # importing the vendored ArgaBench harness in-process (evals/harness_bridge, devsim/runner)
     "pyyaml>=6.0.2",
     "typer>=0.15.0",
+    # benchpress.shims.mcp tests (the optional `mcp` extra)
+    "mcp>=2.2.0",
 ]
 
 [tool.setuptools.packages.find]

@@ -67,6 +67,21 @@ benchpress run --providers hubspot,stripe --prompt "..." --trace-dir runs/demo
 benchpress receipt runs/demo --html
 ```
 
+## MCP: put the gate in front of any MCP server
+
+```bash
+pip install "benchpress-agent[mcp]"
+benchpress mcp-guard --policy guard.json -- npx -y @your/mcp-server
+```
+
+`mcp-guard` is a stdio MCP proxy. Point Claude Desktop, Cursor or any MCP client at it instead of the
+upstream server. Reads pass through. Writes are refused **in code** unless a policy rule allows them
+(tool-name rules, argument patterns, call caps), and destructive or unannotated tools are denied by
+default. Every call, allowed or refused, appends a JSONL receipt line with the tool, an argument
+digest, the decision and the rule. `benchpress.shims.mcp.mcp_executor(...)` goes the other way: it
+turns MCP client sessions into an executor, so the full loop can drive MCP tools. Policy format,
+client config and limits: [docs/MCP.md](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md).
+
 ## The loop
 
 `P0 orient → P1 policy sweep → P2 resolve (lock look-alikes) → P3 definition of done → P4 plan →
@@ -93,7 +108,7 @@ official leaderboard. Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. Expect additions (MCP guard, policy packs, Rehearse) in minor
+`ModelConfig`, `Ablations`, `Gate`. MCP support ships as the `[mcp]` extra. Expect additions (policy packs, Rehearse) in minor
 releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)
