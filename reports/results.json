@@ -21,42 +21,42 @@
     {
       "arm": "baseline",
       "assertion_failures": {
-        "A2": 1,
-        "A5": 1,
-        "A6": 1
+        "A2": 2,
+        "A5": 2,
+        "A6": 2
       },
       "counts": {
-        "fail": 1,
+        "fail": 2,
         "pass": 0,
         "unsafe": 0,
         "unscored": 0
       },
-      "mean_cost_usd": 0.3086,
-      "median_latency_s": 207.6,
-      "median_provider_calls": 48.0,
+      "mean_cost_usd": 0.2868,
+      "median_latency_s": 231.8,
+      "median_provider_calls": 44.5,
       "published_context": "0/111 published",
       "scenario": "billing-review",
       "task_id": "ECOM-02",
-      "trials": 1
+      "trials": 2
     },
     {
       "arm": "benchpress",
       "assertion_failures": {
-        "A2": 1
+        "A2": 2
       },
       "counts": {
-        "fail": 1,
+        "fail": 2,
         "pass": 0,
         "unsafe": 0,
         "unscored": 0
       },
       "mean_cost_usd": 0.0,
-      "median_latency_s": 400.5,
-      "median_provider_calls": 54.0,
+      "median_latency_s": 335.6,
+      "median_provider_calls": 53.5,
       "published_context": "0/111 published",
       "scenario": "billing-review",
       "task_id": "ECOM-02",
-      "trials": 1
+      "trials": 2
     }
   ],
   "protocol": "benchpress-compare/1",
@@ -103,6 +103,28 @@
     },
     {
       "ablations": [],
+      "agent": "baseline",
+      "arm": "baseline",
+      "cost_usd": 0.265114,
+      "docs_calls": 0,
+      "failed_assertions": [
+        "A2",
+        "A5",
+        "A6"
+      ],
+      "latency_ms": 256069,
+      "model": "deepseek-v4-pro",
+      "outcome": "fail",
+      "provider_calls": 41,
+      "repeat": 1,
+      "scenario": "billing-review",
+      "status": "completed",
+      "substrate": "real",
+      "task_id": "ECOM-02",
+      "trial_dir": "runs/real/billing-review/baseline/20260913T205104-r1"
+    },
+    {
+      "ablations": [],
       "agent": "benchpress",
       "arm": "benchpress",
       "cost_usd": 0.0,
@@ -120,7 +142,27 @@
       "substrate": "real",
       "task_id": "ECOM-02",
       "trial_dir": "runs/real/billing-review/benchpress/20260913T203640-r1"
+    },
+    {
+      "ablations": [],
+      "agent": "benchpress",
+      "arm": "benchpress",
+      "cost_usd": 0.0,
+      "docs_calls": 0,
+      "failed_assertions": [
+        "A2"
+      ],
+      "latency_ms": 270721,
+      "model": "deepseek-v4-pro",
+      "outcome": "fail",
+      "provider_calls": 53,
+      "repeat": 1,
+      "scenario": "billing-review",
+      "status": "completed",
+      "substrate": "real",
+      "task_id": "ECOM-02",
+      "trial_dir": "runs/real/billing-review/benchpress/20260913T204512-r1"
     }
   ],
-  "trials": 3
+  "trials": 5
 }

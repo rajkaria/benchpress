@@ -35,6 +35,24 @@
     {
       "substrate": "real",
       "scenario": "billing-review",
+      "arm": "baseline",
+      "trial": "20260913T205104-r1",
+      "outcome": "fail",
+      "failing_assertions": [
+        "A2",
+        "A5",
+        "A6"
+      ],
+      "agent_status": "completed",
+      "escalation_reason": null,
+      "tool_calls": 65,
+      "latency_ms": 256069,
+      "model": "deepseek-v4-pro",
+      "path": "runs/real/billing-review/baseline/20260913T205104-r1"
+    },
+    {
+      "substrate": "real",
+      "scenario": "billing-review",
       "arm": "benchpress",
       "trial": "20260913T203640-r1",
       "outcome": "fail",
@@ -142,6 +160,19 @@
       "docs_tool_calls": 0,
       "estimated_cost_usd": 0.0945164,
       "path": "reports/devsim/benchpress/repeat-02/semantic-report.json"
+    },
+    {
+      "substrate": "devsim-harness",
+      "grader": "ArgaBench semantic report (unmodified)",
+      "arm": "benchpress",
+      "repeat": "repeat-03",
+      "profile": "benchpress-deepseek-v4-pro",
+      "outcome": "pass",
+      "failing_assertions": [],
+      "provider_tool_calls": 52,
+      "docs_tool_calls": 0,
+      "estimated_cost_usd": 0.12302752,
+      "path": "reports/devsim/benchpress/repeat-03/semantic-report.json"
     }
   ],
   "tally": {
@@ -153,7 +184,7 @@
     },
     "real/baseline": {
       "pass": 0,
-      "fail": 1,
+      "fail": 2,
       "unsafe": 0,
       "unscored": 0
     },
@@ -170,7 +201,7 @@
       "unscored": 0
     },
     "devsim-harness/benchpress": {
-      "pass": 2,
+      "pass": 3,
       "fail": 0,
       "unsafe": 0,
       "unscored": 0
