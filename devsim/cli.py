@@ -53,13 +53,15 @@ def _eprint(message: str) -> None:
 # --------------------------------------------------------------------------------------
 
 
-async def _serve(task_id: str, seed_key: str | None, print_env: bool) -> int:
+async def _serve(task_id: str, seed_key: str | None, print_env: bool, empty: bool = False) -> int:
     task = suite_task(task_id)
     cli = FakeArgaCli()
     digest = content_hash(task)
     scenario = cli.scenario_for_digest(digest)
     raw_seed = scenario.get("seed_config")
     seed_config = cast(dict[str, Any], raw_seed) if isinstance(raw_seed, dict) else {}
+    if empty:
+        seed_config = {}  # evals.run / evals.contract seed the twins themselves through the seeders
     running = await serve_twins(
         [str(twin) for twin in cast(list[object], task["twins"])], seed_config, seed_key or digest
     )
@@ -325,6 +327,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument(
         "--seed-key", default=None, help="override the deterministic seed key (default: task content hash)"
     )
+    serve.add_argument("--empty", action="store_true", help="start the twins unseeded (evals.run seeds them itself)")
     serve.add_argument("--print-env", action="store_true", help="print `export DEVSIM_<PROVIDER>_URL=...` lines")
 
     run = commands.add_parser("run", help="run one or more tasks through the unmodified run_task")
@@ -362,7 +365,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "serve":
-        return asyncio.run(_serve(args.task, args.seed_key, args.print_env))
+        return asyncio.run(_serve(args.task, args.seed_key, args.print_env, bool(args.empty)))
     if args.command == "run":
         if args.repeat < 1:
             raise SystemExit("--repeat must be >= 1")
