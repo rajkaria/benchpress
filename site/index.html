@@ -73,7 +73,7 @@ p code,li code,td code{background:var(--panel-2);border:1px solid var(--line);bo
 .hero{position:relative;padding:88px 0 96px;border-bottom:1px solid var(--line);overflow:hidden}
 .hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:40px 40px;opacity:.45;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 70% 30%,#000 10%,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 70% 30%,#000 10%,transparent 75%);pointer-events:none}
 .hero-grid{position:relative;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:56px;align-items:center}
-@media (max-width:980px){.hero-grid{grid-template-columns:1fr;gap:48px}.hero{padding:64px 0 72px}}
+@media (max-width:980px){.hero-grid{grid-template-columns:minmax(0,1fr);gap:48px}.hero{padding:64px 0 72px}}
 .eyebrow{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font:500 12.5px/1.4 var(--mono);color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:7px 12px 7px 8px;background:rgba(17,21,26,.7)}
 .eyebrow b{font-weight:600;color:var(--bg);background:var(--ok);border-radius:999px;padding:3px 7px}
 h1{font:600 clamp(40px,5.6vw,68px)/1.02 var(--display);letter-spacing:-.035em;margin:24px 0 22px;text-wrap:balance}
@@ -272,6 +272,27 @@ td.mono{font-size:12.5px;color:var(--muted);white-space:nowrap}
 .fineprint ul{margin:14px 0 0;padding-left:18px;color:var(--muted);font-size:15px;display:grid;gap:10px}
 .fineprint strong{color:var(--soft);font-weight:600}
 
+/* recording */
+.term-rec{background:#0d1117}
+.term-rec img{width:100%;height:auto}
+.term-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;padding:12px 16px;border-top:1px solid var(--line);font:500 12.5px/1.4 var(--mono);color:var(--dim)}
+
+/* packages */
+.pkgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+@media (max-width:860px){.pkgs{grid-template-columns:1fr}}
+.pkg-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.pkg-head h3{margin:0}
+.extras{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+
+/* shipped */
+.ships{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media (max-width:980px){.ships{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.ships{grid-template-columns:1fr}}
+.ship{background:var(--bg-2);padding:20px 22px}
+.ship-v{display:inline-block;font:500 12px/1 var(--mono);color:var(--accent);margin-bottom:10px}
+.ship h3{font-size:16px;margin:0 0 6px}
+.ship p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+
 /* footer */
 footer{padding:88px 0 64px}
 .foot-tag{font:600 clamp(32px,4.4vw,56px)/1.05 var(--display);letter-spacing:-.035em;margin:0 0 40px}
@@ -293,13 +314,14 @@ footer{padding:88px 0 64px}
       <a href="#gate">The gate</a>
       <a href="#proof">Proof</a>
       <a href="#install">Install</a>
+      <a href="#status">Shipped</a>
     </nav>
     <div class="nav-cta">
       <a class="btn btn-sm" href="https://github.com/rajkaria/benchpress" aria-label="Benchpress on GitHub">
         <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
         GitHub
       </a>
-      <a class="btn btn-sm btn-primary" href="/receipt">See a receipt</a>
+      <a class="btn btn-sm btn-primary" href="/replay">Step through a run</a>
     </div>
   </div>
 </header>
@@ -316,40 +338,28 @@ footer{padding:88px 0 64px}
       <h1>Agents can write to your billing system now. <span class="quiet">Benchpress checks their work.</span></h1>
       <p class="lede">A small, strict loop you wrap around any tool-using model. It reads your team's rules before it acts, refuses to touch the look-alike record, and reads back every change it makes. Customer emails stay drafts until a person approves them. At the end you get a receipt.</p>
       <div class="install">
-        <span id="install-cmd">pip install benchpress-agent</span>
-        <button class="copy" type="button" data-copy="pip install benchpress-agent">copy</button>
+        <span id="install-cmd">uvx --from benchpress-agent benchpress demo</span>
+        <button class="copy" type="button" data-copy="uvx --from benchpress-agent benchpress demo">copy</button>
       </div>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="/receipt">Open a real receipt</a>
-        <a class="btn" href="#install">Try the demo, no keys</a>
+        <a class="btn btn-primary" href="/replay">Step through a real run</a>
+        <a class="btn" href="/receipt">Open a real receipt</a>
+        <a class="btn" href="#install">Install</a>
       </div>
 <!-- generated:hero-proof:start -->
 <p class="proof-line"><span class="dot"></span>Under ArgaBench&#x27;s unmodified grader on local twins: Benchpress passed 3 of 3 runs, the stock baseline 0 of 3. <a href="#proof">See every run</a></p>
 <!-- generated:hero-proof:end -->
     </div>
 
-    <div class="term" role="img" aria-label="Terminal output of benchpress demo: one policy found, the look-alike prospect locked, a planted write refused by the gate, 12 of 12 checks matching, status completed">
-      <div class="term-bar"><i></i><i></i><i></i><span>benchpress demo · no keys, no network</span></div>
-<pre><span class="t-dim">$</span> <span class="t-hi">uvx --from benchpress-agent benchpress demo</span>
-
-<span class="t-dim">request</span>  Rivermill Studio wants renewal notices
-         sent to its accounts-payable address.
-
-<span class="t-warn">policy</span>   [communication_review] "…require a customer
-         confirmation reviewed by the account owner"
-<span class="t-acc">target</span>   hubspot company:701 Rivermill Studio
-<span class="t-acc">locked</span>   Rivermill Studios Prospect <span class="t-dim">(702, cus_P2)</span>
-
-<span class="t-bad">REFUSED</span>  a3 [protected] request targets protected
-         record '702'
-
-<span class="t-ok">evidence</span> 12/12 checks match
-  <span class="t-ok">✓</span> billing email updated and read back
-  <span class="t-ok">✓</span> look-alike record unchanged in the workspace
-  <span class="t-ok">✓</span> customer confirmation left as an unsent draft
-
-<span class="t-hi">status COMPLETED</span> <span class="t-dim">· receipt.html written</span> <span class="cursor"></span></pre>
-    </div>
+    <figure class="term" style="margin:0">
+      <div class="term-rec">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="/img/demo-terminal-still.svg">
+          <img src="/img/demo-terminal.svg" alt="Recording of benchpress demo: the policy sweep finds the review policy, the look-alike record is locked, the gate refuses a planted write to it, every write is read back, and the run completes with a receipt" width="910" height="600">
+        </picture>
+      </div>
+      <figcaption class="term-foot"><span>A real recording of the published demo</span><a href="/replay">Step through it →</a></figcaption>
+    </figure>
   </div>
 </div>
 
@@ -460,7 +470,9 @@ footer{padding:88px 0 64px}
 
     <div class="split">
       <div class="prose">
-        <p>The gate is pure. The same action, context and history always get the same verdict, and it does no I/O of its own. That makes it boring to test, which is the point: it has its own corpus of refusal cases, and anyone can add one.</p>
+        <p>The gate is pure. The same action, context and history always get the same verdict, and it does no I/O of its own. That makes it boring to test, which is the point: it has its own public corpus of gate cases (<!-- generated:corpus:start -->
+<b>178</b> cases, all passing
+<!-- generated:corpus:end -->, run it with <code>benchpress gate check</code>), and anyone can add one.</p>
         <p>When it refuses, the request never leaves the process. The receipt records which rule fired and why, so "the agent didn't do X" always comes with a reason you can read.</p>
         <p>It also checks the sneaky cases. Gmail drafts arrive base64-encoded, so the gate decodes them before looking for protected names. An update that quietly adds an extra recipient gets caught as field smuggling.</p>
         <div class="card verdict" style="padding:0">
@@ -570,6 +582,29 @@ footer{padding:88px 0 64px}
       </div>
     </div>
 
+    <div class="pkgs">
+      <div class="try">
+        <div class="try-body">
+          <div class="pkg-head"><h3>Python</h3><a class="chip chip-acc" href="https://pypi.org/project/benchpress-agent/">PyPI benchpress-agent <!-- generated:pypi-version:start -->
+0.7.0
+<!-- generated:pypi-version:end --></a></div>
+          <p>The loop, the gate, the CLI and the guards. Python 3.12+. Optional extras add the integrations.</p>
+          <div class="extras"><span class="chip">[mcp]</span><span class="chip">[openai-agents]</span><span class="chip">[composio]</span></div>
+        </div>
+        <div class="code"><button class="copy" type="button" data-copy="pip install benchpress-agent">copy</button><pre><span class="t-dim">$</span> pip install benchpress-agent
+<span class="t-dim">$</span> pip install "benchpress-agent[mcp,openai-agents,composio]"</pre></div>
+      </div>
+      <div class="try">
+        <div class="try-body">
+          <div class="pkg-head"><h3>TypeScript</h3><a class="chip chip-acc" href="https://www.npmjs.com/package/benchpress-guard">npm benchpress-guard <!-- generated:npm-version:start -->
+0.1.0
+<!-- generated:npm-version:end --></a></div>
+          <p><code>guardTools(tools, policy)</code> for Vercel AI SDK tools. It refuses a call before <code>execute</code> runs, with the same policy file and receipts as the Python guards.</p>
+        </div>
+        <div class="code"><button class="copy" type="button" data-copy="npm install benchpress-guard">copy</button><pre><span class="t-dim">$</span> npm install benchpress-guard</pre></div>
+      </div>
+    </div>
+
     <div class="tries">
       <div class="try">
         <div class="try-body"><span class="try-n">01 · watch it run</span><h3>The offline demo</h3><p>Policy sweep, a locked look-alike, a refusal, read-backs, a receipt. About five seconds.</p></div>
@@ -651,30 +686,32 @@ result = <span class="py-k">await</span> agent.<span class="py-f">run</span>(<sp
       <div class="sec-label"><b>08</b>Where it stands</div>
       <div>
         <h2>What's shipped, what isn't, and the fine print.</h2>
+        <p class="sec-lede">Every release below is on PyPI or npm, built on 13 Sep 2026. This list is generated from the <a href="https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md">CHANGELOG</a>.</p>
       </div>
     </div>
 
+<!-- generated:shipped:start -->
+<ul class="ships"><li class="ship"><span class="ship-v">npm 0.1.0</span><h3>Vercel AI SDK guard</h3><p>guardTools(tools, policy) refuses a call before execute runs. Same policy file and receipts as the Python guards, 80 parity cases.</p></li><li class="ship"><span class="ship-v">0.7.0</span><h3>Regress and audit export</h3><p>regress pins a run&#x27;s gate decisions as corpus cases; receipts export writes one row per write attempt.</p></li><li class="ship"><span class="ship-v">0.6.1</span><h3>Claude transport fixes</h3><p>Offline contract tests for the Anthropic Messages transport found and fixed five bugs. Not yet run live.</p></li><li class="ship"><span class="ship-v">0.6.0</span><h3>GitHub playbook</h3><p>Issue and pull-request look-alikes, policies from CONTRIBUTING and CODEOWNERS, every update read back.</p></li><li class="ship"><span class="ship-v">0.5.0</span><h3>Composio guard and executor</h3><p>Every Composio tool execution is checked before it runs, and the full loop can drive Composio tools.</p></li><li class="ship"><span class="ship-v">0.4.0</span><h3>OpenAI Agents SDK guard</h3><p>guard_tools returns FunctionTools that refuse before the tool body runs, under every Runner mode.</p></li><li class="ship"><span class="ship-v">0.3.3</span><h3>Gate gap fix</h3><p>A bare file name like summary.pdf is no longer mistaken for an external domain.</p></li><li class="ship"><span class="ship-v">0.3.2</span><h3>Gate gap fixes</h3><p>Deletes spelled as write routes, and mail marked SENT by a label change, now refused.</p></li><li class="ship"><span class="ship-v">0.3.1</span><h3>Policy packs on the CLI</h3><p>benchpress run --policy-pack NAME enforces packs in the gate.</p></li><li class="ship"><span class="ship-v">0.3.0</span><h3>Policy packs, gate corpus, rehearse</h3><p>Code-enforced rule sets, a public corpus of gate cases, and rehearse / replay with no model.</p></li><li class="ship"><span class="ship-v">0.2.0</span><h3>MCP executor and mcp-guard</h3><p>A stdio MCP proxy that refuses writes your policy doesn&#x27;t allow.</p></li><li class="ship"><span class="ship-v">0.1.1</span><h3>The offline demo</h3><p>The whole loop on an in-memory workspace. No keys, no network, a receipt on disk.</p></li><li class="ship"><span class="ship-v">0.1.0</span><h3>benchpress.wrap</h3><p>The eight-phase loop around any execute_tool-shaped tool layer.</p></li></ul>
+<!-- generated:shipped:end -->
+
     <div class="status-grid">
       <div class="card">
-        <h3>Shipped, on PyPI</h3>
-        <ul class="list">
-          <li><span class="v">0.1.0</span><span><code>benchpress.wrap(model, executor)</code> over any <code>execute_tool</code>-shaped tool layer</span></li>
-          <li><span class="v">0.1.1</span><span>The offline <code>benchpress demo</code></span></li>
-          <li><span class="v">0.2.0</span><span>MCP executor and the <code>mcp-guard</code> proxy</span></li>
-          <li><span class="v">0.3.0</span><span>Policy packs, a public gate-rule corpus, and rehearse / replay</span></li>
-          <li><span class="v">0.3.2–3</span><span>Gate fixes for every gap the corpus found (deletes spelled as writes, SENT-label smuggling, bare file names)</span></li>
-          <li><span class="v">0.4.0</span><span>OpenAI Agents SDK tool guard (<code>guard_tools</code>) sharing one policy format with <code>mcp-guard</code></span></li>
-          <li><span class="v">runs on</span><span>Real Slack, Gmail, HubSpot and Stripe (test mode), local twins under ArgaBench's runner, and ArgaBench's <code>invoke_model</code> candidate contract</span></li>
+        <h3>Runs on</h3>
+        <ul class="list todo">
+          <li>Real Slack, Gmail, HubSpot and Stripe (test mode)</li>
+          <li>Local twins under ArgaBench's unmodified runner and grader</li>
+          <li>ArgaBench's <code>invoke_model</code> candidate contract</li>
+          <li>MCP servers, OpenAI Agents SDK tools, Composio tools and Vercel AI SDK tools, through the guards</li>
         </ul>
       </div>
       <div class="card">
         <h3>Not built yet</h3>
         <ul class="list todo">
-          <li>Shims for Composio and the Vercel AI SDK</li>
-          <li>Playbooks beyond Slack, Gmail, HubSpot and Stripe</li>
           <li>A full 40-task ArgaBench row on Arga-hosted twins</li>
+          <li>The Claude transport, run against the live API</li>
+          <li>Playbooks beyond Slack, Gmail, HubSpot, Stripe and GitHub</li>
           <li>Forking live state into twins before a production write</li>
-          <li>Hosted receipts with audit export</li>
+          <li>Hosted receipts</li>
         </ul>
       </div>
     </div>
@@ -701,7 +738,11 @@ result = <span class="py-k">await</span> agent.<span class="py-f">run</span>(<sp
       <nav class="foot-links" aria-label="Footer">
         <a href="https://github.com/rajkaria/benchpress">GitHub</a>
         <a href="https://pypi.org/project/benchpress-agent/">PyPI</a>
+        <a href="https://www.npmjs.com/package/benchpress-guard">npm</a>
+        <a href="https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md">CHANGELOG</a>
         <a href="https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md">Reliability brief</a>
+        <a href="https://github.com/rajkaria/benchpress/tree/main/reports">Reports</a>
+        <a href="/replay">Replay</a>
         <a href="/receipt">Sample receipt</a>
         <a href="/llms.txt">llms.txt</a>
       </nav>
