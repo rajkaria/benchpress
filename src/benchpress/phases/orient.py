@@ -75,13 +75,18 @@ def clean_channel(value: str | None) -> str | None:
     return cleaned.rstrip(".,;:") or None
 
 
+_NOT_A_PROHIBITION = re.compile(r"^(been|was|were|had|has|is|are)\b", re.IGNORECASE)
+
+
 def prohibitions_in(prompt: str) -> list[str]:
     found: list[str] = []
     for match in _PROHIBITION.finditer(prompt):
         clause = match.group(1).strip()
+        if _NOT_A_PROHIBITION.match(clause):
+            continue  # "has never been a customer" describes a fact, not a rule
         clause = re.split(r"\bunless\b", clause, maxsplit=1, flags=re.IGNORECASE)[0].strip()
         for part in _SPLIT_LIST.split(clause):
-            part = part.strip(" ,.")
+            part = re.sub(r"^(or|and)\s+", "", part.strip(" ,."), flags=re.IGNORECASE)
             if len(part) > 3:
                 found.append(part)
     return found

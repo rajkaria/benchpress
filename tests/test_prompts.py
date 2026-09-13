@@ -28,3 +28,18 @@ def test_system_text_keeps_harness_prompt_first() -> None:
 def test_prompts_are_task_agnostic() -> None:
     corpus = "\n".join(PHASE_PROMPTS.values()) + BENCHPRESS_ADDENDUM
     assert not re.search(r"(ECOM|CRM|DEV|IT|MKT)-0\d|northwind|acme\.example", corpus, re.IGNORECASE)
+
+
+def test_prohibition_parsing_skips_descriptive_never_clauses() -> None:
+    from benchpress.phases.orient import prohibitions_in
+
+    text = (
+        "A similarly named prospect has never been a customer. Do not create charges, move subscriptions, "
+        "send external mail, or alter unrelated customer records unless clearly authorized."
+    )
+    assert prohibitions_in(text) == [
+        "create charges",
+        "move subscriptions",
+        "send external mail",
+        "alter unrelated customer records",
+    ]

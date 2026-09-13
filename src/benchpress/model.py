@@ -55,6 +55,24 @@ class ModelRefusal(RuntimeError):
 # Configuration and metering
 # --------------------------------------------------------------------------------------
 
+_DOTENV_LOADED = False
+
+
+def _load_dotenv_once() -> None:
+    """Pick up `.env` from the working directory when keys are absent (dev convenience)."""
+    global _DOTENV_LOADED
+    if _DOTENV_LOADED or any(
+        os.environ.get(name) for name in ("DEEPSEEK_API_KEY", "BENCHPRESS_API_KEY", "ANTHROPIC_API_KEY")
+    ):
+        _DOTENV_LOADED = True
+        return
+    _DOTENV_LOADED = True
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(os.path.join(os.getcwd(), ".env"))
+
 
 @dataclass(frozen=True)
 class Pricing:
@@ -93,6 +111,8 @@ class ModelConfig:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None, *, model: str | None = None) -> ModelConfig:
+        if env is None:
+            _load_dotenv_once()
         source = dict(os.environ if env is None else env)
         chosen = model or source.get("BENCHPRESS_MODEL", "deepseek-v4-pro")
         pricing = DEFAULT_PRICING.get(chosen)
