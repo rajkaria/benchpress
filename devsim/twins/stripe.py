@@ -1781,6 +1781,10 @@ class StripeApi:
         cached = self.store.idempotency_keys.get(ctx.idempotency_key)
         if cached is None:
             return None
+        if cached.get("fingerprint") is None:
+            # A failed request is cached without a fingerprint (the error may have been raised before the
+            # parameters were decoded). Stripe replays the cached error rather than reporting a key conflict.
+            return cached
         if cached.get("fingerprint") != _fingerprint(ctx.method, ctx.path, ctx.params):
             raise StripeError(
                 400,
