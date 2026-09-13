@@ -3,10 +3,12 @@
     uv run python scripts/build_site.py           # refresh site/ from reports/ and docs/img/
     uv run python scripts/build_site.py --check   # exit 1 when site/ is stale (tests/test_site.py runs this)
 
-`site/index.html` and `site/llms.txt` are hand-written, except the blocks between
-`<!-- generated:NAME:start -->` and `<!-- generated:NAME:end -->`. Those come from `reports/summary.json` and
-`reports/gate-replay-historical.json`, so a number on the page can't drift from the file it came from. The receipt
-page and the screenshots are copied from `docs/img/`.
+`site/index.html` is hand-written, except the blocks between `<!-- generated:NAME:start -->` and
+`<!-- generated:NAME:end -->`. Those come from `reports/summary.json`, `reports/gate-replay-historical.json`,
+`CHANGELOG.md`, `pyproject.toml`, the npm package manifest and the bundled gate corpus, so a number on the page can't
+drift from the file it came from. Copied verbatim (never edit the copies): the receipt page, screenshots and terminal
+recording from `docs/img/`, the step-through replay from `docs/demo/` (served at `/replay`), and the repo-root
+`llms.txt`.
 
 Deploy with `vercel deploy --prod --cwd site` (static files, no build step).
 """
@@ -24,6 +26,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
+from benchpress.gate_corpus import load_corpus, run_corpus
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SITE = REPO_ROOT / "site"
 REPORTS = REPO_ROOT / "reports"
@@ -33,7 +37,58 @@ COPIED_ASSETS: dict[str, str] = {
     "docs/img/receipt-sample.html": "receipt.html",
     "docs/img/receipt-hero.png": "img/receipt-hero.png",
     "docs/img/receipt-gate.png": "img/receipt-gate.png",
+    "docs/img/demo-terminal.svg": "img/demo-terminal.svg",
+    "docs/img/demo-terminal-still.svg": "img/demo-terminal-still.svg",
+    "docs/demo/index.html": "replay/index.html",
+    "llms.txt": "llms.txt",
 }
+
+NPM_MANIFEST = REPO_ROOT / "packages" / "benchpress-guard" / "package.json"
+
+# One entry per CHANGELOG release heading (the heading text before the date). build() fails on a heading with no
+# entry, so a release can't land without the page saying what shipped.
+SHIPPED: dict[str, tuple[str, str]] = {
+    "benchpress-guard 0.1.0 on npm": (
+        "Vercel AI SDK guard",
+        "guardTools(tools, policy) refuses a call before execute runs. Same policy file and receipts as the Python "
+        "guards, 80 parity cases.",
+    ),
+    "0.7.0": (
+        "Regress and audit export",
+        "regress pins a run's gate decisions as corpus cases; receipts export writes one row per write attempt.",
+    ),
+    "0.6.1": (
+        "Claude transport fixes",
+        "Offline contract tests for the Anthropic Messages transport found and fixed five bugs. Not yet run live.",
+    ),
+    "0.6.0": (
+        "GitHub playbook",
+        "Issue and pull-request look-alikes, policies from CONTRIBUTING and CODEOWNERS, every update read back.",
+    ),
+    "0.5.0": (
+        "Composio guard and executor",
+        "Every Composio tool execution is checked before it runs, and the full loop can drive Composio tools.",
+    ),
+    "0.4.0": (
+        "OpenAI Agents SDK guard",
+        "guard_tools returns FunctionTools that refuse before the tool body runs, under every Runner mode.",
+    ),
+    "0.3.3": ("Gate gap fix", "A bare file name like summary.pdf is no longer mistaken for an external domain."),
+    "0.3.2": (
+        "Gate gap fixes",
+        "Deletes spelled as write routes, and mail marked SENT by a label change, now refused.",
+    ),
+    "0.3.1": ("Policy packs on the CLI", "benchpress run --policy-pack NAME enforces packs in the gate."),
+    "0.3.0": (
+        "Policy packs, gate corpus, rehearse",
+        "Code-enforced rule sets, a public corpus of gate cases, and rehearse / replay with no model.",
+    ),
+    "0.2.0": ("MCP executor and mcp-guard", "A stdio MCP proxy that refuses writes your policy doesn't allow."),
+    "0.1.1": ("The offline demo", "The whole loop on an in-memory workspace. No keys, no network, a receipt on disk."),
+    "0.1.0": ("benchpress.wrap", "The eight-phase loop around any execute_tool-shaped tool layer."),
+}
+
+CHANGELOG_HEADING = re.compile(r"^## (.+?) \(\d{4}-\d{2}-\d{2}\)\s*$", re.M)
 
 ARMS: tuple[tuple[str, str], ...] = (("benchpress", "Benchpress"), ("baseline", "Stock baseline"))
 
@@ -334,6 +389,40 @@ def package_version() -> str:
     return match.group(1)
 
 
+def changelog_releases() -> list[str]:
+    """Release headings in CHANGELOG.md, newest first, without the date."""
+    return CHANGELOG_HEADING.findall((REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))
+
+
+def render_shipped(releases: Sequence[str]) -> str:
+    missing = [r for r in releases if r not in SHIPPED]
+    if missing:
+        raise ValueError(f"CHANGELOG releases with no SHIPPED entry in scripts/build_site.py: {missing}")
+    tiles: list[str] = []
+    for release in releases:
+        title, line = SHIPPED[release]
+        tag = release.replace("benchpress-guard ", "npm ").replace(" on npm", "")
+        tiles.append(
+            f'<li class="ship"><span class="ship-v">{html.escape(tag)}</span>'
+            f"<h3>{html.escape(title)}</h3><p>{html.escape(line)}</p></li>"
+        )
+    return f'<ul class="ships">{"".join(tiles)}</ul>'
+
+
+def npm_version() -> str:
+    """The benchpress-guard version in its package.json."""
+    data = cast(dict[str, Any], json.loads(NPM_MANIFEST.read_text(encoding="utf-8")))
+    return str(data["version"])
+
+
+def corpus_summary() -> str:
+    """Run the bundled gate corpus, as `benchpress gate check` does, and state the count."""
+    results = run_corpus(load_corpus())
+    passed = sum(r.status == "pass" for r in results)
+    tail = "all passing" if passed == len(results) else f"{passed} passing"
+    return f"<b>{len(results)}</b> cases, {tail}"
+
+
 def replace_block(text: str, name: str, content: str) -> str:
     marker = re.escape(name)
     pattern = re.compile(rf"(<!-- generated:{marker}:start -->)(.*?)(<!-- generated:{marker}:end -->)", re.S)
@@ -355,8 +444,11 @@ def build(check: bool = False) -> list[str]:
             "gate-replay": render_gate_replay(replay),
             "trials": render_trials_table(trials),
             "version": f"<b>{html.escape(package_version())}</b>",
+            "pypi-version": html.escape(package_version()),
+            "npm-version": html.escape(npm_version()),
+            "shipped": render_shipped(changelog_releases()),
+            "corpus": corpus_summary(),
         },
-        SITE / "llms.txt": {"results": render_llms_results(trials, replay)},
     }
     for target, blocks in targets.items():
         current = target.read_text(encoding="utf-8")

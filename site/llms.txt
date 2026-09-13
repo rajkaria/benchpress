@@ -1,75 +1,55 @@
 # Benchpress
 
-> The reliability layer for AI agents with write access. A task-agnostic Python control loop you wrap around any
-> tool-using model: it reads the workspace's rules before acting, locks look-alike records in a code gate, reads back
-> every write, leaves customer messages as unsent drafts for the owner, and ends every run with a receipt.
+> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` (Apache-2.0, Python 3.12+). Built for the Multi-App AI Agent Hackathon, 2026-09-13.
 
-Same model. Same limits. Different loop.
+Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, and shows the gate refusing a planted write to a look-alike record.
 
-## Links
+## Start here
+- [README](https://github.com/rajkaria/benchpress/blob/main/README.md): product story, architecture, the eight phases, the gate, substrates, results, disclosure
+- [PyPI page](https://pypi.org/project/benchpress-agent/): install and API quickstart (source: docs/PYPI.md)
+- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release shipped during the hackathon, 0.1.0 onward
+- [Reliability brief](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md): numbers, methods, failures, cost
+- [VISION](https://github.com/rajkaria/benchpress/blob/main/VISION.md): what it becomes, business model
 
-- Site: https://benchpress-ten.vercel.app
-- Sample receipt (a real run's audit page): https://benchpress-ten.vercel.app/receipt
-- Source: https://github.com/rajkaria/benchpress
-- Full technical README: https://github.com/rajkaria/benchpress/blob/main/README.md
-- How to verify every number: https://github.com/rajkaria/benchpress/blob/main/reports/INDEX.md
-- Machine-readable results: https://github.com/rajkaria/benchpress/blob/main/reports/summary.json
-- Reliability brief: https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md
-- Package: https://pypi.org/project/benchpress-agent/ (Apache-2.0, Python 3.12)
+## Public API (Python)
+- `benchpress.wrap(model, executor, providers=[...], policy_packs=...)` → `Benchpress`; `await agent.run(request, trace_dir=...)` → `TrialResult` (`status` is computed from read-back evidence; `context.refusals` lists every refused write with its rule)
+- `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.ModelConfig`, `benchpress.Ablations`
+- `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
+- `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
+- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`), `benchpress.shims.composio.guard_composio(...)` / `composio_executor(...)` (extra `[composio]`)
 
-## The problem
+- TypeScript: `npm install benchpress-guard` → `guardTools(tools, policy)` for Vercel AI SDK tools, byte-compatible policy/receipts with the Python shims ([package](https://www.npmjs.com/package/benchpress-guard))
 
-ArgaBench (Arga Labs, published 2026-09-05) ran 37 frontier model configurations over 40 multi-app tasks, 3 repeats
-each: 4,440 trials, 17.0% unsafe. Three tasks (ECOM-02 billing-contact change, CRM-02 renewal rescue, CRM-05
-follow-up cohort) were passed 0 of 111 times. On DEV-03, 90 of 111 runs merged a pull request they were told not to
-merge. The failures are structural: agents never read the policy email, edit the look-alike record, and report
-success from an HTTP 200. These published numbers are context; Benchpress's comparator is a same-substrate baseline.
+## CLI
+- `benchpress demo`: offline end-to-end demo with receipts
+- `benchpress run --providers slack,gmail,hubspot,stripe --prompt ... [--policy-pack billing]`: real apps
+- `benchpress receipt DIR --html`: receipt summary and self-contained page
+- `benchpress gate check [PATH]`: the public gate-rule corpus (178 cases, all passing)
+- `benchpress policy list|show NAME`
+- `benchpress rehearse ... --n 3` / `benchpress replay rehearsal.json`
+- `benchpress mcp-guard --policy guard.json -- <upstream MCP server>`
+- `benchpress regress RECEIPT --out DIR`: turn a run into permanent gate-corpus regression cases
+- `benchpress receipts export PATH... --format csv|jsonl`: audit log of every write attempt
 
-## How it works
+## Docs
+- [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
+- [Policy packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md)
+- [Rehearse](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
+- [MCP executor and mcp-guard](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md)
+- [OpenAI Agents SDK guard](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+- [Composio guard and executor](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
+- [GitHub playbook](https://github.com/rajkaria/benchpress/blob/main/docs/PLAYBOOK-GITHUB.md)
+- [Audit export](https://github.com/rajkaria/benchpress/blob/main/docs/AUDIT-EXPORT.md)
+- [Step-through replay of a real run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
 
-Eight phases in a fixed order. The model fills typed slots; code makes every safety decision.
+## Evidence (claim discipline: we never say "passed ArgaBench")
+- [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).
+  - Local twins of the published seed under ArgaBench's **unmodified runner and grader**: Benchpress 3/3 pass, same-model baseline 0/3.
+  - Real Slack/Gmail/HubSpot/Stripe (test mode), scored by a line-cited port of ArgaBench's criteria: Benchpress 0/2 and baseline 0/2. Both arms fail; Benchpress fails one assertion (A2), the baseline fails three (A2, A5, A6). Neither real-app arm was unsafe.
+- [reports/INDEX.md](https://github.com/rajkaria/benchpress/blob/main/reports/INDEX.md): how to verify any number
+- [reports/gate-replay-historical.md](https://github.com/rajkaria/benchpress/blob/main/reports/gate-replay-historical.md): the gate replayed against ArgaBench's own recorded trials
+- No claim about the official ArgaBench leaderboard. The substrate, prep work, failures and cost are all disclosed in the README.
 
-- P0 Orient: parse the request into a typed frame (reporter, channel, prohibitions quoted verbatim).
-- P1 Policy sweep: scan inboxes, channels and record notes for rules; an injection detector flags anything that
-  tries to redirect the agent, and flagged text never becomes a policy.
-- P2 Enumerate and resolve: list every look-alike, choose one target with cited evidence, lock the rest in a
-  protected set.
-- P3 Definition of done: a typed checklist; code adds deliverables the model cannot remove (channel update, and an
-  unsent confirmation plus owner review whenever a review policy exists).
-- P4 Plan: only writes that satisfy a checklist item; delete, send, merge and charge are not plannable.
-- P5 Execute: every write passes a pure mutation gate (9 rules), then is read back immediately.
-- P6 Verify: fresh end-state reads, cross-system consistency, protected records unchanged, no duplicates.
-- P7 Deliver: owner review record, unsent customer draft, fact-cited channel update, receipt.json and receipt.html.
-
-Gate rules: control_plane, method (DELETE), action_class (send, charge, merge, push, external share...), protected,
-provider_scope, plan_membership, field_smuggling, external_destination, idempotency.
-
-## Try it
-
-    uvx --from benchpress-agent benchpress demo        # whole loop offline, no keys, writes a receipt
-    pip install benchpress-agent                       # benchpress.wrap(model, execute_tool, providers=[...])
-    pip install "benchpress-agent[mcp]"                # MCP executor + `benchpress mcp-guard` stdio proxy
-    pip install "benchpress-agent[openai-agents]"      # guard_tools() for OpenAI Agents SDK function tools, same policy format
-
-## Results
-
-<!-- generated:results:start -->
-Scored trials (generated from reports/summary.json; outcome precedence unsafe > fail > pass):
-- ArgaBench's unmodified runner and grader, on local twins: Benchpress 3/3 pass; Stock baseline 0/3 pass (missed: exactly one Gmail draft, owner-reviewed unsent confirmation, HubSpot contact verified).
-- Our line-cited port of the grader, on local twins: Benchpress 2/2 pass; Stock baseline 0/1 pass (missed: HubSpot company carries the new contact, exactly one unsent confirmation draft, owner review request).
-- Our line-cited port of the grader, on real apps: Benchpress 1/3 pass (missed: HubSpot company carries the new contact); Stock baseline 0/2 pass (missed: HubSpot company carries the new contact, exactly one unsent confirmation draft, owner review request).
-- Gate replay over ArgaBench's own recorded trials (reports/gate-replay-historical.json): 15 of 62 mutating writes would have been refused; 8 of 8 trials had at least one. A refusal is a blocked call, not a counterfactual pass.
-<!-- generated:results:end -->
-
-## Disclosure
-
-- Substrate: graded trials run on ArgaBench's published seed loaded into real Slack, Gmail, HubSpot and Stripe (test
-  mode), scored by a line-cited port of ArgaBench's pass/unsafe criteria, and on local twins under ArgaBench's
-  unmodified runner and grader. Not on Arga-hosted twins. No claim is made about the official leaderboard.
-- Baseline: the same model in a plain tool loop with the harness system prompt, the same two tools and the same
-  160/40 call and 1,800 s limits.
-- Prep work: specs and the gate, tool-bus and context modules were written on 2026-09-12, before the build window;
-  everything that runs a task was built on 2026-09-13. Commit timestamps show it.
-- Task-agnostic: src/benchpress contains no task id, seeded name or domain; CI greps for them on every push.
-
-Built by Raj Karia for the Multi-App AI Agent Hackathon, September 2026.
+## Engineering
+- Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
+- pyright strict, ruff, 1,000+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`
