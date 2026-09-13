@@ -178,6 +178,12 @@ def main(argv: list[str] | None = None) -> int:
         metavar="OUT",
         help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
     )
+    receipts = sub.add_parser("receipts", help="work across many receipts")
+    receipts_sub = receipts.add_subparsers(dest="receipts_command", required=True)
+    export = receipts_sub.add_parser("export", help="audit log: one row per write attempt (docs/AUDIT-EXPORT.md)")
+    export.add_argument("paths", nargs="+", metavar="PATH", help="receipt files or run directories (searched)")
+    export.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    export.add_argument("--out", metavar="FILE", help="write here instead of stdout")
     guard = sub.add_parser("mcp-guard", help="MCP stdio proxy: writes are refused unless a policy rule allows them")
     guard.add_argument("--policy", required=True, help="guard policy JSON (see docs/MCP.md)")
     guard.add_argument("--receipts", help="JSONL receipt path; defaults to mcp-guard-receipts.jsonl next to the policy")
@@ -229,6 +235,10 @@ def main(argv: list[str] | None = None) -> int:
         from benchpress.gate_corpus import check_command
 
         return check_command(list(args.paths), verbose=bool(args.verbose))
+    if args.command == "receipts":
+        from benchpress.audit import export_command
+
+        return export_command(list(args.paths), str(args.format), args.out)
     if args.command == "regress":
         from benchpress.regress import regress_command
 
