@@ -171,10 +171,10 @@ for a human: approve the draft. The receipt replaces the "did it actually do it?
 ## 4. How it works: the eight-phase loop
 
 ```mermaid
-flowchart LR
+flowchart TB
     REQ(["Slack request"]) --> P0
     subgraph LOOP["Benchpress controller: fixed order, typed Context"]
-        direction LR
+        direction TB
         P0["P0 Orient<br/>TaskFrame"] --> P1["P1 Policy sweep<br/>PolicyRecord[]"]
         P1 --> P2["P2 Enumerate + resolve<br/>targets + ProtectedSet"]
         P2 --> P3["P3 Definition of done<br/>model draft + code rules"]
