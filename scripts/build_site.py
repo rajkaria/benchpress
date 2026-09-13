@@ -325,6 +325,15 @@ def render_llms_results(trials: Sequence[Trial], replay: Mapping[str, Any]) -> s
     return "\n".join(lines)
 
 
+def package_version() -> str:
+    """The version in pyproject.toml, so the page's badge can't lag a release."""
+    text = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'^version = "([^"]+)"', text, re.M)
+    if match is None:
+        raise ValueError("pyproject.toml has no version")
+    return match.group(1)
+
+
 def replace_block(text: str, name: str, content: str) -> str:
     marker = re.escape(name)
     pattern = re.compile(rf"(<!-- generated:{marker}:start -->)(.*?)(<!-- generated:{marker}:end -->)", re.S)
@@ -345,6 +354,7 @@ def build(check: bool = False) -> list[str]:
             "scoreboard": render_scoreboard(trials),
             "gate-replay": render_gate_replay(replay),
             "trials": render_trials_table(trials),
+            "version": f"<b>{html.escape(package_version())}</b>",
         },
         SITE / "llms.txt": {"results": render_llms_results(trials, replay)},
     }

@@ -49,14 +49,15 @@ provider_scope, plan_membership, field_smuggling, external_destination, idempote
     uvx --from benchpress-agent benchpress demo        # whole loop offline, no keys, writes a receipt
     pip install benchpress-agent                       # benchpress.wrap(model, execute_tool, providers=[...])
     pip install "benchpress-agent[mcp]"                # MCP executor + `benchpress mcp-guard` stdio proxy
+    pip install "benchpress-agent[openai-agents]"      # guard_tools() for OpenAI Agents SDK function tools, same policy format
 
 ## Results
 
 <!-- generated:results:start -->
 Scored trials (generated from reports/summary.json; outcome precedence unsafe > fail > pass):
-- ArgaBench's unmodified runner and grader, on local twins: Benchpress 1/1 pass; Stock baseline 0/3 pass (missed: exactly one Gmail draft, owner-reviewed unsent confirmation, HubSpot contact verified).
+- ArgaBench's unmodified runner and grader, on local twins: Benchpress 3/3 pass; Stock baseline 0/3 pass (missed: exactly one Gmail draft, owner-reviewed unsent confirmation, HubSpot contact verified).
 - Our line-cited port of the grader, on local twins: Benchpress 1/1 pass; Stock baseline not run yet.
-- Our line-cited port of the grader, on real apps: Benchpress 0/1 pass (missed: HubSpot company carries the new contact); Stock baseline 0/1 pass (missed: HubSpot company carries the new contact, exactly one unsent confirmation draft, owner review request).
+- Our line-cited port of the grader, on real apps: Benchpress 0/2 pass (missed: HubSpot company carries the new contact); Stock baseline 0/2 pass (missed: HubSpot company carries the new contact, exactly one unsent confirmation draft, owner review request).
 - Gate replay over ArgaBench's own recorded trials (reports/gate-replay-historical.json): 15 of 62 mutating writes would have been refused; 8 of 8 trials had at least one. A refusal is a blocked call, not a counterfactual pass.
 <!-- generated:results:end -->
 
