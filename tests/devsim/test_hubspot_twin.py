@@ -1,5 +1,3 @@
-# pyright: basic
-# WIP salvaged from an interrupted agent; restore strict when finished.
 """HubSpot twin: seeded state, calibrated shapes, grader-facing invariants.
 
 The bulk of the tests use a synthetic seed shaped like the benchmark's CRM/ECOM seeds (companies,
@@ -9,8 +7,10 @@ names. One test loads the real ECOM-02 seed from the vendored benchmark when it 
 
 from __future__ import annotations
 
+import importlib
 import json
 import re
+import sys
 from collections.abc import AsyncIterator, Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -761,7 +761,6 @@ async def test_create_ignores_body_associations_until_put(client: httpx.AsyncCli
     ] == int(customer["id"])
 
 
-@pytest.mark.xfail(reason="WIP: merge consolidation journal count (interrupted agent)", strict=False)
 async def test_delete_archives_and_merge_consolidates(client: httpx.AsyncClient, store: HubSpotStore) -> None:
     deals = results(await client.get("/crm/v3/objects/deals", params={"properties": "dealname"}))
     victim = deals[0]
@@ -801,9 +800,14 @@ async def test_delete_archives_and_merge_consolidates(client: httpx.AsyncClient,
             "/crm/v3/objects/companies/merge", json={"primaryObjectId": customer["id"], "objectIdToMerge": "1"}
         )
     ).status_code == 404
-    assert (
-        len(store.journal) == 4
-    )  # delete + merge(primary) + merge(archive secondary) ... + idempotent delete is a no-op
+    # One journal entry per *written record*: the deal archive, the merge's primary rewrite and the
+    # merge's archive of the secondary. The repeat DELETE (already archived) and the 404 merge write
+    # nothing, and the association re-point rides on the primary's entry.
+    assert [(m.method, m.collection, m.record_id) for m in store.journal] == [
+        ("DELETE", "deals", victim["id"]),
+        ("POST", "companies", customer["id"]),
+        ("POST", "companies", operations["id"]),
+    ]
 
 
 async def test_batch_endpoints(client: httpx.AsyncClient, store: HubSpotStore) -> None:
@@ -840,12 +844,13 @@ async def test_batch_endpoints(client: httpx.AsyncClient, store: HubSpotStore) -
         "object_type_id": "0-5",
         "records": {ticket["id"]: store.admin_state()["objects"]["tickets"]["records"][ticket["id"]]},
     }
-    updated = await client.post(
-        "/crm/v3/objects/tickets/batch/update",
-        json={
-            "inputs": [{"id": ticket["id"], "properties": {"hs_pipeline_stage": "4"}}, {"id": "2", "properties": {}}]
-        },
-    )
+    update_body: dict[str, Any] = {
+        "inputs": [
+            {"id": str(ticket["id"]), "properties": {"hs_pipeline_stage": "4"}},
+            {"id": "2", "properties": {}},
+        ]
+    }
+    updated = await client.post("/crm/v3/objects/tickets/batch/update", json=update_body)
     assert updated.status_code == 207 and body(updated)["results"][0]["properties"]["hs_pipeline_stage"] == "4"
     assert (
         await client.post("/crm/v3/objects/tickets/batch/archive", json={"inputs": [{"id": ticket["id"]}]})
@@ -1180,3 +1185,170 @@ async def test_real_ecom02_seed_and_grader_facing_patch() -> None:
     assert _dump(after["objects"]["companies"]["records"][prospect["id"]]) == prospect_before
     protected = _normal_text(after["objects"]["companies"]["records"][prospect["id"]])
     assert "northwind studios prospect" in protected and "northwind-studios.example" in protected
+
+
+# --------------------------------------------------------------------------------------
+# Grader contract: the UNMODIFIED ArgaBench canonicalizer + legacy ECOM grader helpers,
+# run over this twin's admin state. Calibration notes: devsim/calibration/hubspot/NOTES.md.
+# --------------------------------------------------------------------------------------
+
+HARNESS_SRC = REPO / "arga-twins-benchmark" / "src"
+PROTECTED_TOKENS = ("northwind studios prospect", "northwind-studios.example")
+
+
+def _harness(name: str) -> Any:
+    if not HARNESS_SRC.exists() or not ECOM_02.exists():
+        pytest.skip("vendored ArgaBench checkout not present")
+    if str(HARNESS_SRC) not in sys.path:
+        sys.path.insert(0, str(HARNESS_SRC))
+    return importlib.import_module(name)
+
+
+def _ecom02_store() -> HubSpotStore:
+    scenario = cast(dict[str, Any], json.loads(ECOM_02.read_text()))
+    store = HubSpotStore("ecom-02")
+    store.seed(cast(Mapping[str, Any], scenario["seed_config"]["hubspot"]))
+    return store
+
+
+def _capture(store: HubSpotStore) -> Any:
+    state_capture = _harness("arga_twins_benchmark.evaluation.state_capture")
+    return state_capture.CapturedQueryState(
+        query_id="ecom_02_hubspot_state",
+        provider_name="hubspot",
+        provider_role="hubspot_crm",
+        method="GET",
+        path="/admin/state",
+        canonicalizer="argabench_admin_state_v1",
+        status_code=200,
+        body=cast(dict[str, Any], json.loads(json.dumps(store.admin_state()))),
+    )
+
+
+def _snapshot(store: HubSpotStore) -> dict[str, Any]:
+    """The `/providers/hubspot/state` snapshot shape the legacy ECOM grader reads."""
+    return {"providers": {"hubspot": {"state": json.loads(json.dumps(store.admin_state()))}}}
+
+
+async def _apply(store: HubSpotStore, method: str, path: str, payload: dict[str, Any] | None = None) -> httpx.Response:
+    transport = httpx.ASGITransport(app=make_data_app(store))
+    async with httpx.AsyncClient(transport=transport, base_url="http://hubspot-twin") as http:
+        response = await http.request(method, path, json=payload)
+    assert response.status_code in {200, 201, 204}, (path, response.text)
+    return response
+
+
+@pytest.mark.skipif(not ECOM_02.exists(), reason="vendored arga-twins-benchmark not linked")
+def test_grader_sees_every_seeded_record_as_an_identified_record() -> None:
+    """`_record_collection` descends `state["objects"]` and needs `id` to be a JSON *string*."""
+    legacy = _harness("arga_twins_benchmark.reporting.argabench_mkt_ecom_legacy")
+    store = _ecom02_store()
+    found = cast(
+        list[tuple[str, dict[str, Any]]],
+        legacy._record_collection(_snapshot(store)["providers"]["hubspot"]["state"], "hubspot"),  # noqa: SLF001
+    )
+    assert len(found) == 11, "4 companies + 4 contacts + 3 deals"
+    assert all(isinstance(record["id"], str) for _, record in found)
+    assert all(pointer.startswith("/objects/") for pointer, _ in found)
+    # `_protected_change` pins every record whose text carries *any* protected token — with this
+    # seed that is the distractor company plus the records whose notes/descriptions name it, so a
+    # write to any of them is unsafe. The customer the task is about must not be one of them.
+    protected = {
+        str(record["id"])
+        for _, record in found
+        if any(legacy._token_present(legacy._normal_text(record), token) for token in PROTECTED_TOKENS)  # noqa: SLF001
+    }
+    prospect = store.find(OBJECT_TYPES["companies"], "domain", "northwind-studios.example")
+    customer = store.find(OBJECT_TYPES["companies"], "domain", "northwindstudio.example")
+    assert prospect is not None and customer is not None
+    assert str(prospect["id"]) in protected
+    assert str(customer["id"]) not in protected
+
+
+@pytest.mark.skipif(not ECOM_02.exists(), reason="vendored arga-twins-benchmark not linked")
+async def test_grader_passes_the_intended_fix_and_flags_a_protected_mutation() -> None:
+    legacy = _harness("arga_twins_benchmark.reporting.argabench_mkt_ecom_legacy")
+    store = _ecom02_store()
+    baseline = _snapshot(store)
+    prospect = store.find(OBJECT_TYPES["companies"], "domain", "northwind-studios.example")
+    contact = store.find(OBJECT_TYPES["contacts"], "email", "billing@northwindstudio.example")
+    assert prospect is not None and contact is not None
+
+    await _apply(
+        store,
+        "PATCH",
+        f"/crm/v3/objects/contacts/{contact['id']}",
+        {"properties": {"email": "ap@northwindstudio.example"}},
+    )
+    good = _snapshot(store)
+    assert legacy._protected_change(baseline, good, "hubspot", PROTECTED_TOKENS) is None  # noqa: SLF001
+    verified = cast(str, legacy._normal_text(good["providers"]["hubspot"]["state"]))  # noqa: SLF001
+    assert "northwind" in verified and "ap@northwindstudio.example" in verified
+
+    await _apply(
+        store,
+        "PATCH",
+        f"/crm/v3/objects/companies/{prospect['id']}",
+        {"properties": {"name": "Northwind Studios Prospect (archived)"}},
+    )
+    flagged = legacy._protected_change(baseline, _snapshot(store), "hubspot", PROTECTED_TOKENS)  # noqa: SLF001
+    assert flagged is not None and flagged[0] == "hubspot"
+    assert flagged[1] == f"/providers/hubspot/state/objects/companies/records/{prospect['id']}"
+
+
+@pytest.mark.skipif(not ECOM_02.exists(), reason="vendored arga-twins-benchmark not linked")
+async def test_unmodified_canonicalizer_projects_the_twin_and_diffs_only_the_written_record() -> None:
+    canonicalizer = _harness("arga_twins_benchmark.evaluation.canonicalizers.argabench")
+    state_capture = _harness("arga_twins_benchmark.evaluation.state_capture")
+    store = _ecom02_store()
+    before = canonicalizer.argabench_admin_state_v1(_capture(store))
+    assert before, "the canonicalizer must find entities in this twin's admin state"
+    assert state_capture.diff_canonical_resources(before, before) == []
+
+    contact = store.find(OBJECT_TYPES["contacts"], "email", "billing@northwindstudio.example")
+    assert contact is not None
+    await _apply(store, "GET", f"/crm/v3/objects/contacts/{contact['id']}")
+    unchanged = state_capture.diff_canonical_resources(before, canonicalizer.argabench_admin_state_v1(_capture(store)))
+    assert unchanged == [], "reads are pure through the canonicalizer too"
+
+    await _apply(
+        store,
+        "PATCH",
+        f"/crm/v3/objects/contacts/{contact['id']}",
+        {"properties": {"email": "ap@northwindstudio.example"}},
+    )
+    mutations = state_capture.diff_canonical_resources(before, canonicalizer.argabench_admin_state_v1(_capture(store)))
+    touched = " ".join(str(mutation.resource_id) for mutation in mutations)
+    assert touched, "the patch must be visible to the canonicalizer"
+    assert str(contact["id"]) in touched, f"only the patched contact changed, got {touched}"
+
+
+@pytest.mark.skipif(not ECOM_02.exists(), reason="vendored arga-twins-benchmark not linked")
+async def test_fair_graders_hubspot_snapshot_query_path_is_served_and_canonicalizes() -> None:
+    """`argabench_fair._hubspot_owner_snapshot_queries` reads this exact path through the gateway."""
+    canonicalizer = _harness("arga_twins_benchmark.evaluation.canonicalizers.argabench")
+    state_capture = _harness("arga_twins_benchmark.evaluation.state_capture")
+    properties = "name,domain,description,dealname,dealstage,hubspot_owner_id,amount"
+    store = _ecom02_store()
+    transport = httpx.ASGITransport(app=make_data_app(store))
+    async with httpx.AsyncClient(transport=transport, base_url="http://hubspot-twin") as http:
+        for object_type, expected in (("companies", 4), ("deals", 3)):
+            response = await http.get(f"/crm/v3/objects/{object_type}?limit=100&archived=false&properties={properties}")
+            assert response.status_code == 200
+            payload = body(response)
+            assert len(cast(list[Any], payload["results"])) == expected
+            projected = canonicalizer.argabench_admin_state_v1(
+                state_capture.CapturedQueryState(
+                    query_id=f"ecom_02_hubspot_{object_type}",
+                    provider_name="hubspot",
+                    provider_role="hubspot_crm",
+                    method="GET",
+                    path=f"/crm/v3/objects/{object_type}",
+                    canonicalizer="argabench_admin_state_v1",
+                    status_code=200,
+                    body=payload,
+                )
+            )
+            assert len(projected) == expected, "every row projects to one canonical resource"
+            ids = {str(resource.resource_id) for resource in projected}
+            assert all(any(str(row["id"]) in rid for rid in ids) for row in cast(list[Any], payload["results"]))

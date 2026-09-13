@@ -20,7 +20,9 @@ updated: 2026-09-13
   collections are dicts keyed by id, asserted against the vendored grader's own `_removed_mapping_count` /
   `_protected_change` helpers; Stripe search-query subset, form bodies, `Idempotency-Key`, real error
   envelopes, unsafe routes (delete / charge / payment intent / refund / invoice send) that work.
-- WIP (pyright basic): `twins/hubspot.py` (+tests, 25/26).
+- Done (D4): HubSpot twin (`twins/hubspot.py`, 30 tests, pyright strict, calibration notes in
+  `devsim/calibration/hubspot/NOTES.md`); four of its tests run the unmodified ArgaBench canonicalizer
+  and ECOM legacy grader helpers over the twin's admin state.
 - Missing: golden contract (D6), `baseline_candidate.py`, scored runs (D7).
 
 ## Key decisions
