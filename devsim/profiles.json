@@ -1,0 +1,62 @@
+{
+  "protocol": "devsim-profiles/1",
+  "note": "Profiles that are NOT in the canonical model_matrix.json (adding them there breaks the harness's tests). `agent` selects the candidate; identity fields keep response_model == model_id (classifier lines 887, 945). Pricing fields feed run_argabench_40.estimated_cost.",
+  "profiles": [
+    {
+      "id": "benchpress-deepseek-chat",
+      "label": "Benchpress DeepSeek Chat",
+      "provider": "openai",
+      "model_id": "deepseek-chat",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 0.27,
+      "output_usd_per_million": 1.1,
+      "cache_read_usd_per_million": 0.07,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "agent": "benchpress"
+    },
+    {
+      "id": "baseline-deepseek-chat",
+      "label": "Baseline DeepSeek Chat",
+      "provider": "openai",
+      "model_id": "deepseek-chat",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 0.27,
+      "output_usd_per_million": 1.1,
+      "cache_read_usd_per_million": 0.07,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "agent": "baseline"
+    },
+    {
+      "id": "benchpress-opus-5-high",
+      "label": "Benchpress Opus 5 High",
+      "provider": "anthropic",
+      "model_id": "claude-opus-5",
+      "requested_effort": "high",
+      "api_effort": "high",
+      "thinking": "adaptive",
+      "input_usd_per_million": 5.0,
+      "output_usd_per_million": 25.0,
+      "cache_read_usd_per_million": 0.5,
+      "pricing_source": "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-8",
+      "agent": "benchpress"
+    },
+    {
+      "id": "benchpress-sonnet-5-high",
+      "label": "Benchpress Sonnet 5 High",
+      "provider": "anthropic",
+      "model_id": "claude-sonnet-5",
+      "requested_effort": "high",
+      "api_effort": "high",
+      "thinking": "adaptive",
+      "input_usd_per_million": 2.0,
+      "output_usd_per_million": 10.0,
+      "cache_read_usd_per_million": 0.2,
+      "pricing_source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "agent": "benchpress"
+    }
+  ]
+}
