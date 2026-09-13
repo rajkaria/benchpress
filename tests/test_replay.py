@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from benchpress.context import Action
+from benchpress.demo import SCRIPT
 from benchpress.rehearse import (
     Rehearsal,
     record_difference,
     replay,
     substitute_action,
 )
-from tests.test_controller import SCRIPT
 from tests.test_rehearse import OffsetWorkspace, WorkspaceStage, convergent_script, run_rehearsal
 
 

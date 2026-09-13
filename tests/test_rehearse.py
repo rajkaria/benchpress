@@ -13,6 +13,7 @@ from typing import Any, cast
 
 import pytest
 
+from benchpress.demo import PROMPT, SCRIPT, GmailBook, HubSpotBook, SlackBook, StripeBook, Workspace
 from benchpress.model import ModelClient, ModelConfig
 from benchpress.playbooks import Playbook
 from benchpress.rehearse import (
@@ -24,7 +25,6 @@ from benchpress.rehearse import (
     rehearse,
     state_hash,
 )
-from tests.test_controller import PROMPT, SCRIPT, GmailBook, HubSpotBook, SlackBook, StripeBook, Workspace
 
 PROVIDERS = ["slack", "gmail", "hubspot", "stripe"]
 

@@ -15,10 +15,10 @@ import pytest
 
 import benchpress.cli as cli
 import benchpress.realapp as realapp
+from benchpress.demo import PROMPT, SCRIPT
 from benchpress.model import ModelClient
 from benchpress.playbooks import Playbook
 from benchpress.rehearse import Rehearsal, StageFactory
-from tests.test_controller import PROMPT, SCRIPT
 from tests.test_rehearse import (
     OffsetWorkspace,
     WorkspaceStage,
