@@ -17,6 +17,16 @@ pip install benchpress-agent        # or: uv add benchpress-agent
 
 Python 3.12+. Runtime dependencies: `httpx`, `pydantic`.
 
+**See it work in one command, no keys needed:**
+
+```bash
+uvx --from benchpress-agent benchpress demo      # or: pip install benchpress-agent && benchpress demo
+```
+
+The demo runs the real loop, gate and read-back on an in-memory workspace with a scripted model. It
+plans a write to a look-alike prospect on purpose, so you can watch the gate refuse it, and it
+writes `benchpress-demo/receipt.json` and a self-contained `receipt.html`.
+
 ## Quickstart
 
 ```python

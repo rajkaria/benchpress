@@ -11,7 +11,7 @@ import pytest
 
 import benchpress
 from benchpress import Ablations, Benchpress, ModelConfig, wrap
-from tests.test_controller import (
+from benchpress.demo import (
     PROMPT,
     GmailBook,
     HubSpotBook,
