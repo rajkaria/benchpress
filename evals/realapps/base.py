@@ -93,13 +93,12 @@ class RealAppClient:
     ) -> httpx.Response:
         attempt = 0
         while True:
-            response = await self._client.request(
-                method,
-                path,
-                params=list(params.items()) if isinstance(params, Mapping) else params,
-                json=json_body,
-                data=data,
-            )
+            query: Mapping[str, str] | tuple[tuple[str, str], ...] | None = None
+            if isinstance(params, Mapping):
+                query = dict(params)
+            elif params is not None:
+                query = tuple(params)
+            response = await self._client.request(method, path, params=query, json=json_body, data=data)
             if response.status_code in {429, 502, 503, 504} and attempt < retries:
                 attempt += 1
                 retry_after = response.headers.get("retry-after", "")

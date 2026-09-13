@@ -69,19 +69,20 @@ async def test_twin_server_start_stop_with_health() -> None:
 
 
 async def test_serve_twins_falls_back_to_stubs_and_serves_admin_state() -> None:
-    running = await serve_twins(["stripe", "slack"], {"stripe": {"customers": [{"a": 1}]}}, "seed-key")
+    # jira and notion have no twin module, so they must fall back to stubs.
+    running = await serve_twins(["notion", "jira"], {"jira": {"issues": [{"a": 1}]}}, "seed-key")
     try:
-        assert running.providers == ("slack", "stripe")
+        assert running.providers == ("jira", "notion")
         assert all(twin.is_stub for twin in running.twins.values())
-        assert running["stripe"].role == "payments"
-        assert running["stripe"].base_url != running["stripe"].admin_url
+        assert running["jira"].role == "jira_tracker"
+        assert running["jira"].base_url != running["jira"].admin_url
         async with httpx.AsyncClient() as client:
-            data = await client.get(f"{running['stripe'].base_url}/v1/customers")
+            data = await client.get(f"{running['jira'].base_url}/rest/api/3/issue/X-1")
             assert data.status_code == 404 and data.json() == {"error": "devsim stub: no route"}
-            admin = await client.get(f"{running['stripe'].admin_url}/admin/state")
+            admin = await client.get(f"{running['jira'].admin_url}/admin/state")
             assert admin.status_code == 200 and isinstance(admin.json(), dict)
         env = running.env_lines()
-        assert any(line.startswith("DEVSIM_STRIPE_URL=http://127.0.0.1:") for line in env)
+        assert any(line.startswith("DEVSIM_JIRA_URL=http://127.0.0.1:") for line in env)
     finally:
         await running.stop()
 
