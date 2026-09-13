@@ -397,3 +397,22 @@ def test_customer_draft_in_base64_raw_is_allowed(context: Context) -> None:
         fields=("message", "raw"),
     )
     _allowed(context, action)
+
+
+def test_protected_short_id_as_path_segment_is_refused(context: Context) -> None:
+    """Ids shorter than the fuzzy-match floor are still caught by exact segment identity."""
+    action = make_action(
+        path="/crm/v3/objects/companies/702",
+        body={"properties": {"description": "touched"}},
+        fields=("description",),
+    )
+    assert _refusal(context, action) == "protected"
+
+
+def test_protected_ref_in_target_refs_is_refused(context: Context) -> None:
+    action = make_action(
+        path="/crm/v3/objects/companies/9999",
+        body={"properties": {"description": "touched"}},
+        fields=("description",),
+    ).model_copy(update={"target_refs": ("company:702",)})
+    assert _refusal(context, action) == "protected"

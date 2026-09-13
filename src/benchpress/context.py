@@ -230,6 +230,9 @@ class DefinitionOfDone(Frozen):
     write_scope: tuple[str, ...] = ()
     facts: dict[str, str] = Field(default_factory=dict[str, str])
     escalation: str | None = None
+    summary: str = ""
+    customer_contact: str = ""
+    account_owner: str = ""
 
     def deliverable(self, kind: DeliverableKind) -> Deliverable | None:
         return next((item for item in self.deliverables if item.kind == kind), None)
@@ -391,9 +394,17 @@ class Context(Mutable):
     def add_evidence(self, items: Sequence[Evidence]) -> None:
         self.evidence.extend(items)
 
+    def latest_evidence(self) -> dict[str, Evidence]:
+        """The most recent evidence per check id (a repair round supersedes earlier reads)."""
+        latest: dict[str, Evidence] = {}
+        for item in self.evidence:
+            latest[item.check] = item
+        return latest
+
     def status(self) -> RunStatus:
         if self.ambiguous:
             return "escalated"
-        if not self.evidence:
+        latest = self.latest_evidence()
+        if not latest:
             return "partial"
-        return "completed" if all(item.match for item in self.evidence) else "partial"
+        return "completed" if all(item.match for item in latest.values()) else "partial"

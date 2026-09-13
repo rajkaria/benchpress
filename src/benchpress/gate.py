@@ -361,13 +361,27 @@ class Gate:
     def _rule_protected(self, action: Action) -> tuple[str, str] | None:
         if not action.is_write:
             return None
+        chosen = self.context.target_refs()
+        # Identity match first: a path segment or declared target ref that *is* a protected
+        # id or name, whatever its length. Short numeric ids never slip through here.
+        protected_ids = self.context.protected.ids
+        protected_names = {casefold_text(name) for name in self.context.protected.names}
+        segments = [segment for segment in action.path.split("?", 1)[0].split("/") if segment]
+        for ref in action.target_refs:
+            segments.append(ref)
+            segments.append(ref.split(":", 1)[-1])
+        for segment in segments:
+            if segment in chosen:
+                continue
+            if segment in protected_ids or casefold_text(segment) in protected_names:
+                return ("protected", f"request targets protected record {segment!r}")
         text = request_text(action.provider, action.path, action.query, action.body)
         hit = self.context.protected.hit(text)
         if hit is None:
             return None
         # A protected term may legitimately appear when the write's own target is what the
         # deny-list would otherwise catch — but only if that exact term is a chosen target.
-        if hit in self.context.target_refs():
+        if hit in chosen:
             return None
         return ("protected", f"request references protected term {hit!r}")
 
