@@ -31,7 +31,10 @@ from pydantic import BaseModel, ValidationError
 T = TypeVar("T", bound=BaseModel)
 ToolHandler = Callable[[str, dict[str, Any]], Awaitable[object]]
 
-_RETRY_STATUSES = frozenset({408, 409, 429, 500, 502, 503, 504})
+# 529 is Anthropic's `overloaded_error`: transient, retried like a 503.
+_RETRY_STATUSES = frozenset({408, 409, 429, 500, 502, 503, 504, 529})
+# Adaptive thinking and `output_config.effort` arrived with Claude 4.6; Haiku 4.5 and older ids reject them with a 400.
+_LEGACY_CLAUDE = re.compile(r"^claude-(?:\d|instant|haiku-4-5|(?:opus|sonnet)-4-(?:[015]|20\d{6}))(?:\D|$)")
 _JSON_OBJECT = re.compile(r"\{.*\}", re.DOTALL)
 _TOOL_RESULT_LIMIT = 24_000
 
@@ -80,19 +83,26 @@ class Pricing:
     output_per_m: float = 3.96
     cache_read_per_m: float = 0.044
     source: str = "https://api-docs.deepseek.com/quick_start/pricing"
+    # None: cache writes bill at the input rate. Anthropic 5-minute cache writes bill at 1.25x input.
+    cache_write_per_m: float | None = None
 
+
+_CLAUDE_PRICING = "https://platform.claude.com/docs/en/about-claude/pricing"
 
 # DeepSeek prices are the PEAK rates from api-docs.deepseek.com/quick_start/pricing (verified
 # 2026-09-13); off-peak is half. `deepseek-chat` is a legacy alias the API still accepts.
+# Claude: first-party per-MTok rates; cache reads 0.1x input (0.025x on Fable 5.1), 5-minute cache writes 1.25x.
 DEFAULT_PRICING: Mapping[str, Pricing] = {
     "deepseek-v4-pro": Pricing(1.32, 3.96, 0.044),
     "deepseek-flash": Pricing(0.30, 1.20, 0.006),
     "deepseek-chat": Pricing(1.32, 3.96, 0.044),
     "deepseek-reasoner": Pricing(1.32, 3.96, 0.044),
-    "claude-opus-5": Pricing(5.0, 25.0, 0.5, "https://platform.claude.com/docs/en/about-claude/models"),
-    "claude-sonnet-5": Pricing(3.0, 15.0, 0.3, "https://platform.claude.com/docs/en/about-claude/models"),
-    "claude-fable-5": Pricing(10.0, 50.0, 1.0, "https://www.anthropic.com/claude/fable"),
-    "claude-haiku-4-5-20251001": Pricing(1.0, 5.0, 0.1, "https://platform.claude.com/docs/en/about-claude/models"),
+    "claude-opus-5": Pricing(5.0, 25.0, 0.5, _CLAUDE_PRICING, 6.25),
+    "claude-sonnet-5": Pricing(2.0, 10.0, 0.2, _CLAUDE_PRICING, 2.5),
+    "claude-fable-5": Pricing(10.0, 50.0, 1.0, _CLAUDE_PRICING, 12.5),
+    "claude-fable-5-1": Pricing(10.0, 50.0, 0.25, _CLAUDE_PRICING, 12.5),
+    "claude-haiku-4-5": Pricing(1.0, 5.0, 0.1, _CLAUDE_PRICING, 1.25),
+    "claude-haiku-4-5-20251001": Pricing(1.0, 5.0, 0.1, _CLAUDE_PRICING, 1.25),
 }
 
 
@@ -122,10 +132,10 @@ class ModelConfig:
                 provider="anthropic",
                 api_base=source.get("ANTHROPIC_API_BASE", "https://api.anthropic.com"),
                 api_key=source.get("ANTHROPIC_API_KEY", ""),
-                effort=source.get("BENCHPRESS_EFFORT", "high"),
+                effort=source.get("BENCHPRESS_EFFORT", "high" if _claude_supports_adaptive(chosen) else "default"),
                 max_tokens=int(source.get("BENCHPRESS_MAX_TOKENS", "16000")),
                 temperature=None,
-                pricing=pricing or Pricing(5.0, 25.0, 0.5),
+                pricing=pricing or Pricing(5.0, 25.0, 0.5, _CLAUDE_PRICING, 6.25),
             )
         api_key = source.get("BENCHPRESS_API_KEY") or source.get("DEEPSEEK_API_KEY") or source.get("OPENAI_API_KEY", "")
         return cls(
@@ -167,10 +177,13 @@ class UsageTotals:
             self.reasoning_tokens += _int(cast(Mapping[str, object], details).get("reasoning_tokens"))
 
     def cost_usd(self, pricing: Pricing) -> float:
-        billable_input = max(0, self.input_tokens - self.cache_read_input_tokens)
+        """`input_tokens` is the whole prompt; cache reads and cache writes are the priced subsets of it."""
+        write_rate = pricing.input_per_m if pricing.cache_write_per_m is None else pricing.cache_write_per_m
+        billable_input = max(0, self.input_tokens - self.cache_read_input_tokens - self.cache_creation_input_tokens)
         return round(
             billable_input / 1e6 * pricing.input_per_m
             + self.cache_read_input_tokens / 1e6 * pricing.cache_read_per_m
+            + self.cache_creation_input_tokens / 1e6 * write_rate
             + self.output_tokens / 1e6 * pricing.output_per_m,
             6,
         )
@@ -213,6 +226,8 @@ class ChatResponse:
     usage: dict[str, Any]
     model: str
     raw: dict[str, Any]
+    # Provider-native assistant content (Anthropic thinking blocks with signatures) to replay verbatim.
+    native_content: tuple[dict[str, Any], ...] = ()
 
 
 class ModelTransport(Protocol):
@@ -315,6 +330,14 @@ def _to_anthropic(payload: Mapping[str, Any], config: ModelConfig) -> dict[str, 
         if role == "system":
             system_parts.append(str(message.get("content", "")))
         elif role == "assistant":
+            native = message.get("anthropic_content")
+            if isinstance(native, list) and native:
+                # Replay the turn exactly as returned: a tool-use continuation must carry the turn's
+                # thinking blocks (with signatures) ahead of its tool_use blocks.
+                messages.append(
+                    {"role": "assistant", "content": [dict(block) for block in cast(list[dict[str, Any]], native)]}
+                )
+                continue
             blocks: list[dict[str, Any]] = []
             if message.get("content"):
                 blocks.append({"type": "text", "text": str(message["content"])})
@@ -342,7 +365,12 @@ def _to_anthropic(payload: Mapping[str, Any], config: ModelConfig) -> dict[str, 
             else:
                 messages.append({"role": "user", "content": [block]})
         else:
-            messages.append({"role": "user", "content": str(message.get("content", ""))})
+            text = str(message.get("content", ""))
+            if messages and messages[-1]["role"] == "user" and isinstance(messages[-1]["content"], list):
+                # Text after tool results joins the same user turn (tool_result blocks stay first).
+                cast(list[dict[str, Any]], messages[-1]["content"]).append({"type": "text", "text": text})
+            else:
+                messages.append({"role": "user", "content": text})
     body: dict[str, Any] = {
         "model": config.model,
         "max_tokens": int(payload.get("max_tokens", config.max_tokens)),
@@ -360,22 +388,42 @@ def _to_anthropic(payload: Mapping[str, Any], config: ModelConfig) -> dict[str, 
             }
             for tool in tools
         ]
+    else:
+        # A history holding tool_use/tool_result blocks must still declare those tools; `none` keeps the
+        # "answer now, no more calls" turn tool-free.
+        used = sorted(
+            {
+                str(block.get("name"))
+                for item in messages
+                if item["role"] == "assistant"
+                for block in cast(list[dict[str, Any]], item["content"])
+                if block.get("type") == "tool_use"
+            }
+        )
+        if used:
+            body["tools"] = [{"name": name, "input_schema": {"type": "object"}} for name in used]
+            body["tool_choice"] = {"type": "none"}
     choice = payload.get("tool_choice")
     if isinstance(choice, Mapping):
         function = cast(Mapping[str, Any], cast(Mapping[str, Any], choice).get("function", {}))
         body["tool_choice"] = {"type": "tool", "name": str(function.get("name"))}
     elif choice == "required":
         body["tool_choice"] = {"type": "any"}
-    if config.effort not in {"", "default"}:
+    if config.effort not in {"", "default"} and _claude_supports_adaptive(config.model):
         body["output_config"] = {"effort": config.effort}
         body["thinking"] = {"type": "adaptive"}
     return body
 
 
+def _claude_supports_adaptive(model: str) -> bool:
+    return _LEGACY_CLAUDE.match(model) is None
+
+
 def _from_anthropic(raw: Mapping[str, Any]) -> dict[str, Any]:
     text_parts: list[str] = []
     tool_calls: list[dict[str, Any]] = []
-    for block in cast(Sequence[Mapping[str, Any]], raw.get("content", []) or []):
+    content = [dict(block) for block in cast(Sequence[Mapping[str, Any]], raw.get("content", []) or [])]
+    for block in content:
         if block.get("type") == "text":
             text_parts.append(str(block.get("text", "")))
         elif block.get("type") == "tool_use":
@@ -394,15 +442,19 @@ def _from_anthropic(raw: Mapping[str, Any]) -> dict[str, Any]:
     message: dict[str, Any] = {"role": "assistant", "content": "".join(text_parts)}
     if tool_calls:
         message["tool_calls"] = tool_calls
+        message["anthropic_content"] = content
+    # Anthropic's `input_tokens` is only the uncached remainder; the OpenAI-shaped `prompt_tokens` is the whole prompt.
+    cache_read = _int(usage.get("cache_read_input_tokens"))
+    cache_creation = _int(usage.get("cache_creation_input_tokens"))
     return {
         "id": raw.get("id"),
         "model": raw.get("model"),
         "choices": [{"index": 0, "message": message, "finish_reason": finish}],
         "usage": {
-            "prompt_tokens": _int(usage.get("input_tokens")),
+            "prompt_tokens": _int(usage.get("input_tokens")) + cache_read + cache_creation,
             "completion_tokens": _int(usage.get("output_tokens")),
-            "prompt_cache_hit_tokens": _int(usage.get("cache_read_input_tokens")),
-            "cache_creation_input_tokens": _int(usage.get("cache_creation_input_tokens")),
+            "prompt_cache_hit_tokens": cache_read,
+            "cache_creation_input_tokens": cache_creation,
         },
     }
 
@@ -576,20 +628,21 @@ class ModelClient:
             response = await self.complete(messages, phase=phase, tools=converted if allow_tools else None)
             if not response.tool_calls or not allow_tools:
                 return response.text
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": response.text,
-                    "tool_calls": [
-                        {
-                            "id": call.id,
-                            "type": "function",
-                            "function": {"name": call.name, "arguments": json.dumps(call.arguments)},
-                        }
-                        for call in response.tool_calls
-                    ],
-                }
-            )
+            assistant: dict[str, Any] = {
+                "role": "assistant",
+                "content": response.text,
+                "tool_calls": [
+                    {
+                        "id": call.id,
+                        "type": "function",
+                        "function": {"name": call.name, "arguments": json.dumps(call.arguments)},
+                    }
+                    for call in response.tool_calls
+                ],
+            }
+            if response.native_content:
+                assistant["anthropic_content"] = [dict(block) for block in response.native_content]
+            messages.append(assistant)
             for call in response.tool_calls:
                 calls += 1
                 if call.invalid:
@@ -651,6 +704,7 @@ def _parse_response(raw: Mapping[str, Any]) -> ChatResponse:
         )
     finish = str(choice.get("finish_reason") or ("tool_calls" if calls else "stop"))
     usage = cast(Mapping[str, Any], raw.get("usage") or {})
+    native = message.get("anthropic_content")
     return ChatResponse(
         text=text,
         tool_calls=tuple(calls),
@@ -658,6 +712,9 @@ def _parse_response(raw: Mapping[str, Any]) -> ChatResponse:
         usage=dict(usage),
         model=str(raw.get("model") or ""),
         raw=dict(raw),
+        native_content=tuple(dict(block) for block in cast(list[dict[str, Any]], native))
+        if isinstance(native, list)
+        else (),
     )
 
 
