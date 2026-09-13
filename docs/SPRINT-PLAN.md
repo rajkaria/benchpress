@@ -125,6 +125,22 @@ Open: receipt.html, `reports/compare.md`, the injection trial, the brief, SUBMIS
 
 ---
 
+## Track D: grader-faithful local twins (parallel upside, own session)
+
+Full plan: [`TRACK-DEVSIM.md`](./TRACK-DEVSIM.md). It runs **alongside** the Plan B lanes and never blocks them.
+
+| Time PT / IST | Track D milestone |
+|---|---|
+| 09:45 / 22:15 | Second Claude session ("D-lead") in worktree `benchpress-devsim`, branch `track-devsim`; D0 scaffold + D1 calibration dispatched |
+| 10:45 / 23:15 | Stub twins run the unmodified `run_task` end to end; calibration pack merged; D2–D5 twins + D6 golden skeleton dispatched |
+| 12:45 / 01:15 | Twins v1: seed + admin state match calibration |
+| 13:30 / 02:00 | Oracle trajectory grades `pass` via `grade_argabench_attempt.py` |
+| **14:00 / 02:30** | **Gate:** golden contract green through the unmodified semantic report → D7 scored runs (stock `opus-5-high` × 3, Benchpress × 3). Missed → no Track D claims |
+| 14:45 / 03:15 | Results into B5 brief with TRACK-DEVSIM §8 disclosure, in their own substrate column |
+
+If the gate is green, the video's proof segment leads with "graded by ArgaBench's own unmodified
+grader" (TRACK-DEVSIM §8 wording) and the real-app results carry the usefulness and injection story.
+
 ## Plan A deltas (only if multi-twin access is granted by 09:25)
 
 | Block | Change |

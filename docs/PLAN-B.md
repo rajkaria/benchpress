@@ -20,9 +20,9 @@ A read-only audit of the vendored harness (`4a81785`; 975 tests pass, `validate`
 | The grader is offline and pure | No network in `reporting/`/`evaluation/`; `grade_argabench_attempt.py <task_dir> --task-id X --output …` grades one trial | Grading locally is possible in principle |
 | But it scores **realistic API response bodies** from `invocation.json` tool outputs plus `/admin/state` snapshots (`/providers/<p>/state/...`), with calls paired to `provider-trace.json` by `trace.sequence` + `request_fingerprint` | `argabench_mkt_ecom_legacy.py:485–560, 1954–2010`; `argabench_fair.py:707–725` | A local twin must reproduce real bodies and admin-state collections exactly. Stripe, GitHub and Linear state shapes are **not in the repo** |
 | The classifier needs `control.json` / `cleanup.json` with Arga lifecycle fields, and **exactly 37 profiles** | `argabench_matrix.py:1208`, `argabench_semantic_report.py:398`, `lifecycle.py:342–367` | Workarounds exist, but every artifact would be a devsim imitation of Arga's lifecycle |
-| Effort | Audit estimate: 12–16 h for ECOM-02 at grader-passing fidelity, 20–26 h for four tasks | **Does not fit a 6.5 h solo build that also has to build the agent** |
+| Effort | Audit estimate: 12–16 h for ECOM-02 at grader-passing fidelity, 20–26 h for four tasks | **Cannot be the guaranteed path in a 6.5 h window.** It runs as the parallel upside Track D: [`TRACK-DEVSIM.md`](./TRACK-DEVSIM.md) |
 
-Real apps avoid all of it, because no twin fidelity is involved. The seed/reset/snapshot tooling
+Real apps avoid all of it, because no twin fidelity is involved, so they are the guaranteed path. Track D runs alongside with its own session and agents, and upgrades the headline only if its 14:00 PT gate goes green. The seed/reset/snapshot tooling
 is ~2 h, and the usefulness demo needed real-app wiring anyway.
 
 ## 2. What is real, what is ported, what is ours

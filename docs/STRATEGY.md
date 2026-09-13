@@ -52,8 +52,11 @@ brief, video. The 09:25 PT decision only picks where graded trials run.
 > **Why Plan B is not "devsim + official grader" any more** (verified 08:40 PT, PLAN-B §4). The
 > offline grader works, but it scores realistic twin API bodies plus `/admin/state` snapshots, and
 > it hard-requires a 37-profile matrix and Arga lifecycle artifacts. A grader-faithful local twin
-> fleet costs 12–16 h for ECOM-02 alone, which doesn't fit the build window. Real apps
-> are cheaper, more useful, and immune to the "your simulator is lenient" objection.
+> fleet costs 12–16 h for ECOM-02 alone, so it can't be the guaranteed path. Real apps
+> are cheaper, more useful, and immune to the "your simulator is lenient" objection. The
+> grader-faithful rebuild still runs, as **Track D**, in parallel with its own agents
+> ([`TRACK-DEVSIM.md`](./TRACK-DEVSIM.md)). If its 14:00 PT golden contract goes green, the proof
+> segment upgrades to "graded by ArgaBench's own unmodified grader".
 
 ---
 
@@ -158,4 +161,5 @@ opening**. Those four items are why the sprint plan reserves time for them.
 | Demo opens on real apps, not on the leaderboard | Userlens and Comma weight usefulness; the leaderboard shot comes second as the hook into the proof |
 | Ablations over a third task | Causal attribution is worth more on the 25% criterion than one more pass count |
 | Plan B substrate = real apps, not devsim (08:40 PT) | Verified: a grader-faithful twin rebuild costs 12–16 h per task, plus a 37-profile matrix requirement. Real apps take ~2 h of seed/reset/assert tooling that the usefulness demo needed anyway |
+| Track D kept as a parallel multi-agent upside (08:55 PT, Raj's call) | The unmodified-grader headline is worth the parallel spend. It is isolated in its own session and branch with a hard 14:00 PT gate, so it can't hurt Plan B |
 | Plan A: no edits to canonical `model_matrix.json` | Adding profiles breaks 23 harness tests (verified). Use an importlib runner with a patched `load_profile`, and grade with a 37-profile matrix copy that swaps one slot |

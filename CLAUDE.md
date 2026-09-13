@@ -9,7 +9,8 @@ write access: a task-agnostic control loop, measured against ArgaBench's hardest
 1. [`docs/SPRINT-PLAN.md`](./docs/SPRINT-PLAN.md): the master schedule (PT/IST), branch decision, blocks, cut lines.
 2. [`docs/IMPLEMENTATION-PLAN.md`](./docs/IMPLEMENTATION-PLAN.md): every task with files, interfaces, tests, acceptance commands, subagent prompts.
 3. [`docs/STRATEGY.md`](./docs/STRATEGY.md): why it wins, the judge map, the proof ladder, **claim discipline**.
-4. [`docs/PLAN-B.md`](./docs/PLAN-B.md): the no-access substrate (verified harness contract).
+4. [`docs/PLAN-B.md`](./docs/PLAN-B.md): the no-access substrate (real-app rehearsal eval) + verified harness facts.
+   [`docs/TRACK-DEVSIM.md`](./docs/TRACK-DEVSIM.md): parallel upside track, grader-faithful local ECOM-02 twins built by multiple agents, 14:00 PT gate.
 5. [`docs/BUILD-SPEC.md`](./docs/BUILD-SPEC.md): the full product spec (phases, gate, playbooks, model layer).
 6. [`docs/RESEARCH.md`](./docs/RESEARCH.md): verified facts. Do not re-research.
 7. Ship docs: [`docs/DEMO-SCRIPT.md`](./docs/DEMO-SCRIPT.md), [`docs/SUBMISSION.md`](./docs/SUBMISSION.md), [`docs/RELIABILITY-BRIEF.template.md`](./docs/RELIABILITY-BRIEF.template.md), [`VISION.md`](./VISION.md).
