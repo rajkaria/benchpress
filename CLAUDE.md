@@ -51,4 +51,4 @@ cd arga-twins-benchmark && uv sync --group dev && uv run pytest -q -x
 ## State
 Day 2 (2026-09-14) ended at tag `v0.1.0-hackathon`: Benchpress 3/3 pass vs stock 0/3 under the unmodified
 ArgaBench grader on twins; real apps 0/2 vs 0/2 (A2 substrate limit). **Start with [`docs/HANDOFF.md`](./docs/HANDOFF.md)**
-and [`reports/INDEX.md`](./reports/INDEX.md). Gate green (614 tests). Left: video, form, PDF, ablations.
+and [`reports/INDEX.md`](./reports/INDEX.md). Ablations (2026-09-14 14:20 PT): policy sweep off → 0/3, gate off 3/3, read-back off 3/3. Brief PDF at `docs/RELIABILITY-BRIEF.pdf`. Left: record the video (`docs/DEMO-SCRIPT.md`), form, confirmation screenshot.
