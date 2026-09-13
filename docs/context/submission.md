@@ -16,7 +16,7 @@ updated: 2026-09-13
   ≥3 real apps, a critical workflow. Judges: Arga Labs + Userlens founders.
 - Docs in place: BUILD-SPEC, STRATEGY, SPRINT-PLAN, IMPLEMENTATION-PLAN, PLAN-B, TRACK-DEVSIM,
   DEMO-SCRIPT, SUBMISSION, RELIABILITY-BRIEF.template, VISION, HANDOFF, AGENT-TASKS.
-- Not done: README rewrite (product-first), `docs/RELIABILITY-BRIEF.md` with numbers, video, form.
+- README rewritten 2026-09-14: product-first story, full technical deep dive, mermaid diagrams, receipt screenshots, author links. Not done: `docs/RELIABILITY-BRIEF.md` with numbers, video, form.
   Hard stop 15:55 PT.
 
 ## Next steps
