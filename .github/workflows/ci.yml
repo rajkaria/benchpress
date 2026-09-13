@@ -13,6 +13,11 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
+      - name: Vendor the ArgaBench harness (read-only, pinned to the audited commit)
+        run: |
+          git init -q arga-twins-benchmark
+          git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a81785
+          git -C arga-twins-benchmark checkout -q FETCH_HEAD
       - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run pyright src tests
