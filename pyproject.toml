@@ -1,17 +1,38 @@
 [build-system]
-requires = ["setuptools>=75", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "benchpress-agent"
 version = "0.1.0"
-description = "A task-agnostic agent scaffold: policy-first, authority-gated, evidence-verified multi-app execution"
-readme = "README.md"
+description = "The reliability layer for AI agents with write access: policy-first, code-gated, read-back-verified multi-app execution"
+readme = "docs/PYPI.md"
 requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Raj Karia" }]
+keywords = ["ai-agents", "llm", "agent-reliability", "guardrails", "tool-use", "mcp", "evals", "agent-safety"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
 dependencies = [
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rajkaria/benchpress"
+Repository = "https://github.com/rajkaria/benchpress"
+Issues = "https://github.com/rajkaria/benchpress/issues"
+Documentation = "https://github.com/rajkaria/benchpress#readme"
 
 [project.scripts]
 benchpress = "benchpress.cli:main"
@@ -33,6 +54,9 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+benchpress = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
