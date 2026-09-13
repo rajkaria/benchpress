@@ -5,7 +5,7 @@
 > ArgaBench and graded by ArgaBench.
 
 Status: spec v1.0, 2026-09-12. Written for a build that starts 2026-09-13 09:30 PT but
-scoped as the complete product, not the hackathon subset. `docs/SUNDAY-PLAN.md` says which
+scoped as the complete product, not the hackathon subset. `docs/SPRINT-PLAN.md` says which
 sections ship on Sunday. `docs/RESEARCH.md` holds every fact this spec relies on.
 
 ---
@@ -676,7 +676,7 @@ benchpress/
   README.md                      # one-liner, GIF, what/how/built-with, results table, run it
   VISION.md                      # §23
   docs/
-    BUILD-SPEC.md  RESEARCH.md  SUNDAY-PLAN.md  FOUNDERS-EMAIL.md
+    BUILD-SPEC.md  RESEARCH.md  SPRINT-PLAN.md  IMPLEMENTATION-PLAN.md  STRATEGY.md
     RELIABILITY-BRIEF.md         # §12.3, produced from real runs
     DEMO-SCRIPT.md               # §21
   arga-twins-benchmark/          # fork, branch `benchpress` (git submodule or vendored clone)
@@ -756,7 +756,7 @@ input/output, every tool call with gate verdict, every model call with usage),
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| No multi-twin access by Sunday morning | medium | Founders email sent Saturday; Pro self-serve checkout at 08:30 PT Sunday if no reply; in the worst case run tasks whose twins we can afford sequentially and disclose |
+| No multi-twin access by Sunday morning | medium | Founders email + X DM Saturday; ask organizers for credits at the 09:00 opening. **Pro at $1,250/mo is ruled out.** If both fail, switch to Plan B — [`docs/PLAN-B-DEVSIM.md`](./PLAN-B-DEVSIM.md): rebuild the published scenario seed locally, run the identical adapter, grade with ArgaBench's own offline verifier, and disclose the substrate |
 | Twin provisioning slow (>5 min) or flaky | medium | `--concurrency 4`, start scored runs by 13:30 PT; harness retries infra-invalid trials without counting them |
 | Draft/review grader nuance not met (e.g. draft text lacks 2 facts) | low | P7 templates always include entity + both contact values; unit test on template output against the grader's term checks |
 | Model calls `provider_api` on a blocked path during exploration | low | Tool bus static filter; a blocked attempt never reaches the gateway |

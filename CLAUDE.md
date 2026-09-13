@@ -1,56 +1,44 @@
-# Benchpress — Project Instructions
+# Benchpress: project instructions
 
-Hackathon entry for the **Multi-App AI Agent Hackathon, Sunday 2026-09-13 09:30–16:00 PT**
-(judges: Arga Labs founders; $10k first). Benchpress is a task-agnostic agent scaffold
-shipped as a candidate adapter inside the judges' public benchmark, ArgaBench.
+Hackathon entry for the **Multi-App AI Agent Hackathon, Sunday 2026-09-13, build 09:30–16:00 PT
+(22:00–04:30 IST)**. Judges: founders of **Arga Labs** (Phillip Li, Akira Tong) and **Userlens**
+(Ankur Dahama, Hai Ta). $10k first prize. Benchpress is the reliability layer for agents with
+write access: a task-agnostic control loop, measured with ArgaBench's own grader.
 
 ## Read first, in this order
-1. [`docs/BUILD-SPEC.md`](./docs/BUILD-SPEC.md) — the complete product spec (architecture,
-   phases, gate rules, harness integration, eval plan, demo script, vision).
-2. [`docs/SUNDAY-PLAN.md`](./docs/SUNDAY-PLAN.md) — hour-by-hour plan with cut lines.
-3. [`docs/RESEARCH.md`](./docs/RESEARCH.md) — every verified fact: judges, criteria,
-   ArgaBench harness internals, grader assertions, the 40 tasks, pricing. Do not re-research.
-4. [`docs/FOUNDERS-EMAIL.md`](./docs/FOUNDERS-EMAIL.md) — access request + fallback.
+1. [`docs/SPRINT-PLAN.md`](./docs/SPRINT-PLAN.md): the master schedule (PT/IST), branch decision, blocks, cut lines.
+2. [`docs/IMPLEMENTATION-PLAN.md`](./docs/IMPLEMENTATION-PLAN.md): every task with files, interfaces, tests, acceptance commands, subagent prompts.
+3. [`docs/STRATEGY.md`](./docs/STRATEGY.md): why it wins, the judge map, the proof ladder, **claim discipline**.
+4. [`docs/PLAN-B-DEVSIM.md`](./docs/PLAN-B-DEVSIM.md): the no-access substrate (verified harness contract).
+5. [`docs/BUILD-SPEC.md`](./docs/BUILD-SPEC.md): the full product spec (phases, gate, playbooks, model layer).
+6. [`docs/RESEARCH.md`](./docs/RESEARCH.md): verified facts. Do not re-research.
+7. Ship docs: [`docs/DEMO-SCRIPT.md`](./docs/DEMO-SCRIPT.md), [`docs/SUBMISSION.md`](./docs/SUBMISSION.md), [`docs/RELIABILITY-BRIEF.template.md`](./docs/RELIABILITY-BRIEF.template.md), [`VISION.md`](./VISION.md).
 
 ## Layout
-- `arga-twins-benchmark/` — vendored clone of ArgaLabs/arga-twins-benchmark (gitignored
-  here; becomes the fork `rajkaria/arga-twins-benchmark`, branch `benchpress`). Our code
-  lands as `src/arga_twins_benchmark/agents/benchpress.py` + `src/benchpress/` + two
-  profiles in `benchmark/argabench_40/model_matrix.json`. **Never edit graders, gateway,
-  snapshot capture or seeds.**
-- `src/benchpress/` — the package (adapter, model, tools, gate, phases/, playbooks/,
-  verify, report, realapp, cli, lemma). Python 3.12, pyright strict, ruff (line 120).
-- `tests/` — gate, DoD rules, playbooks, replay.
-- `reports/` — committed semantic reports + compare tables. `runs/` gitignored.
+- `arga-twins-benchmark` is a symlink to the vendored clone of ArgaLabs/arga-twins-benchmark at `4a81785` (gitignored). **Never edit graders, gateway, snapshot capture or seeds.**
+- `src/benchpress/` is the package. Python 3.12, pyright strict, ruff line 120. Existing: `normalize.py context.py gate.py tools.py` (61 tests).
+- `devsim/` (Plan B) holds the local substrate seeded from published scenario JSON, plus the grader's trial-artifact writer.
+- `tests/` covers gate, DoD rules, playbooks, replay, and devsim seed/snapshot/grader contract.
+- `reports/` holds committed semantic reports and compare tables. `runs/` is gitignored.
 
 ## Hard rules
-- **Task-agnostic.** No code keyed on task IDs, seeded names, emails or domains. A judge
-  must find nothing that would not generalize to a 41st task. Verifier source is read by
-  humans to learn semantics; it is never imported at runtime.
-- **Same rules as every candidate.** Two tools (`provider_api`, `provider_docs`), 160/40
-  calls, 1,800 s, harness system prompt, no control-plane paths (`/admin`, `/_twin`,
-  `/inspect`, `/reset`, roots, schema/health routes, GraphQL introspection).
-- **Code beats prompt for safety.** `gate.py` refuses DELETE, sends, charges, merges,
-  protected-record writes, out-of-scope providers, unplanned writes, field smuggling,
-  external destinations, replayed fingerprints.
-- **State is truth.** Every write is read back; success is reported from evidence only.
-- **Disclose everything** in `docs/RELIABILITY-BRIEF.md`: real vs twin, what failed, cost.
+- **Task-agnostic.** No code keyed on task IDs, seeded names, emails or domains. CI greps for them.
+- **Same rules as every candidate.** Two tools, 160/40 calls, 1,800 s, harness system prompt, no control-plane paths.
+- **Code beats prompt for safety.** The gate refuses; the prompt only explains.
+- **State is truth.** Every write is read back. Status comes from evidence only.
+- **Claim discipline** (STRATEGY §8). In Plan B, never say "passed ArgaBench". Say "graded by ArgaBench's verifier on the published seed rebuilt locally".
+- **Disclose everything** in the brief: substrate, prep work done 2026-09-12, failures, cost.
 
-## Gate (green before any scored run)
+## Gates
 ```bash
-cd arga-twins-benchmark && uv sync --group dev && uv run pytest -q && uv run ruff check . && uv run pyright
+uv sync --group dev && uv run pytest -q && uv run ruff check . && uv run pyright
+cd arga-twins-benchmark && uv sync --group dev && uv run pytest -q -x
 ```
 
-## Access
-Arga Free = 1 twin/run; every task needs 3–5 twins. Founders email sent Saturday; fallback
-Pro $1,250/mo self-serve. Env: `ARGA_API_URL=https://api.argalabs.com`, `ARGA_API_KEY`,
-`ANTHROPIC_API_KEY`, optional `LEMMA_API_KEY`/`LEMMA_PROJECT_ID`.
-
-## Memory
-Cross-session facts live in the Hunch memory dir
-(`~/.claude/projects/-Users-rajkaria-Projects-hunch/memory/project_multiapp_agent_hackathon.md`).
-Keep this CLAUDE.md updated with state + next steps at the end of every session.
+## Env
+`.env` (copy `.env.example`): `ANTHROPIC_API_KEY` is required. Plan A adds `ARGA_API_KEY`. Real-app mode needs `SLACK_BOT_TOKEN`, `STRIPE_SECRET_KEY` (test), `HUBSPOT_PRIVATE_APP_TOKEN`, optional `GMAIL_ACCESS_TOKEN`.
 
 ## State (update every session)
-- 2026-09-12: docs written (spec, plan, research, email). Benchmark cloned at HEAD
-  `4a81785`. No code yet. Next: Saturday prep checklist in SUNDAY-PLAN.md, then Sunday.
+- 2026-09-12: specs, research, outreach drafted. Gate/tool bus/context/normalize written (61 tests). Pro ruled out.
+- 2026-09-13 08:30 PT: prep session. Consolidated the main-checkout work into this worktree. Added SPRINT-PLAN, IMPLEMENTATION-PLAN, STRATEGY, DEMO-SCRIPT, SUBMISSION, RELIABILITY-BRIEF template, VISION, README, `.env.example`. Verified the harness grader contract for Plan B (see PLAN-B-DEVSIM §1). Site update: Userlens founders are now judges. Keys not yet in env, arga CLI not installed.
+  **Next:** preflight (SPRINT-PLAN T-30), decide A/B at 09:25 PT, then B0 (create GitHub repo, CI).

@@ -1,30 +1,67 @@
 # Benchpress
 
-> A task-agnostic agent scaffold that makes the same frontier model finish multi-app work,
-> obey its authority, and prove it — shipped as a candidate adapter inside
-> [ArgaBench](https://github.com/ArgaLabs/arga-twins-benchmark) and graded by ArgaBench.
+> **The reliability layer for AI agents with write access.** Same model, different loop:
+> Benchpress reads the workspace's rules first, locks look-alike records in code, reads back
+> every write, leaves customer messages for owner review, and proves it with the benchmark
+> judges' own grader.
 
-Built for the Multi-App AI Agent Hackathon (2026-09-13).
+<!-- B5: replace with a receipt.html screenshot (docs/img/receipt.png) -->
 
-## What it does
+Built for the Multi-App AI Agent Hackathon, 2026-09-13.
 
-Benchpress wraps a tool-using model in a fixed loop: **policy sweep → candidate
-enumeration + protected set → definition of done → typed plan → execution through a
-code-enforced mutation gate → read-back verification → deliverables**. The model never
-decides a write that the gate has not approved, and never reports success that provider
-state does not evidence.
+## Why
+
+Agents with write access fail at real multi-app work, and the agent can't see the failure. In
+[ArgaBench](https://www.argalabs.com/benchmark), three billing and CRM tasks were passed by
+**0 of 111** frontier runs, and a CI task was **unsafe in 90 of 111**: the agent merged a PR it
+was told not to. The failures come from the loop around the model. Agents don't read policy,
+they edit the look-alike account, and they report success from an HTTP 200.
+
+## How it works
+
+```
+Slack request
+  → P0 orient          parse the request, map providers, read the originating channel
+  → P1 policy sweep    read every workspace for review/approval/embargo rules
+  → P2 resolve         enumerate look-alikes, choose one target with cited evidence, lock the rest
+  → P3 done-as-data    typed definition of done: end state, deliverables, forbidden classes
+  → P4 plan            only writes that satisfy the definition of done
+  → P5 execute         every write passes the mutation gate (code, not prompt), then read-back
+  → P6 verify          end state, cross-system consistency, protected-set audit, one repair round
+  → P7 deliver         channel update, unsent draft + owner review record, evidence-only status
+```
+
+The mutation gate refuses DELETE, sends, charges, merges, protected-record writes, out-of-scope
+providers, unplanned writes, smuggled fields, external destinations, control-plane paths and
+replayed fingerprints. See [`src/benchpress/gate.py`](src/benchpress/gate.py).
 
 ## Results
 
-_Filled in from `reports/` after the scored runs. Target: ArgaBench zero-pass tasks
-(ECOM-02, CRM-02, CRM-05) 0% → 100%; unsafe rate 0% on every task run; same-day
-`opus-5-high` baseline on the same harness._
+<!-- B5: fill from reports/compare.md. Every number links to its report file. -->
 
-## Docs
+| Task | Baseline (same model, same substrate) | Benchpress | Published, 37 configs |
+|---|---|---|---|
+| ECOM-02 billing contact change under review policy | _pending_ | _pending_ | 0/111 pass |
+| DEV-03 flaky test quarantine, do not merge | _pending_ | _pending_ | 90/111 unsafe |
 
-- [Build spec](docs/BUILD-SPEC.md) · [Sunday plan](docs/SUNDAY-PLAN.md) ·
-  [Research](docs/RESEARCH.md) · Reliability brief (generated after runs)
+Graded by ArgaBench's published `argabench_fair` verifier, unmodified. See
+[`docs/RELIABILITY-BRIEF.md`](docs/RELIABILITY-BRIEF.md) for the substrate, repeats, ablations
+and honest failures.
+
+## Apps
+
+Slack · Gmail · HubSpot · Stripe · GitHub · Linear. Real-app mode runs the identical agent on real
+Slack, Stripe (test mode), HubSpot and Gmail.
 
 ## Reproduce
 
-See `docs/BUILD-SPEC.md` §11 for the exact harness commands.
+```bash
+uv sync --group dev
+uv run pytest -q                      # gate, DoD rules, playbooks, substrate, grader contract
+cp .env.example .env                  # add ANTHROPIC_API_KEY
+# B4: exact eval commands land here
+```
+
+## Docs
+
+[Vision](VISION.md) · [Reliability brief](docs/RELIABILITY-BRIEF.md) · [Build spec](docs/BUILD-SPEC.md)

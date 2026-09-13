@@ -15,7 +15,7 @@ re-research; extend this file if something new turns up.
 | Prizes | $10,000 / $4,000 / $1,000 + guaranteed interviews at Arga Labs or Lemma AI for top three |
 | Judging | Technical execution **30%** · Reliability & evaluation **25%** · Usefulness **20%** · Originality **15%** · Demo clarity **10%** |
 | Hosts | Lemma (uselemma.ai) + Comma Capital (pre-seed/seed VC, NYC, dev tools + AI) |
-| Judges | **Phillip Li** (CEO) and **Akira Tong** (CTO) — founders of **Arga Labs** |
+| Judges | **Phillip Li** (CEO) and **Akira Tong** (CTO) of **Arga Labs**, plus the founders of **Userlens** (added to the site by 2026-09-13; see below) |
 | Registration | Google Form (created inside Arga Labs' workspace): name, email, LinkedIn/GitHub, school/company, solo/team, "What will you build?", "Which 3+ external apps?" |
 | Official rules | Not published on the site as of 2026-09-12. No definition of "external apps", no prior-work policy stated. |
 
@@ -48,6 +48,18 @@ LangChain/LangGraph, Mastra, Anthropic SDK. Env: `LEMMA_API_KEY`, `LEMMA_PROJECT
 
 **Comma Capital** — Adarsh Bhatt + David Ongchoco, checks $100K–$3M, operator community.
 Will judge usefulness/company potential.
+
+**Userlens** (YC; added as judges on the site by 2026-09-13). Founders Ankur Dahama and Hai Ta
+(previously Wudpecker: 25K users, 1,000+ customers). "AI CSM that never misses churn": agents that
+monitor every enterprise account, catch churn before renewal, build QBR decks and tell the team
+what to say. YC tagline: "Agents that renew and expand six and seven-figure enterprise software."
+SF, ~4 people. They will weight usefulness on customer-facing CRM/renewal workflows (CRM-02
+renewal rescue, ECOM-02 billing contact, CRM-05 follow-up cohort). Sources:
+https://www.ycombinator.com/companies/userlens · https://www.ycombinator.com/launches/Psr-userlens-ai-csm-that-never-misses-churn
+
+**Site re-check 2026-09-13 08:30 PT:** criteria, schedule and brief unchanged. The registration
+form is closed. No FAQ, no rules text, no definition of "external apps", no prior-work policy
+published. Ask at the 09:00 opening.
 
 ## Arga's published worldview (what they reward)
 
