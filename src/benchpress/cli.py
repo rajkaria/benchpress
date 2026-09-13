@@ -99,7 +99,16 @@ def main(argv: list[str] | None = None) -> int:
         metavar="OUT",
         help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
     )
+    gate = sub.add_parser("gate", help="check the mutation gate against the gate-rule corpus")
+    gate_sub = gate.add_subparsers(dest="gate_command", required=True)
+    gate_check = gate_sub.add_parser("check", help="run corpus cases; exit 1 on any mismatch")
+    gate_check.add_argument("paths", nargs="*", metavar="PATH", help="case files or directories (default: bundled)")
+    gate_check.add_argument("-v", "--verbose", action="store_true", help="print every reason and xfail note")
     args = parser.parse_args(argv)
+    if args.command == "gate":
+        from benchpress.gate_corpus import check_command
+
+        return check_command(list(args.paths), verbose=bool(args.verbose))
     if args.command == "run":
         return asyncio.run(_run(args))
     if args.command == "receipt":

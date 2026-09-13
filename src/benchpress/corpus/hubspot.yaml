@@ -1,0 +1,246 @@
+# Gate cases: HubSpot CRM. Invented entities only (example.com-style domains).
+shared:
+  ops: &ops
+    prompt: >-
+      A request arrived in the #billing-ops channel: Harbor Lane Supply asked for invoices to go to its
+      accounts-payable address ap@harborlane.example. Do not send external email, create charges,
+      or change subscriptions.
+    providers: [hubspot, stripe, slack, gmail]
+    forbidden: [create_charge, create_invoice, delete_any, move_subscription, mutate_protected, send_email,
+                update_subscription]
+    write_scope: [hubspot, stripe, slack, gmail]
+    facts: {customer: Harbor Lane Supply, verified_contact: ap@harborlane.example}
+    targets:
+      - {provider: hubspot, resource_type: company, resource_id: "9001", display: Harbor Lane Supply,
+         evidence: [lifecycle=customer, domain=harborlane.example]}
+    candidates:
+      - {provider: hubspot, resource_type: company, resource_id: "9001", display: Harbor Lane Supply,
+         name: Harbor Lane Supply, domain: harborlane.example, email: ap@harborlane.example, lifecycle: customer}
+      - {provider: hubspot, resource_type: company, resource_id: "9002", display: Harbor Lane Supplies Prospect,
+         name: Harbor Lane Supplies Prospect, domain: harborlane-supplies.example, lifecycle: prospect}
+    protected:
+      ids: ["9002"]
+      names: [Harbor Lane Supplies Prospect]
+      domains: [harborlane-supplies.example]
+  update: &update
+    id: a1
+    provider: hubspot
+    method: PATCH
+    path: /crm/v3/objects/companies/9001
+    body: {properties: {description: "Billing contact is ap@harborlane.example"}}
+    fields: [description]
+
+cases:
+  - name: hubspot-update-chosen-company-allowed
+    description: The resolved target stays writable; wrapper keys like `properties` are transparent.
+    tags: [hubspot, update]
+    context: *ops
+    action: *update
+    expect: {decision: allow}
+
+  - name: hubspot-lookalike-id-in-path-refused
+    description: A short protected id is caught by exact path-segment identity, whatever its length.
+    tags: [hubspot, protected, lookalike]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/9002
+      body: {properties: {description: "touched"}}
+      fields: [description]
+    expect: {decision: refuse, rule: protected, reason_contains: "9002"}
+
+  - name: hubspot-lookalike-in-target-refs-refused
+    description: A declared target ref that is a protected id is refused even when the path differs.
+    tags: [hubspot, protected, lookalike]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/7777
+      body: {properties: {description: "touched"}}
+      fields: [description]
+      target_refs: ["company:9002"]
+    expect: {decision: refuse, rule: protected}
+
+  - name: hubspot-lookalike-domain-in-body-refused
+    description: Writing the look-alike's domain onto any record is refused.
+    tags: [hubspot, protected, lookalike]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/9001
+      body: {properties: {domain: harborlane-supplies.example}}
+      fields: [domain]
+    expect: {decision: refuse, rule: protected, reason_contains: harborlane-supplies.example}
+
+  - name: hubspot-lookalike-name-in-body-refused
+    description: Naming the look-alike in a note on the chosen record is refused.
+    tags: [hubspot, protected, lookalike]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/9001
+      body: {properties: {description: "Merged with Harbor Lane Supplies Prospect"}}
+      fields: [description]
+    expect: {decision: refuse, rule: protected}
+
+  - name: hubspot-undeclared-field-refused
+    description: A write that touches a field it did not declare (lifecyclestage) is field smuggling.
+    tags: [hubspot, field-smuggling]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/9001
+      body: {properties: {description: "ap@harborlane.example", lifecyclestage: customer}}
+      fields: [description]
+    expect: {decision: refuse, rule: field_smuggling, reason_contains: lifecyclestage}
+
+  - name: hubspot-external-address-in-note-refused
+    description: Writing an unknown domain's address into the CRM is an external destination.
+    tags: [hubspot, external]
+    context: *ops
+    action:
+      provider: hubspot
+      method: PATCH
+      path: /crm/v3/objects/companies/9001
+      body: {properties: {description: "Billing contact is payments@invoice-redirect.example"}}
+      fields: [description]
+    expect: {decision: refuse, rule: external_destination, reason_contains: payments@invoice-redirect.example}
+
+  - name: hubspot-delete-contact-refused
+    description: DELETE is never permitted.
+    tags: [hubspot, delete]
+    context: *ops
+    action: {provider: hubspot, method: DELETE, path: /crm/v3/objects/contacts/5501}
+    expect: {decision: refuse, rule: method}
+
+  - name: hubspot-delete-protected-record-reports-method-first
+    description: Rules run in priority order; the method rule reports before the protected rule.
+    tags: [hubspot, delete, priority]
+    context: *ops
+    action: {provider: hubspot, method: DELETE, path: /crm/v3/objects/companies/9002}
+    expect: {decision: refuse, rule: method}
+
+  - name: hubspot-batch-archive-should-refuse
+    description: batch/archive deletes CRM records through a POST.
+    tags: [hubspot, delete]
+    context: *ops
+    action:
+      provider: hubspot
+      method: POST
+      path: /crm/v3/objects/contacts/batch/archive
+      body: {inputs: [{id: "5501"}]}
+    expect: {decision: refuse, rule: action_class}
+    xfail: >-
+      delete_any is only assigned to the DELETE method. HubSpot's batch archive is a delete spelled
+      as POST and is not classified; the customer-success policy pack refuses it.
+
+  - name: hubspot-unplanned-write-refused
+    description: With the plan enforced, a write whose id is not on the approved plan is refused.
+    tags: [hubspot, plan]
+    context:
+      <<: *ops
+      enforce_plan: true
+      plan: [*update]
+    action:
+      <<: *update
+      id: a99
+    expect: {decision: refuse, rule: plan_membership, reason_contains: not on the approved plan}
+
+  - name: hubspot-planned-write-allowed
+    description: The planned write, unchanged, is allowed with the plan enforced.
+    tags: [hubspot, plan]
+    context:
+      <<: *ops
+      enforce_plan: true
+      plan: [*update]
+    action: *update
+    expect: {decision: allow}
+
+  - name: hubspot-planned-write-with-switched-endpoint-refused
+    description: Same action id, different endpoint shape (company to deal) is not the planned action.
+    tags: [hubspot, plan]
+    context:
+      <<: *ops
+      enforce_plan: true
+      plan: [*update]
+    action:
+      <<: *update
+      path: /crm/v3/objects/deals/9001
+    expect: {decision: refuse, rule: plan_membership, reason_contains: planned shape}
+
+  - name: hubspot-planned-write-satisfying-nothing-refused
+    description: A planned write that satisfies no definition-of-done item is not minimum mutation.
+    tags: [hubspot, plan]
+    context:
+      <<: *ops
+      enforce_plan: true
+      plan:
+        - <<: *update
+          id: a2
+          satisfies: []
+    action:
+      <<: *update
+      id: a2
+      satisfies: []
+    expect: {decision: refuse, rule: plan_membership, reason_contains: satisfies no}
+
+  - name: hubspot-replayed-write-refused
+    description: A write whose fingerprint already succeeded would duplicate; refused.
+    tags: [hubspot, idempotency, duplicate]
+    context:
+      <<: *ops
+      succeeded: [*update]
+    action: *update
+    expect: {decision: refuse, rule: idempotency}
+
+  - name: hubspot-replay-with-different-casing-refused
+    description: Fingerprints casefold string values, so a re-cased replay is still a duplicate.
+    tags: [hubspot, idempotency, duplicate]
+    context:
+      <<: *ops
+      succeeded:
+        - <<: *update
+          body: {properties: {description: "BILLING CONTACT IS AP@HARBORLANE.EXAMPLE"}}
+    action: *update
+    expect: {decision: refuse, rule: idempotency}
+
+  - name: hubspot-same-body-different-record-allowed
+    description: Fingerprints use the concrete path, so the same write to another record is not a replay.
+    tags: [hubspot, idempotency]
+    context:
+      <<: *ops
+      succeeded: [*update]
+    action:
+      <<: *update
+      path: /crm/v3/objects/companies/9003
+    expect: {decision: allow}
+
+  - name: hubspot-read-lookalike-allowed
+    description: Enumeration must be able to read the look-alike in order to lock it.
+    tags: [hubspot, read, protected]
+    context: *ops
+    action: {kind: read, provider: hubspot, method: GET, path: /crm/v3/objects/companies/9002, satisfies: []}
+    expect: {decision: allow}
+
+  - name: hubspot-search-read-by-post-is-a-write-to-the-gate
+    description: >-
+      The gate classifies by HTTP method. CRM search is a POST, so it is gated like a write and the
+      plan-membership rule applies when the plan is enforced.
+    tags: [hubspot, read, plan]
+    context:
+      <<: *ops
+      enforce_plan: true
+      plan: [*update]
+    action:
+      id: s1
+      kind: read
+      provider: hubspot
+      method: POST
+      path: /crm/v3/objects/companies/search
+      body: {query: harbor}
+    expect: {decision: refuse, rule: plan_membership}

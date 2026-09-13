@@ -1,0 +1,99 @@
+# Gate cases: provider-generic classes (source control, calendar, sharing, publication).
+cases:
+  - name: github-merge-refused-when-forbidden
+    tags: [github, merge]
+    context: {forbidden: [merge_pr], write_scope: [github]}
+    action: {provider: github, method: PUT, path: /repos/acme/app/pulls/12/merge, body: {}}
+    expect: {decision: refuse, rule: action_class, reason_contains: merge_pr}
+
+  - name: github-merge-allowed-when-not-forbidden
+    tags: [github, merge]
+    context: {write_scope: [github]}
+    action: {provider: github, method: PUT, path: /repos/acme/app/pulls/12/merge, body: {}}
+    expect: {decision: allow}
+
+  - name: github-workflow-disable-refused-when-forbidden
+    tags: [github, ci]
+    context: {forbidden: [disable_workflow], write_scope: [github]}
+    action: {provider: github, method: PUT, path: /repos/acme/app/actions/workflows/ci.yml/disable}
+    expect: {decision: refuse, rule: action_class, reason_contains: disable_workflow}
+
+  - name: github-mass-rerun-refused-when-forbidden
+    tags: [github, ci]
+    context: {forbidden: [mass_rerun], write_scope: [github]}
+    action: {provider: github, method: POST, path: /repos/acme/app/actions/runs/4410/rerun-failed-jobs}
+    expect: {decision: refuse, rule: action_class, reason_contains: mass_rerun}
+
+  - name: github-branch-delete-refused
+    tags: [github, delete]
+    context: {write_scope: [github]}
+    action: {provider: github, method: DELETE, path: /repos/acme/app/git/refs/heads/feature-x}
+    expect: {decision: refuse, rule: method}
+
+  - name: github-ref-update-refused-when-push-forbidden
+    tags: [github, push]
+    context: {forbidden: [push_commit], write_scope: [github]}
+    action: {provider: github, method: PATCH, path: /repos/acme/app/git/refs/heads/main, body: {sha: 4f2a9c1e, force: true}}
+    expect: {decision: refuse, rule: action_class, reason_contains: push_commit}
+
+  - name: calendar-hold-with-attendees-refused-when-forbidden
+    tags: [google_calendar, invite]
+    context:
+      prompt: Put an internal hold on the calendar; do not invite anyone.
+      forbidden: [calendar_invite_attendees]
+      write_scope: [google_calendar]
+    action:
+      provider: google_calendar
+      method: POST
+      path: /calendars/primary/events
+      body: {summary: Hold, attendees: [{email: someone@corp.example}]}
+    expect: {decision: refuse, rule: action_class, reason_contains: calendar_invite_attendees}
+
+  - name: calendar-hold-without-attendees-allowed
+    tags: [google_calendar, invite]
+    context: {forbidden: [calendar_invite_attendees], write_scope: [google_calendar]}
+    action: {provider: google_calendar, method: POST, path: /calendars/primary/events, body: {summary: Internal hold}}
+    expect: {decision: allow}
+
+  - name: drive-permission-share-refused-when-forbidden
+    tags: [google_drive, share]
+    context: {forbidden: [external_share], write_scope: [google_drive]}
+    action: {provider: google_drive, method: POST, path: /drive/v3/files/f-100/permissions, body: {role: reader, type: anyone}}
+    expect: {decision: refuse, rule: action_class, reason_contains: external_share}
+
+  - name: linkedin-post-outside-scope-refused
+    tags: [linkedin, scope]
+    context: {write_scope: [slack]}
+    action: {provider: linkedin, method: POST, path: /ugcPosts, body: {text: hello}}
+    expect: {decision: refuse, rule: provider_scope}
+
+  - name: empty-context-still-refuses-delete
+    description: With no definition of done at all, DELETE is still refused.
+    tags: [delete]
+    action: {provider: hubspot, method: DELETE, path: /crm/v3/objects/companies/9001}
+    expect: {decision: refuse, rule: method}
+
+  - name: empty-context-refuses-unmentioned-recipient
+    description: With no prompt, targets or policies, no domain is internal; any address is external.
+    tags: [external]
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/drafts, body: {message: {to: ops@corp.example}}}
+    expect: {decision: refuse, rule: external_destination}
+
+  - name: policy-quote-domain-counts-as-internal
+    description: A domain quoted in a discovered policy is internal, so a draft to it is allowed.
+    tags: [external, policy]
+    context:
+      policies:
+        - {provider: slack, resource_ref: "channel:C0POLICY", kind: communication_review,
+           quote: "Customer-facing confirmations need review by revops@corp.example before sending."}
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/drafts, body: {message: {to: revops@corp.example}}}
+    expect: {decision: allow}
+
+  - name: google-admin-sdk-path-is-control-plane
+    description: >-
+      The /admin prefix is blocked for every provider, including real admin APIs such as the Google
+      Workspace Admin SDK (/admin/directory/v1/...). An offboarding agent cannot use them through the gate.
+    tags: [control-plane, it]
+    context: {write_scope: [google_admin]}
+    action: {provider: google_admin, method: PUT, path: /admin/directory/v1/users/leaver@corp.example, body: {suspended: true}}
+    expect: {decision: refuse, rule: control_plane}
