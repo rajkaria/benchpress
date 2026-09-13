@@ -26,6 +26,8 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - `benchpress policy list|show NAME`
 - `benchpress rehearse ... --n 3` / `benchpress replay rehearsal.json`
 - `benchpress mcp-guard --policy guard.json -- <upstream MCP server>`
+- `benchpress regress RECEIPT --out DIR`: turn a run into permanent gate-corpus regression cases
+- `benchpress receipts export PATH... --format csv|jsonl`: audit log of every write attempt
 
 ## Docs
 - [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
@@ -35,6 +37,8 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - [OpenAI Agents SDK guard](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
 - [Composio guard and executor](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
 - [GitHub playbook](https://github.com/rajkaria/benchpress/blob/main/docs/PLAYBOOK-GITHUB.md)
+- [Audit export](https://github.com/rajkaria/benchpress/blob/main/docs/AUDIT-EXPORT.md)
+- [Step-through replay of a real run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
 
 ## Evidence (claim discipline: we never say "passed ArgaBench")
 - [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).
@@ -46,4 +50,4 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 
 ## Engineering
 - Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
-- pyright strict, ruff, 970+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`
+- pyright strict, ruff, 1,000+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`

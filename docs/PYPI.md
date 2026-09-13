@@ -146,6 +146,14 @@ non-converged rehearsal and stops at the first refusal or read-back mismatch. Yo
 twin, or seeded copy); forking live production state is not automated yet.
 [docs/REHEARSE.md](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
 
+## Closed loop: regressions and audit export
+
+```bash
+benchpress regress runs/acme/receipt.json --out gate-cases/   # this run's gate decisions become permanent test cases
+benchpress gate check gate-cases/                             # fails the day the gate would decide differently
+benchpress receipts export runs/ --format csv --out audit.csv # who changed which record, why, with what evidence
+```
+
 ## The loop
 
 `P0 orient → P1 policy sweep → P2 resolve (lock look-alikes) → P3 definition of done → P4 plan →
