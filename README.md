@@ -22,6 +22,13 @@
   <a href="https://multiappagenthackathon.com/">Multi-App AI Agent Hackathon 2026</a>
 </p>
 
+## Video demo
+
+<p align="center">
+  <a href="https://youtu.be/ITqfb-MVq6o"><img src="https://img.youtube.com/vi/ITqfb-MVq6o/maxresdefault.jpg" alt="Benchpress video demo on YouTube" width="80%"></a>
+  <br><b>▶ <a href="https://youtu.be/ITqfb-MVq6o">Watch the video demo on YouTube</a></b>
+</p>
+
 ---
 
 > **An ops agent gets a Slack message:** *"Move Northwind's renewal notices to their accounts-payable address."*
