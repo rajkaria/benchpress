@@ -1,0 +1,133 @@
+{
+  "ok": true,
+  "channels": [
+    {
+      "id": "C01BILL0001",
+      "name": "billing-desk",
+      "name_normalized": "billing-desk",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "is_private": false,
+      "is_archived": false,
+      "is_general": false,
+      "is_member": true,
+      "created": 1756717200,
+      "creator": "U01PRIYA001",
+      "num_members": 4,
+      "topic": {
+        "value": "",
+        "creator": "",
+        "last_set": 0
+      },
+      "purpose": {
+        "value": "Billing operations requests",
+        "creator": "U01PRIYA001",
+        "last_set": 1756717200
+      }
+    },
+    {
+      "id": "C01POLC0002",
+      "name": "ops-policy",
+      "name_normalized": "ops-policy",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "is_private": false,
+      "is_archived": false,
+      "is_general": false,
+      "is_member": true,
+      "created": 1756717200,
+      "creator": "U01PRIYA001",
+      "num_members": 4,
+      "topic": {
+        "value": "",
+        "creator": "",
+        "last_set": 0
+      },
+      "purpose": {
+        "value": "Operating rules for the ops team",
+        "creator": "U01PRIYA001",
+        "last_set": 1756717200
+      }
+    },
+    {
+      "id": "C01RAND0003",
+      "name": "random",
+      "name_normalized": "random",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "is_private": false,
+      "is_archived": false,
+      "is_general": true,
+      "is_member": true,
+      "created": 1756717200,
+      "creator": "U01PRIYA001",
+      "num_members": 4,
+      "topic": {
+        "value": "",
+        "creator": "",
+        "last_set": 0
+      },
+      "purpose": {
+        "value": "",
+        "creator": "U01PRIYA001",
+        "last_set": 1756717200
+      }
+    },
+    {
+      "id": "C01ANNC0004",
+      "name": "announcements",
+      "name_normalized": "announcements",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "is_private": false,
+      "is_archived": false,
+      "is_general": false,
+      "is_member": true,
+      "created": 1756717200,
+      "creator": "U01PRIYA001",
+      "num_members": 4,
+      "topic": {
+        "value": "",
+        "creator": "",
+        "last_set": 0
+      },
+      "purpose": {
+        "value": "Company announcements",
+        "creator": "U01PRIYA001",
+        "last_set": 1756717200
+      }
+    },
+    {
+      "id": "C01UPDT0005",
+      "name": "company-updates",
+      "name_normalized": "company-updates",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "is_private": false,
+      "is_archived": true,
+      "is_general": false,
+      "is_member": true,
+      "created": 1756717200,
+      "creator": "U01PRIYA001",
+      "num_members": 4,
+      "topic": {
+        "value": "",
+        "creator": "",
+        "last_set": 0
+      },
+      "purpose": {
+        "value": "",
+        "creator": "U01PRIYA001",
+        "last_set": 1756717200
+      }
+    }
+  ],
+  "response_metadata": {
+    "next_cursor": "dGVhbTpDMDFCSUxMMDAwMQ=="
+  }
+}

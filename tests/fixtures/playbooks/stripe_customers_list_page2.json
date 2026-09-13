@@ -1,0 +1,32 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "cus_HB002e6f7g8h9",
+      "object": "customer",
+      "name": "Harlow Bakeries Prospect",
+      "email": "hello@harlow-bakeries.example",
+      "description": "Prospect account created for a demo",
+      "metadata": {},
+      "created": 1756717200,
+      "livemode": false,
+      "delinquent": false,
+      "currency": "usd",
+      "balance": 0,
+      "phone": null,
+      "address": null,
+      "shipping": null,
+      "default_source": null,
+      "invoice_prefix": "F7G8H9",
+      "invoice_settings": {
+        "custom_fields": null,
+        "default_payment_method": null,
+        "footer": null
+      },
+      "tax_exempt": "none",
+      "preferred_locales": []
+    }
+  ],
+  "has_more": false,
+  "url": "/v1/customers"
+}

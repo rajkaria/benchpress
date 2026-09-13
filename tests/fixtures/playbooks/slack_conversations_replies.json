@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "messages": [
+    {
+      "type": "message",
+      "user": "U01BOT00099",
+      "ts": "1757691000.000300",
+      "text": "Verified: Harlow Bakery renewal notices now go to ap@harlowbakery.example.",
+      "team": "T01BRIGHT01"
+    }
+  ],
+  "has_more": false,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

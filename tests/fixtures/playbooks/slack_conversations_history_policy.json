@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "messages": [
+    {
+      "type": "message",
+      "user": "U01TOMAS002",
+      "ts": "1757600000.000300",
+      "text": "Policy: contact changes on customer records require a verified request and an owner review before any confirmation goes out.",
+      "team": "T01BRIGHT01"
+    }
+  ],
+  "has_more": false,
+  "pin_count": 1,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

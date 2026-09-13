@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "messages": [
+    {
+      "type": "message",
+      "user": "U01PRIYA001",
+      "ts": "1757690000.000100",
+      "text": "Harlow Bakery asked to move renewal notices to ap@harlowbakery.example - can someone verify the request and update our records?",
+      "team": "T01BRIGHT01"
+    },
+    {
+      "type": "message",
+      "subtype": "channel_join",
+      "user": "U01TOMAS002",
+      "ts": "1757689500.000150",
+      "text": "<@U01TOMAS002> has joined the channel"
+    },
+    {
+      "type": "message",
+      "user": "U01TOMAS002",
+      "ts": "1757689000.000200",
+      "text": "Reminder: any customer confirmation must be reviewed by the account owner before sending.",
+      "team": "T01BRIGHT01"
+    }
+  ],
+  "has_more": false,
+  "pin_count": 0,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

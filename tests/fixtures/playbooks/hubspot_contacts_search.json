@@ -1,0 +1,20 @@
+{
+  "total": 1,
+  "results": [
+    {
+      "id": "5501",
+      "properties": {
+        "email": "ap@harlowbakery.example",
+        "firstname": "Dana",
+        "lastname": "Okafor",
+        "lifecyclestage": "customer",
+        "notes": "Accounts payable contact; prefers renewal notices by email.",
+        "company": "Harlow Bakery",
+        "hs_object_id": "5501"
+      },
+      "createdAt": "2025-03-04T12:00:00.000Z",
+      "updatedAt": "2026-09-01T09:00:00.000Z",
+      "archived": false
+    }
+  ]
+}

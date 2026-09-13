@@ -1,0 +1,18 @@
+{
+  "id": "msg_c3d5e7f9a1b2",
+  "threadId": "thr_c3d5e7f9a1b2",
+  "labelIds": [
+    "INBOX"
+  ],
+  "snippet": "",
+  "raw": "RnJvbTogRGFuYSBPa2Fmb3IgPGFwQGhhcmxvd2Jha2VyeS5leGFtcGxlPg0KVG86IGJpbGxpbmctZGVza0BicmlnaHRsaW5lLmV4YW1wbGUNClN1YmplY3Q6IFJlbmV3YWwgbm90aWNlcyBmb3IgSGFybG93IEJha2VyeQ0KRGF0ZTogVHVlLCAyIFNlcCAyMDI2IDEwOjE1OjAwICswMDAwDQpNSU1FLVZlcnNpb246IDEuMA0KQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PSJ1dGYtOCINCkNvbnRlbnQtVHJhbnNmZXItRW5jb2Rpbmc6IDdiaXQNCg0KUGxlYXNlIHJvdXRlIHJlbmV3YWwgbm90aWNlcyB0byBhcEBoYXJsb3diYWtlcnkuZXhhbXBsZSBnb2luZyBmb3J3YXJkLg0KDQpEYW5hIE9rYWZvcg0KQWNjb3VudHMgUGF5YWJsZSwgSGFybG93IEJha2VyeQ==",
+  "payload": {
+    "partId": "",
+    "mimeType": "text/plain",
+    "filename": "",
+    "headers": [],
+    "body": {
+      "size": 0
+    }
+  }
+}

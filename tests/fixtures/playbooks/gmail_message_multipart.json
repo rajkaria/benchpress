@@ -1,0 +1,82 @@
+{
+  "id": "msg_a1f3e9c2b7d4",
+  "threadId": "thr_a1f3e9c2b7d4",
+  "labelIds": [
+    "INBOX",
+    "IMPORTANT"
+  ],
+  "snippet": "Reminder from operations policy: Any customer confirmation must be reviewed by the account owner before sending.",
+  "historyId": "48211",
+  "internalDate": "1756717200000",
+  "sizeEstimate": 1842,
+  "payload": {
+    "partId": "",
+    "mimeType": "multipart/alternative",
+    "filename": "",
+    "headers": [
+      {
+        "name": "From",
+        "value": "Ops Policy <ops-policy@brightline.example>"
+      },
+      {
+        "name": "To",
+        "value": "billing-desk@brightline.example"
+      },
+      {
+        "name": "Subject",
+        "value": "Policy: customer confirmations require owner review"
+      },
+      {
+        "name": "Date",
+        "value": "Mon, 1 Sep 2026 09:00:00 +0000"
+      },
+      {
+        "name": "MIME-Version",
+        "value": "1.0"
+      },
+      {
+        "name": "Content-Type",
+        "value": "multipart/alternative; boundary=\"b1\""
+      },
+      {
+        "name": "Message-ID",
+        "value": "<a1f3e9c2b7d4@brightline.example>"
+      }
+    ],
+    "body": {
+      "size": 0
+    },
+    "parts": [
+      {
+        "partId": "0",
+        "mimeType": "text/plain",
+        "filename": "",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "text/plain; charset=\"UTF-8\""
+          }
+        ],
+        "body": {
+          "size": 184,
+          "data": "UmVtaW5kZXIgZnJvbSBvcGVyYXRpb25zIHBvbGljeToKCkFueSBjdXN0b21lciBjb25maXJtYXRpb24gbXVzdCBiZSByZXZpZXdlZCBieSB0aGUgYWNjb3VudCBvd25lciBiZWZvcmUgc2VuZGluZy4KRG8gbm90IHNlbmQgY29uZmlybWF0aW9ucyBkaXJlY3RseSBmcm9tIHRoZSBiaWxsaW5nIGRlc2suCgpUaGFua3MsCk9wcw"
+        }
+      },
+      {
+        "partId": "1",
+        "mimeType": "text/html",
+        "filename": "",
+        "headers": [
+          {
+            "name": "Content-Type",
+            "value": "text/html; charset=\"UTF-8\""
+          }
+        ],
+        "body": {
+          "size": 158,
+          "data": "PGh0bWw-PGJvZHk-PHA-UmVtaW5kZXIgZnJvbSBvcGVyYXRpb25zIHBvbGljeTo8L3A-PHA-QW55IGN1c3RvbWVyIGNvbmZpcm1hdGlvbiBtdXN0IGJlIDxiPnJldmlld2VkIGJ5IHRoZSBhY2NvdW50IG93bmVyPC9iPiBiZWZvcmUgc2VuZGluZy48L3A-PC9ib2R5PjwvaHRtbD4="
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "cus_HB001a2b3c4d5",
+  "object": "customer",
+  "name": "Harlow Bakery",
+  "email": "billing@harlowbakery.example",
+  "description": "Bakery chain, annual plan",
+  "metadata": {
+    "lifecycle": "customer",
+    "crm_id": "9001"
+  },
+  "created": 1741089600,
+  "livemode": false,
+  "delinquent": false,
+  "currency": "usd",
+  "balance": 0,
+  "phone": null,
+  "address": null,
+  "shipping": null,
+  "default_source": null,
+  "invoice_prefix": "B3C4D5",
+  "invoice_settings": {
+    "custom_fields": null,
+    "default_payment_method": null,
+    "footer": null
+  },
+  "tax_exempt": "none",
+  "preferred_locales": []
+}
