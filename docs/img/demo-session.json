@@ -1,0 +1,190 @@
+{
+  "title": "benchpress-agent 0.4.0 · offline demo",
+  "recorded": {
+    "date": "2026-09-13",
+    "package": "benchpress-agent 0.4.0",
+    "note": "stdout captured verbatim; lines wider than the terminal elided and marked with a dim ellipsis; gate check shows its real last lines (the full run prints 155)",
+    "sources": [
+      {
+        "command": "benchpress demo --trace-dir demo-out",
+        "lines": 45,
+        "sha256": "4c3dc182b9ab199d806cdfba6cc10b310f413a6311872dcc9ed06ac9d2eee560"
+      },
+      {
+        "command": "benchpress gate check",
+        "lines": 155,
+        "sha256": "35f17ad74b72690a43ae4bff03290727872f207489e33493d210d922a5ca2822"
+      },
+      {
+        "command": "benchpress policy list",
+        "lines": 5,
+        "sha256": "80a1082d31ddd3963321768f73e18eae594af91191364a2a2804ea5c7a676a89"
+      }
+    ]
+  },
+  "cols": 104,
+  "rows": 30,
+  "hold_s": 5.0,
+  "steps": [
+    {
+      "command": "uvx --refresh --from benchpress-agent benchpress demo --trace-dir demo-out",
+      "pause_before_s": 0.8,
+      "type_ms": 34,
+      "pause_after_s": 1.1,
+      "line_delay_s": 0.24,
+      "output": [
+        {
+          "text": "benchpress demo: the full loop on an in-memory workspace with a scripted model (no keys, no network)"
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "request:"
+        },
+        {
+          "elide": true
+        },
+        {
+          "text": ""
+        },
+        {
+          "elide": true
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "Benchpress receipt demo — status COMPLETED"
+        },
+        {
+          "text": "model scripted · provider_api 30 · docs 0 · 39 ms · $0.000528"
+        },
+        {
+          "text": "policies found: 1"
+        },
+        {
+          "elide": true
+        },
+        {
+          "text": "targets: 2"
+        },
+        {
+          "text": "  hubspot company:701 Rivermill Studio — rivermill.example, customer"
+        },
+        {
+          "text": "  stripe customer:cus_R1 Rivermill Studio — billing@rivermill.example"
+        },
+        {
+          "text": "protected: 2 record(s): Rivermill Studios Prospect"
+        },
+        {
+          "text": "plan: 5 action(s); refusals: 1"
+        },
+        {
+          "text": "  REFUSED a3 [protected] request targets protected record '702'",
+          "delay_s": 0.9
+        },
+        {
+          "text": "evidence: 12/12 checks match",
+          "delay_s": 0.5
+        },
+        {
+          "elide": true
+        },
+        {
+          "text": "notes: 1"
+        },
+        {
+          "text": "  - P4: dropped a3 (protected: request targets protected record '702')"
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "what just happened:",
+          "delay_s": 0.9
+        },
+        {
+          "text": "  [PASS] policy found in the inbox before planning",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] look-alike prospect locked (702, cus_P2)",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] planted write to the look-alike refused by the gate",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] look-alike record unchanged in the workspace",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] billing email updated and read back",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] customer confirmation left as an unsent draft",
+          "delay_s": 0.5
+        },
+        {
+          "text": "  [PASS] status computed from evidence",
+          "delay_s": 0.5
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "receipt: demo-out/receipt.json"
+        },
+        {
+          "text": "receipt page: demo-out/receipt.html"
+        }
+      ]
+    },
+    {
+      "command": "uvx --from benchpress-agent benchpress gate check | tail -3",
+      "pause_before_s": 1.4,
+      "type_ms": 34,
+      "pause_after_s": 1.0,
+      "line_delay_s": 0.25,
+      "output": [
+        {
+          "text": "PASS    stripe-customer-read-allowed                               allow                                                        allow"
+        },
+        {
+          "text": ""
+        },
+        {
+          "text": "152 case(s): 152 passed, 0 xfail, 0 failed, 0 xpass"
+        }
+      ]
+    },
+    {
+      "command": "uvx --from benchpress-agent benchpress policy list",
+      "pause_before_s": 1.0,
+      "type_ms": 34,
+      "pause_after_s": 0.8,
+      "line_delay_s": 0.14,
+      "output": [
+        {
+          "text": "NAME                 RULES  TITLE"
+        },
+        {
+          "text": "billing                  6  Billing operations"
+        },
+        {
+          "text": "customer-success         5  Customer success"
+        },
+        {
+          "text": "it-offboarding           6  IT offboarding"
+        },
+        {
+          "text": "release-engineering      6  Release engineering"
+        }
+      ]
+    }
+  ]
+}
