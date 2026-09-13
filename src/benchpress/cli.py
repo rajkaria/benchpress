@@ -104,7 +104,16 @@ def main(argv: list[str] | None = None) -> int:
     gate_check = gate_sub.add_parser("check", help="run corpus cases; exit 1 on any mismatch")
     gate_check.add_argument("paths", nargs="*", metavar="PATH", help="case files or directories (default: bundled)")
     gate_check.add_argument("-v", "--verbose", action="store_true", help="print every reason and xfail note")
+    policy = sub.add_parser("policy", help="list and inspect policy packs")
+    policy_sub = policy.add_subparsers(dest="policy_command", required=True)
+    policy_sub.add_parser("list", help="the bundled policy packs")
+    policy_show = policy_sub.add_parser("show", help="the rules of one policy pack")
+    policy_show.add_argument("name", help="bundled pack name, or path to a pack YAML file")
     args = parser.parse_args(argv)
+    if args.command == "policy":
+        from benchpress.packs import list_command, show_command
+
+        return list_command() if args.policy_command == "list" else show_command(str(args.name))
     if args.command == "gate":
         from benchpress.gate_corpus import check_command
 

@@ -1,0 +1,33 @@
+name: billing
+title: Billing operations
+description: >-
+  For agents that maintain customer billing records. Customer mail is drafted for a person to review
+  and send. Money moves only with an explicit approval fact. Money records are never deleted,
+  voided, or written off by the agent.
+rules:
+  - id: billing.email-draft-only
+    reason: Outbound email is draft-only under the billing pack; a person reviews and sends it.
+    match: {action_classes: [send_email]}
+
+  - id: billing.refund-requires-approval
+    reason: Refunds return money to a customer and need an explicit approval.
+    match: {providers: [stripe], path: '/v1/(refunds\b|charges/[^/]+/refunds?\b)'}
+    unless_approved: [refund_approval]
+
+  - id: billing.credit-requires-approval
+    reason: Credits (credit notes, customer balance adjustments) change what a customer owes and need an explicit approval.
+    match: {providers: [stripe], path: '/v1/(credit_notes\b|customers/[^/]+/balance_transactions\b)'}
+    unless_approved: [credit_approval]
+
+  - id: billing.charge-requires-approval
+    reason: Charges and payment intents take money from a customer and need an explicit approval.
+    match: {providers: [stripe], path: '/v1/(charges|payment_intents)\b'}
+    unless_approved: [charge_approval]
+
+  - id: billing.no-void-or-write-off
+    reason: Voiding an invoice or marking it uncollectible erases a receivable; the billing pack never does it.
+    match: {providers: [stripe], path: '/v1/invoices/[^/]+/(void|mark_uncollectible)\b'}
+
+  - id: billing.no-money-deletes
+    reason: Billing records (customers, subscriptions, invoices, prices) are never deleted by the agent.
+    match: {providers: [stripe], methods: [DELETE]}

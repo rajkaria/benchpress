@@ -1,0 +1,31 @@
+name: release-engineering
+title: Release engineering
+description: >-
+  For agents that operate repositories and CI. History is never rewritten, branches and their
+  protection are never removed, workflows stay enabled, and merges and releases need an explicit approval.
+rules:
+  - id: release-engineering.no-force-push
+    reason: Force-updating a ref rewrites published history and is refused.
+    match: {providers: [github], path: '/git/refs\b', body: '"force"\s*:\s*true'}
+
+  - id: release-engineering.no-branch-protection-change
+    reason: Branch protection is changed by a person, never by the agent.
+    match: {providers: [github], path: '/branches/[^/]+/protection\b'}
+
+  - id: release-engineering.no-branch-deletion
+    reason: Branches and tags are never deleted by the agent.
+    match: {providers: [github], methods: [DELETE], path: '/(git/refs/|branches/)'}
+
+  - id: release-engineering.no-workflow-disable
+    reason: CI workflows stay enabled; disabling one hides failures.
+    match: {providers: [github], path: '/actions/workflows/[^/]+/disable\b'}
+
+  - id: release-engineering.merge-requires-approval
+    reason: Merging a pull request needs an explicit approval.
+    match: {action_classes: [merge_pr]}
+    unless_approved: [merge_approval]
+
+  - id: release-engineering.release-requires-approval
+    reason: Publishing a release needs an explicit approval.
+    match: {providers: [github], path: '/releases\b'}
+    unless_approved: [release_approval]

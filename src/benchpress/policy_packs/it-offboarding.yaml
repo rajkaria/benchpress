@@ -1,0 +1,30 @@
+name: it-offboarding
+title: IT offboarding
+description: >-
+  For agents that close out a departing employee's access. Mail is never forwarded or purged, files
+  are never shared outward, accounts are never deleted, and deactivation needs an explicit approval.
+rules:
+  - id: it-offboarding.no-mail-forwarding
+    reason: Setting up mail forwarding for a departing account can exfiltrate mail and is refused.
+    match: {providers: [gmail], path: '/settings/(forwardingAddresses|autoForwarding)\b'}
+
+  - id: it-offboarding.no-forwarding-filters
+    reason: A mail filter that forwards messages is mail forwarding by another route and is refused.
+    match: {providers: [gmail], path: '/settings/filters\b', body: '"forward"'}
+
+  - id: it-offboarding.no-mailbox-purge
+    reason: A departing account's mail is retained; trashing or bulk-deleting it is refused.
+    match: {providers: [gmail], path: '/(messages|threads)/(batchDelete\b|[^/]+/trash\b)'}
+
+  - id: it-offboarding.no-external-share
+    reason: Files are transferred to an internal owner, never shared outward during offboarding.
+    match: {action_classes: [external_share]}
+
+  - id: it-offboarding.no-account-deletion
+    reason: Accounts are deactivated, never deleted, so audit history survives.
+    match: {methods: [DELETE], path: '/(users|members|accounts)/'}
+
+  - id: it-offboarding.deactivation-requires-approval
+    reason: Removing or deactivating a user needs an explicit approval.
+    match: {path: '(admin\.users\.(remove|setInactive)\b|/users/[^/]+/(suspend|lifecycle/(deactivate|suspend))\b)'}
+    unless_approved: [offboarding_approval]

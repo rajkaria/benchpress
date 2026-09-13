@@ -11,7 +11,7 @@ import json
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import cast
+from typing import Protocol, cast
 
 from benchpress.context import Action, Context, GateVerdict
 from benchpress.normalize import casefold_text, domains_in, emails_in
@@ -188,6 +188,11 @@ def _body_text(body: object) -> str:
     return f"{rendered}\n{decoded}" if decoded else rendered
 
 
+def body_text(body: object) -> str:
+    """Public form of the searchable body text (JSON rendering plus decoded base64url `raw`)."""
+    return _body_text(body)
+
+
 def _decoded_raw_fields(value: object) -> list[str]:
     found: list[str] = []
     if isinstance(value, Mapping):
@@ -279,12 +284,19 @@ _TRANSPARENT_FIELD_KEYS: frozenset[str] = frozenset(
 )
 
 
+class PolicyRuleSet(Protocol):
+    """Extra refusals layered onto the gate, e.g. a `benchpress.packs.PolicyPack`. Can only add refusals."""
+
+    def refusal(self, action: Action, context: Context) -> tuple[str, str] | None: ...
+
+
 @dataclass
 class Gate:
     """Stateful only in the sense that it remembers fingerprints it has already allowed."""
 
     context: Context
     allow_unplanned: bool = False
+    policy_packs: Sequence[PolicyRuleSet] = ()
     _succeeded: set[str] = field(default_factory=set[str])
 
     # -- public ------------------------------------------------------------------------
@@ -316,6 +328,7 @@ class Gate:
     def _first_refusal(self, action: Action) -> tuple[str, str]:
         for rule in (
             self._rule_control_plane,
+            self._rule_policy_packs,
             self._rule_method,
             self._rule_action_class,
             self._rule_protected,
@@ -342,6 +355,16 @@ class Gate:
             return ("control_plane", "absolute URLs are not a data-plane path")
         if _GRAPHQL_INTROSPECTION.search(_body_text(action.body)):
             return ("control_plane", "GraphQL introspection is forbidden")
+        return None
+
+    def _rule_policy_packs(self, action: Action) -> tuple[str, str] | None:
+        """Pack rules run before the generic rules so a refusal names the specific pack rule id."""
+        if not action.is_write:
+            return None
+        for pack in self.policy_packs:
+            refusal = pack.refusal(action, self.context)
+            if refusal is not None:
+                return refusal
         return None
 
     def _rule_method(self, action: Action) -> tuple[str, str] | None:
