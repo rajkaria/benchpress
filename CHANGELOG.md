@@ -3,7 +3,8 @@
 Python releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchpress-agent/) and tagged `v*` in git.
 The TypeScript guard is on npm as [`benchpress-guard`](https://www.npmjs.com/package/benchpress-guard), tagged
 `benchpress-guard-v*`. All dates are America/Los_Angeles. Every release passed the local gate (pytest, ruff,
-pyright strict, the task-agnostic grep); CI also builds the wheel and runs the user-facing commands from a clean venv.
+pyright strict, the task-agnostic grep) and, after upload, was installed back from PyPI into a clean virtualenv and
+imported before its GitHub release was cut; CI also builds the wheel and runs the user-facing commands from a clean venv.
 
 ## benchpress-guard 0.1.0 on npm (2026-09-13)
 - **Vercel AI SDK guard**, published to npm as [`benchpress-guard`](https://www.npmjs.com/package/benchpress-guard)
