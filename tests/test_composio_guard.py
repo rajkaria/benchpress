@@ -206,3 +206,14 @@ def test_import_benchpress_does_not_import_composio() -> None:
     code = "import sys, benchpress, benchpress.tools, benchpress.shims.guard_policy\nprint('composio' in sys.modules)"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert out.stdout.strip() == "False"
+
+
+def test_agentic_tools_bind_execute_when_fetched_so_guard_first() -> None:
+    client = FakeComposio()
+    (fetched_before,) = client.tools.get("user-1", tools=["TRACKER_CREATE_ITEM"])
+    guard_composio(client, {}, receipts=False)
+    (fetched_after,) = client.tools.get("user-1", tools=["TRACKER_CREATE_ITEM"])
+    assert "[no_allow_rule]" in fetched_after({"item_id": "i-1"})["error"]
+    assert client.tools.calls == []
+    # documented limit: a tool object fetched before guarding keeps the unguarded bound method
+    assert fetched_before({"item_id": "i-1"})["successful"] is True

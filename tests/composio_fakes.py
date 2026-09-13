@@ -5,6 +5,7 @@ Tool metadata objects are the SDK's own `composio.client.types.Tool` models, bui
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -95,6 +96,13 @@ class FakeTools:
         elif "CREATE" in slug or "UPDATE" in slug:
             self.store[item_id] = dict(arguments)
         return {"data": {"slug": slug, "item": self.store.get(item_id)}, "error": None, "successful": True}
+
+    def get(self, user_id: str, *, tools: list[str] | None = None) -> list[Callable[..., Any]]:
+        """Agentic-provider tools: each binds `partial(self.execute, ...)` now, as SDK `_wrap_execute_tool` does."""
+        return [
+            functools.partial(self.execute, slug, user_id=user_id, dangerously_skip_version_check=True)
+            for slug in tools or []
+        ]
 
     def get_raw_composio_tool_by_slug(self, slug: str) -> Tool:
         self.metadata_lookups.append(slug)
