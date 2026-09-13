@@ -232,13 +232,15 @@ async def test_hubspot_seed_shapes_manifest_and_association(scratch_ok: None, mo
     assert any(note.startswith("hubspot tickets: 1 entries not seeded") for note in result.notes)
 
     calls = [(r.method, r.url.path) for r in fake.requests]
-    assert calls[:4] == [
+    # Every object type's property list is checked first; only undefined names are created (contacts.notes).
+    assert calls[:5] == [
+        ("GET", "/crm/v3/properties/companies"),
         ("POST", "/crm/v3/objects/companies"),
         ("POST", "/crm/v3/objects/companies"),
         ("GET", "/crm/v3/properties/contacts"),
         ("POST", "/crm/v3/properties/contacts"),
     ]
-    property_body = _json(fake.requests[3])
+    property_body = _json(fake.requests[4])
     assert property_body == {
         "name": "notes",
         "label": "Notes",

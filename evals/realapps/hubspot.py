@@ -261,14 +261,13 @@ class HubSpotApp:
         return aliases
 
     async def _ensure_properties(self, object_type: str, names: set[str]) -> list[str]:
-        custom = sorted(name for name in names if name not in STOCK_PROPERTIES[object_type])
-        if not custom:
-            return []
+        # Whatever the portal (or twin) does not define is created; STOCK_PROPERTIES is only a hint.
         payload = cast(Mapping[str, Any], (await self._request("GET", f"/crm/v3/properties/{object_type}")).json())
         existing = {str(item.get("name", "")) for item in _records(payload.get("results"))}
+        custom = sorted(name for name in names if name not in existing)
         created: list[str] = []
         for name in custom:
-            if name in existing:
+            if name in STOCK_PROPERTIES[object_type] and name in existing:
                 continue
             await self._request(
                 "POST",

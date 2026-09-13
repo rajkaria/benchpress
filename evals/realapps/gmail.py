@@ -390,5 +390,12 @@ def from_env(env: Mapping[str, str]) -> GmailApp:
     address = env.get("GMAIL_ADDRESS", "")
     if "@" not in address:
         raise ValueError("GMAIL_ADDRESS is not set (the scratch mailbox address)")
+    twin_url = env.get("DEVSIM_GMAIL_URL")
+    if twin_url:
+        # A twin never sees a real credential; it accepts the provider's normal bearer header.
+        async def twin_headers() -> Mapping[str, str]:
+            return {"Authorization": "Bearer ya29.devsim-seeder"}
+
+        return GmailApp(twin_headers, address=address, base_url=twin_url)
     provider = GmailTokenProvider(env)
-    return GmailApp(provider.headers, address=address, base_url=env.get("DEVSIM_GMAIL_URL") or BASE_URL)
+    return GmailApp(provider.headers, address=address, base_url=BASE_URL)

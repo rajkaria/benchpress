@@ -122,7 +122,10 @@ def build_apps(names: Sequence[str], env: Mapping[str, str]) -> tuple[dict[str, 
         if factory is None:
             skipped.append(f"{name} (module has no from_env(env) factory)")
             continue
-        apps[name] = factory(env)
+        try:
+            apps[name] = factory(env)
+        except Exception as exc:  # noqa: BLE001 - a missing credential must not take the other apps down
+            skipped.append(f"{name} (not configured: {exc})")
     return apps, skipped
 
 
