@@ -1,6 +1,4 @@
-# pyright: basic
 # ruff: noqa: E501
-# WIP salvaged from an interrupted agent; restore strict when finished.
 """The receipt page: one self-contained HTML file rendered from a receipt payload.
 
 The page is the human-readable twin of `receipt.json`. It is built with the standard
@@ -20,7 +18,7 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from string import Template
-from typing import Any
+from typing import Any, cast
 
 from benchpress.tools import MAX_DOCS_CALLS, MAX_PROVIDER_CALLS
 
@@ -236,11 +234,11 @@ def render_receipt_html(payload: Mapping[str, Any]) -> str:
 
 def write_receipt_html(receipt_json: Path, out: Path) -> Path:
     """Read `receipt.json`, render it, write the page to `out` and return that path."""
-    payload = json.loads(Path(receipt_json).read_text(encoding="utf-8"))
-    if not isinstance(payload, Mapping):
+    raw: object = json.loads(Path(receipt_json).read_text(encoding="utf-8"))
+    if not isinstance(raw, Mapping):
         raise ValueError(f"{receipt_json} does not hold a receipt object")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render_receipt_html(_mapping(payload)), encoding="utf-8")
+    out.write_text(render_receipt_html(_mapping(cast(object, raw))), encoding="utf-8")
     return out
 
 
@@ -950,7 +948,7 @@ def _metric(key: str, value: str) -> str:
 
 def _mapping(value: object) -> dict[str, Any]:
     if isinstance(value, Mapping):
-        typed: Mapping[Any, Any] = value
+        typed = cast(Mapping[object, object], value)
         return {str(key): item for key, item in typed.items()}
     return {}
 
@@ -958,8 +956,8 @@ def _mapping(value: object) -> dict[str, Any]:
 def _records(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, (list, tuple)):
         return []
-    items: Sequence[Any] = value
-    return [_mapping(item) for item in items if isinstance(item, Mapping)]
+    items = cast(Sequence[object], value)
+    return [_mapping(cast(object, item)) for item in items if isinstance(item, Mapping)]
 
 
 def _strings(value: object) -> list[str]:
@@ -967,7 +965,7 @@ def _strings(value: object) -> list[str]:
         return [value]
     if not isinstance(value, (list, tuple, set, frozenset)):
         return []
-    items: Iterable[Any] = value
+    items = cast(Iterable[object], value)
     return [str(item) for item in items if item is not None and str(item)]
 
 

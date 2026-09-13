@@ -16,6 +16,7 @@ from typing import Any, Protocol, cast
 from benchpress.controller import run_trial
 from benchpress.model import ModelConfig
 from benchpress.phases.common import Ablations
+from benchpress.receipt_html import write_receipt_html
 from benchpress.report import receipt_summary
 
 
@@ -91,6 +92,13 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--ablations", default=os.environ.get("BENCHPRESS_ABLATIONS"))
     receipt = sub.add_parser("receipt", help="print a receipt summary")
     receipt.add_argument("path")
+    receipt.add_argument(
+        "--html",
+        nargs="?",
+        const="",
+        metavar="OUT",
+        help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
+    )
     args = parser.parse_args(argv)
     if args.command == "run":
         return asyncio.run(_run(args))
@@ -99,6 +107,9 @@ def main(argv: list[str] | None = None) -> int:
         if path.is_dir():
             path = path / "receipt.json"
         print(receipt_summary(json.loads(path.read_text())))
+        if args.html is not None:
+            out = Path(args.html) if args.html else path.with_suffix(".html")
+            print(f"\nreceipt page: {write_receipt_html(path, out)}")
         return 0
     return 1
 
