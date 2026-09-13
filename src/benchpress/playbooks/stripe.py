@@ -8,6 +8,8 @@ subscriptions, refunds and deletes are never offered — not even as refused act
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -86,6 +88,17 @@ LIFECYCLE_WORDS: tuple[str, ...] = (
 
 _CUSTOMER_ID = re.compile(r"^cus_[A-Za-z0-9]+$")
 _BRACKET_KEY = re.compile(r"\[([^\]]*)\]")
+
+
+def idempotency_key(action_id: str, path: str, body: Mapping[str, object]) -> str:
+    """Stripe scopes an idempotency key to the first endpoint and body it was used with.
+
+    A key made only of the action id (`bp-stripe-customer-email-update`) is reused across runs and
+    across customers, and Stripe then answers 400 for a different customer. Binding the key to the
+    exact request keeps retries of the same write idempotent while any other write gets its own key.
+    """
+    digest = hashlib.sha256(f"{path}\n{json.dumps(dict(body), sort_keys=True)}".encode()).hexdigest()[:16]
+    return f"bp-{action_id}-{digest}"
 
 
 def quote(value: str) -> str:
@@ -337,7 +350,7 @@ class StripePlaybook(BasePlaybook):
             path=path,
             body=body,
             body_encoding="form",
-            headers={"Idempotency-Key": f"bp-{action_id}"},
+            headers={"Idempotency-Key": idempotency_key(action_id, path, body)},
             fields=names,
             satisfies=tuple(satisfies),
             target_refs=tuple(dict.fromkeys([*target_refs, normalized_ref])),

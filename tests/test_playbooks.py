@@ -46,7 +46,7 @@ from benchpress.playbooks.gmail import (
 )
 from benchpress.playbooks.hubspot import HubSpotPlaybook, company_filter_groups, contact_filter_groups
 from benchpress.playbooks.slack import SlackPlaybook, select_policy_channels, user_directory
-from benchpress.playbooks.stripe import StripePlaybook, quote, search_clauses
+from benchpress.playbooks.stripe import StripePlaybook, idempotency_key, quote, search_clauses
 from benchpress.tools import ToolBus
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "playbooks"
@@ -966,7 +966,11 @@ def test_stripe_update_action_form_shape() -> None:
     assert action.path == "/v1/customers/cus_HB001a2b3c4d5"
     assert action.body == {"email": "ap@harlowbakery.example"}
     assert action.body_encoding == "form"
-    assert action.headers == {"Idempotency-Key": "bp-a2"}
+    key = action.headers["Idempotency-Key"]
+    body = cast(dict[str, object], action.body)
+    assert key.startswith("bp-a2-") and len(key) == len("bp-a2-") + 16
+    assert key == idempotency_key("a2", action.path, body)  # same write, same key: retries stay idempotent
+    assert key != idempotency_key("a2", action.path + "x", body)  # a different customer gets its own key
     assert action.fields == ("email",)
     assert action.target_refs == ("Harlow Bakery", "customer:cus_HB001a2b3c4d5")
     assert action.readback == ReadBack(method="GET", path="/v1/customers/cus_HB001a2b3c4d5", field_path="email")
