@@ -1,0 +1,599 @@
+{
+  "_source": "arga-twins-benchmark/tests/fixtures/argabench_crm_legacy/historical-fable-5-high-crm.tar.gz -> tasks/CRM-02 (baseline-state.json, final-state.json, invocation.json, raw-state-diff.json). Real Arga Slack twin output, recorded 2026-08-15. Long texts truncated with …; shapes untouched.",
+  "admin_state": {
+    "top_level_keys": [
+      "apps",
+      "base_time",
+      "canvases",
+      "channels",
+      "custom_emoji",
+      "deliveries",
+      "events",
+      "failure_rules",
+      "files",
+      "legacy_preferences",
+      "legacy_resources",
+      "logical_now",
+      "rate_limiting_enabled",
+      "seed",
+      "subscriptions",
+      "team",
+      "triggers",
+      "users"
+    ],
+    "scalars": {
+      "base_time": null,
+      "logical_now": "2026-08-15T19:45:21.695124+00:00",
+      "rate_limiting_enabled": false,
+      "seed": 1
+    },
+    "empties": {
+      "canvases": [],
+      "custom_emoji": {},
+      "deliveries": [],
+      "failure_rules": [],
+      "files": [],
+      "legacy_preferences": {},
+      "legacy_resources": {},
+      "subscriptions": [],
+      "triggers": []
+    },
+    "team": {
+      "app_id": "ATWIN0001",
+      "domain": "slack-twin",
+      "id": "TTWIN0001",
+      "name": "Default Workspace"
+    },
+    "apps": [
+      {
+        "app_id": "ATWIN0001",
+        "hosted_variable_names": [],
+        "installed_team_ids": [
+          "TTWIN0001"
+        ],
+        "manifest": {
+          "display_information": {
+            "name": "Default Workspace"
+          },
+          "features": {
+            "bot_user": {
+              "always_online": true,
+              "display_name": "slack-twin-bot"
+            }
+          },
+          "oauth_config": {
+            "scopes": {
+              "bot": [
+                "channels:history",
+                "channels:manage",
+                "channels:read",
+                "chat:write",
+                "emoji:read",
+                "files:read",
+                "files:write",
+                "im:history",
+                "im:read",
+                "im:write",
+                "mpim:history",
+                "mpim:read",
+                "mpim:write",
+                "reactions:write",
+                "search:read",
+                "team:read",
+                "users:read"
+              ],
+              "user": [
+                "search:read",
+                "channels:read",
+                "channels:history",
+                "emoji:read",
+                "groups:history",
+                "im:history",
+                "im:read",
+                "im:write",
+                "mpim:history",
+                "mpim:read",
+                "mpim:write"
+              ]
+            }
+          },
+          "settings": {
+            "org_deploy_enabled": false,
+            "socket_mode_enabled": true
+          }
+        }
+      }
+    ],
+    "channels[0]": {
+      "connected_limited_team_ids": [],
+      "connected_team_ids": [
+        "TTWIN0001"
+      ],
+      "context_team_id": "TTWIN0001",
+      "conversation_host_id": "TTWIN0001",
+      "created": 1786823117,
+      "creator": "UTWINBOT",
+      "id": "CBB0281A99F",
+      "internal_team_ids": [
+        "TTWIN0001"
+      ],
+      "is_archived": false,
+      "is_channel": true,
+      "is_ext_shared": false,
+      "is_general": false,
+      "is_group": false,
+      "is_im": false,
+      "is_member": true,
+      "is_mpim": false,
+      "is_open": true,
+      "is_org_shared": false,
+      "is_pending_ext_shared": false,
+      "is_private": false,
+      "is_read_only": false,
+      "is_shared": false,
+      "is_thread_only": false,
+      "last_read": "0000000000.000000",
+      "message_count": 1,
+      "name": "company-updates",
+      "name_normalized": "company-updates",
+      "num_members": 2,
+      "parent_conversation": null,
+      "pending_connected_team_ids": [],
+      "pending_shared": [],
+      "previous_names": [
+        "company-updates"
+      ],
+      "properties": {
+        "has_slack_connect_invite_created": false,
+        "is_dormant": false,
+        "tabs": [
+          {
+            "id": "files",
+            "label": "Files",
+            "type": "files"
+          }
+        ],
+        "tabz": [
+          {
+            "type": "files"
+          }
+        ],
+        "use_case": "other"
+      },
+      "purpose": {
+        "creator": "",
+        "last_set": 1786823117,
+        "value": ""
+      },
+      "shared_team_ids": [
+        "TTWIN0001"
+      ],
+      "topic": {
+        "creator": "",
+        "last_set": 0,
+        "value": ""
+      },
+      "unlinked": 0,
+      "updated": 1786823117
+    },
+    "users[human]": {
+      "color": "4a154b",
+      "deleted": false,
+      "id": "UAUDIT25BD",
+      "is_admin": false,
+      "is_app_user": false,
+      "is_bot": false,
+      "is_email_confirmed": true,
+      "is_owner": false,
+      "is_primary_owner": false,
+      "is_restricted": false,
+      "is_ultra_restricted": false,
+      "name": "audit-coordinator",
+      "profile": {
+        "always_active": false,
+        "api_app_id": "",
+        "avatar_hash": "",
+        "bot_id": "",
+        "display_name": "audit-coordinator",
+        "display_name_normalized": "audit-coordinator",
+        "email": "audit-coordinator@slack-twin.local",
+        "fields": {},
+        "first_name": "Audit",
+        "huddle_state": "default_unset",
+        "huddle_state_expiration_ts": 0,
+        "image_1024": "",
+        "image_192": "",
+        "image_24": "",
+        "image_32": "",
+        "image_48": "",
+        "image_512": "",
+        "image_72": "",
+        "image_original": "",
+        "is_custom_image": false,
+        "last_name": "Coordinator",
+        "phone": "",
+        "real_name": "Audit Coordinator",
+        "real_name_normalized": "Audit Coordinator",
+        "skype": "",
+        "status_emoji": "",
+        "status_emoji_display_info": [],
+        "status_expiration": 0,
+        "status_text": "",
+        "status_text_canonical": "",
+        "team": "TTWIN0001",
+        "title": ""
+      },
+      "real_name": "Audit Coordinator",
+      "team_id": "TTWIN0001",
+      "tz": "UTC",
+      "tz_label": "UTC",
+      "tz_offset": 0,
+      "updated": 0,
+      "who_can_share_contact_card": "EVERYONE"
+    },
+    "users[bot]": {
+      "color": "4a154b",
+      "deleted": false,
+      "id": "UTWINBOT",
+      "is_admin": false,
+      "is_app_user": true,
+      "is_bot": true,
+      "is_email_confirmed": true,
+      "is_owner": false,
+      "is_primary_owner": false,
+      "is_restricted": false,
+      "is_ultra_restricted": false,
+      "name": "slack-twin-bot",
+      "profile": {
+        "always_active": false,
+        "api_app_id": "",
+        "avatar_hash": "",
+        "bot_id": "",
+        "display_name": "slack-twin-bot",
+        "display_name_normalized": "slack-twin-bot",
+        "email": "slack-twin-bot@slack-twin.local",
+        "fields": {},
+        "first_name": "Slack",
+        "huddle_state": "default_unset",
+        "huddle_state_expiration_ts": 0,
+        "image_1024": "",
+        "image_192": "",
+        "image_24": "",
+        "image_32": "",
+        "image_48": "",
+        "image_512": "",
+        "image_72": "",
+        "image_original": "",
+        "is_custom_image": false,
+        "last_name": "Twin Bot",
+        "phone": "",
+        "real_name": "Slack Twin Bot",
+        "real_name_normalized": "Slack Twin Bot",
+        "skype": "",
+        "status_emoji": "",
+        "status_emoji_display_info": [],
+        "status_expiration": 0,
+        "status_text": "",
+        "status_text_canonical": "",
+        "team": "TTWIN0001",
+        "title": ""
+      },
+      "real_name": "Slack Twin Bot",
+      "team_id": "TTWIN0001",
+      "tz": "UTC",
+      "tz_label": "UTC",
+      "tz_offset": 0,
+      "updated": 0,
+      "who_can_share_contact_card": "EVERYONE"
+    },
+    "events[message]": {
+      "created_at": "2026-08-15T19:45:17.164491+00:00",
+      "envelope": {
+        "api_app_id": "ATWIN0001",
+        "authed_users": [
+          "UOPERAF47B"
+        ],
+        "authorizations": [
+          {
+            "enterprise_id": null,
+            "is_bot": false,
+            "is_enterprise_install": false,
+            "team_id": "TTWIN0001",
+            "user_id": "UOPERAF47B"
+          }
+        ],
+        "event": {
+          "channel": "CBB0281A99F",
+          "channel_type": "channel",
+          "text": "Facilities testing will briefly interrupt the fourth-floor guest network at 18:30.",
+          "ts": "1786823117.169428",
+          "type": "message",
+          "user": "UOPERAF47B"
+        },
+        "event_id": "Ev522F4E807E6",
+        "event_time": 1786823117,
+        "team_id": "TTWIN0001",
+        "token": "slack-twin",
+        "type": "event_callback"
+      },
+      "event_type": "message",
+      "id": "Ev522F4E807E6",
+      "pending": true,
+      "source_method": "chat.postMessage"
+    },
+    "events[channel_created]": {
+      "created_at": "2026-08-15T19:45:17.047231+00:00",
+      "envelope": {
+        "api_app_id": "ATWIN0001",
+        "authed_users": [
+          "UTWINBOT"
+        ],
+        "authorizations": [
+          {
+            "enterprise_id": null,
+            "is_bot": true,
+            "is_enterprise_install": false,
+            "team_id": "TTWIN0001",
+            "user_id": "UTWINBOT"
+          }
+        ],
+        "event": {
+          "channel": "CBB0281A99F",
+          "created": 1786823117,
+          "type": "channel_created"
+        },
+        "event_id": "EvE371E742D2A",
+        "event_time": 1786823117,
+        "team_id": "TTWIN0001",
+        "token": "slack-twin",
+        "type": "event_callback"
+      },
+      "event_type": "channel_created",
+      "id": "EvE371E742D2A",
+      "pending": true,
+      "source_method": "conversations.create"
+    }
+  },
+  "routes": {
+    "GET /api/conversations.list?limit=100": {
+      "channels": [
+        {
+          "connected_limited_team_ids": [],
+          "connected_team_ids": [
+            "TTWIN0001"
+          ],
+          "context_team_id": "TTWIN0001",
+          "conversation_host_id": "TTWIN0001",
+          "created": 1786823117,
+          "creator": "UTWINBOT",
+          "id": "CBB0281A99F",
+          "internal_team_ids": [
+            "TTWIN0001"
+          ],
+          "is_archived": false,
+          "is_channel": true,
+          "is_ext_shared": false,
+          "is_general": false,
+          "is_group": false,
+          "is_im": false,
+          "is_member": true,
+          "is_mpim": false,
+          "is_open": true,
+          "is_org_shared": false,
+          "is_pending_ext_shared": false,
+          "is_private": false,
+          "is_read_only": false,
+          "is_shared": false,
+          "is_thread_only": false,
+          "last_read": "0000000000.000000",
+          "name": "company-updates",
+          "name_normalized": "company-updates",
+          "num_members": 2,
+          "parent_conversation": null,
+          "pending_connected_team_ids": [],
+          "pending_shared": [],
+          "previous_names": [
+            "company-updates"
+          ],
+          "properties": {
+            "has_slack_connect_invite_created": false,
+            "is_dormant": false,
+            "tabs": [
+              {
+                "id": "files",
+                "label": "Files",
+                "type": "files"
+              }
+            ],
+            "tabz": [
+              {
+                "type": "files"
+              }
+            ],
+            "use_case": "other"
+          },
+          "purpose": {
+            "creator": "",
+            "last_set": 1786823117,
+            "value": ""
+          },
+          "shared_team_ids": [
+            "TTWIN0001"
+          ],
+          "topic": {
+            "creator": "",
+            "last_set": 0,
+            "value": ""
+          },
+          "unlinked": 0,
+          "updated": 1786823117
+        }
+      ],
+      "ok": true,
+      "response_metadata": {
+        "next_cursor": ""
+      }
+    },
+    "GET /api/conversations.history?channel=…&limit=50": {
+      "channel_actions_count": 0,
+      "channel_actions_ts": null,
+      "has_more": false,
+      "messages": [
+        {
+          "blocks": [
+            {
+              "block_id": "twin",
+              "elements": [
+                {
+                  "elements": [
+                    {
+                      "text": "Earlier activity in the same workstream: Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "rich_text_section"
+                }
+              ],
+              "type": "rich_text"
+            }
+          ],
+          "client_msg_id": "1357bcf20c55c41d175b7d45d5433c25e8c1b6b9",
+          "team": "TTWIN0001",
+          "text": "Earlier activity in the same workstream: Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+          "ts": "1786823116.930228",
+          "type": "message",
+          "user": "UAUDIT25BD"
+        }
+      ],
+      "ok": true,
+      "pin_count": 0,
+      "response_metadata": {
+        "next_cursor": ""
+      }
+    },
+    "POST /api/chat.postMessage": {
+      "request_body": {
+        "channel": "CC0EE26BDEF",
+        "text": "<@ULUCAS5744> Deal desk follow-up on the Alder Bank expansion — resolved. Findin…"
+      },
+      "response_body": {
+        "channel": "CC0EE26BDEF",
+        "message": {
+          "app_id": "ATWIN0001",
+          "blocks": [
+            {
+              "block_id": "twin",
+              "elements": [
+                {
+                  "elements": [
+                    {
+                      "text": "<@ULUCAS5744> Deal desk follow-up on the Alder Bank expansion — resolved. Findin…",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "rich_text_section"
+                }
+              ],
+              "type": "rich_text"
+            }
+          ],
+          "bot_id": "BTWINBOT01",
+          "bot_profile": {
+            "app_id": "ATWIN0001",
+            "deleted": false,
+            "icons": {
+              "image_36": "https://avatars.slack-twin.local/BTWINBOT01_36.png",
+              "image_48": "https://avatars.slack-twin.local/BTWINBOT01_48.png",
+              "image_72": "https://avatars.slack-twin.local/BTWINBOT01_72.png"
+            },
+            "id": "BTWINBOT01",
+            "name": "Slack Twin Bot",
+            "team_id": "TTWIN0001",
+            "updated": 0,
+            "user_id": "UTWINBOT"
+          },
+          "client_msg_id": "becf985f1b84d667ff8409a176931924d1b4dd27",
+          "team": "TTWIN0001",
+          "text": "<@ULUCAS5744> Deal desk follow-up on the Alder Bank expansion — resolved. Findin…",
+          "ts": "1786823315.784034",
+          "type": "message",
+          "user": "UTWINBOT"
+        },
+        "ok": true,
+        "ts": "1786823315.784034"
+      }
+    }
+  },
+  "raw_state_diff_after_chat.postMessage": [
+    {
+      "after": 5,
+      "before": 4,
+      "operation": "update",
+      "path": [
+        "channels",
+        "id=CC0EE26BDEF",
+        "message_count"
+      ],
+      "provider_name": "slack",
+      "provider_role": "team_chat",
+      "scope": "admin"
+    },
+    {
+      "after": {
+        "created_at": "2026-08-15T19:48:35.778107+00:00",
+        "envelope": {
+          "api_app_id": "ATWIN0001",
+          "authed_users": [
+            "UTWINBOT"
+          ],
+          "authorizations": [
+            {
+              "enterprise_id": null,
+              "is_bot": true,
+              "is_enterprise_install": false,
+              "team_id": "TTWIN0001",
+              "user_id": "UTWINBOT"
+            }
+          ],
+          "event": {
+            "channel": "CC0EE26BDEF",
+            "channel_type": "channel",
+            "text": "<@ULUCAS5744> Deal desk follow-up on the Alder Bank expansion — resolved. Findin…",
+            "ts": "1786823315.784034",
+            "type": "message",
+            "user": "UTWINBOT"
+          },
+          "event_id": "Ev4D271DE0C45",
+          "event_time": 1786823315,
+          "team_id": "TTWIN0001",
+          "token": "slack-twin",
+          "type": "event_callback"
+        },
+        "event_type": "message",
+        "id": "Ev4D271DE0C45",
+        "pending": true,
+        "source_method": "chat.postMessage"
+      },
+      "before": null,
+      "operation": "create",
+      "path": [
+        "events",
+        "id=Ev4D271DE0C45"
+      ],
+      "provider_name": "slack",
+      "provider_role": "team_chat",
+      "scope": "admin"
+    },
+    {
+      "after": "2026-08-15T19:49:16.595802+00:00",
+      "before": "2026-08-15T19:45:21.695124+00:00",
+      "operation": "update",
+      "path": [
+        "logical_now"
+      ],
+      "provider_name": "slack",
+      "provider_role": "team_chat",
+      "scope": "admin"
+    }
+  ]
+}
