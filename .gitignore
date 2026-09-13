@@ -22,3 +22,22 @@ dist/
 # npm packages
 packages/*/node_modules/
 packages/*/dist/
+
+# internal planning docs (kept out of the public repo)
+/CLAUDE.md
+/docs/AGENT-TASKS.md
+/docs/BUILD-SPEC.md
+/docs/DEMO-SCRIPT.md
+/docs/FOUNDERS-EMAIL.md
+/docs/HANDOFF.md
+/docs/IMPLEMENTATION-PLAN.md
+/docs/PLAN-B.md
+/docs/RELIABILITY-BRIEF.template.md
+/docs/RESEARCH.md
+/docs/SPRINT-PLAN.md
+/docs/STRATEGY.md
+/docs/SUBMISSION.md
+/docs/TRACK-DEVSIM.md
+/docs/context/
+/logs/
+.internal-docs/
