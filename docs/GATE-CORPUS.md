@@ -43,6 +43,31 @@ run as ordinary expectations:
 | `hubspot-batch-archive-refused` | same route-verb rule: HubSpot `batch/archive` is a POST |
 | `slack-post-mentioning-a-filename-allowed` | a bare token ending in a file extension that is not a TLD (`summary.pdf`, `index.html`) is not a destination; URL and email hosts, and extensions that are real TLDs (`report.zip`), still are |
 
+## Regressing a run into cases
+
+Every failure a run survives becomes a permanent regression test. A receipt records each write the
+gate judged (`gate_decisions`: phase, timestamp, the exact action, the verdict) next to the facts the
+gate consulted, so the decision can be replayed without the providers:
+
+```bash
+benchpress regress runs/local/20260913T101500Z --out gate-cases   # receipt.json or its run directory
+benchpress gate check gate-cases
+```
+
+`regress` writes one YAML file per receipt with one case per decision: every refused write with its
+rule (and the quoted term from the reason, when it still reproduces) and every allowed write. Cases
+are named `<kind>-<provider>-<allowed|refused-rule>-<digest>`, never after a record, and carry the
+receipt path and action id in `source`. The context is rebuilt from the receipt (targets, candidates,
+protected set, forbidden classes, write scope, facts, policies, policy packs) with `enforce_plan: true`,
+as the run's gate had. Bodies keep every key (field names drive field smuggling) and reduce every string
+to `redacted` plus the emails, destination domains and protected terms it carries; base64url `raw`
+fields are decoded and reduced too. Each case is replayed before it is written: if the reduced case
+does not reproduce the recorded decision, the recorded body is used (tag `recorded-body`); if neither
+does, the decision is reported as `DRIFT` and the command exits `1`. A receipt written before
+`gate_decisions` existed still yields its allowed writes (rebuilt from the ledger, the plan and
+`benchpress-trace.jsonl`); its refusals are skipped with a note unless the refused action is still on
+the plan.
+
 ## Case format
 
 A corpus file is a YAML mapping with `cases` (a list) and an optional free-form `shared` mapping

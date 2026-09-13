@@ -178,6 +178,12 @@ def main(argv: list[str] | None = None) -> int:
         metavar="OUT",
         help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
     )
+    receipts = sub.add_parser("receipts", help="work across many receipts")
+    receipts_sub = receipts.add_subparsers(dest="receipts_command", required=True)
+    export = receipts_sub.add_parser("export", help="audit log: one row per write attempt (docs/AUDIT-EXPORT.md)")
+    export.add_argument("paths", nargs="+", metavar="PATH", help="receipt files or run directories (searched)")
+    export.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    export.add_argument("--out", metavar="FILE", help="write here instead of stdout")
     guard = sub.add_parser("mcp-guard", help="MCP stdio proxy: writes are refused unless a policy rule allows them")
     guard.add_argument("--policy", required=True, help="guard policy JSON (see docs/MCP.md)")
     guard.add_argument("--receipts", help="JSONL receipt path; defaults to mcp-guard-receipts.jsonl next to the policy")
@@ -205,6 +211,9 @@ def main(argv: list[str] | None = None) -> int:
     gate_check = gate_sub.add_parser("check", help="run corpus cases; exit 1 on any mismatch")
     gate_check.add_argument("paths", nargs="*", metavar="PATH", help="case files or directories (default: bundled)")
     gate_check.add_argument("-v", "--verbose", action="store_true", help="print every reason and xfail note")
+    regress = sub.add_parser("regress", help="turn a run's gate decisions into gate-corpus cases")
+    regress.add_argument("receipt", metavar="RECEIPT", help="receipt.json, or the run directory holding it")
+    regress.add_argument("--out", default="gate-cases", metavar="DIR", help="where the case file goes")
     policy = sub.add_parser("policy", help="list and inspect policy packs")
     policy_sub = policy.add_subparsers(dest="policy_command", required=True)
     policy_sub.add_parser("list", help="the bundled policy packs")
@@ -226,6 +235,14 @@ def main(argv: list[str] | None = None) -> int:
         from benchpress.gate_corpus import check_command
 
         return check_command(list(args.paths), verbose=bool(args.verbose))
+    if args.command == "receipts":
+        from benchpress.audit import export_command
+
+        return export_command(list(args.paths), str(args.format), args.out)
+    if args.command == "regress":
+        from benchpress.regress import regress_command
+
+        return regress_command(str(args.receipt), str(args.out))
     if args.command == "run":
         return asyncio.run(_run(args))
     if args.command == "demo":

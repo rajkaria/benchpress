@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast
 
-from benchpress.context import Action, Context, GateVerdict, LedgerEntry
+from benchpress.context import Action, Context, GateDecision, GateVerdict, LedgerEntry, utc_now
 from benchpress.gate import (
     BLOCKED_EXACT_PATHS,
     BLOCKED_PATH_PREFIXES,
@@ -187,8 +187,12 @@ class ToolBus:
                 rule=refusal.rule,
                 reason=refusal.reason,
             )
+            self.context.gate_decisions.append(
+                GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict)
+            )
             self._record_refusal(action, verdict)
             return ToolResult(ok=False, status_code=None, body=None, error=f"gate:{refusal.rule}"), verdict
+        self.context.gate_decisions.append(GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict))
 
         result = await self._call(
             provider=action.provider,
@@ -288,6 +292,7 @@ class ToolBus:
                 action_id=action_id,
                 error=result.error,
                 response_digest=_digest(result.body)[:16],
+                at=utc_now(),
             )
         )
 
@@ -306,6 +311,7 @@ class ToolBus:
                 gate=verdict,
                 action_id=action.id,
                 error=f"gate:{verdict.rule}",
+                at=utc_now(),
             )
         )
         self._record_event("gate_refusal", {"action": action.id, "rule": verdict.rule}, verdict.reason)
