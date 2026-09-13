@@ -16,7 +16,7 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.ModelConfig`, `benchpress.Ablations`
 - `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
 - `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
-- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`)
+- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`), `benchpress.shims.composio.guard_composio(...)` / `composio_executor(...)` (extra `[composio]`)
 
 ## CLI
 - `benchpress demo`: offline end-to-end demo with receipts
@@ -33,6 +33,7 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - [Rehearse](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
 - [MCP executor and mcp-guard](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md)
 - [OpenAI Agents SDK guard](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+- [Composio guard and executor](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
 
 ## Evidence (claim discipline: we never say "passed ArgaBench")
 - [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).

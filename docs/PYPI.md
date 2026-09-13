@@ -97,6 +97,20 @@ Reads run; `update_invoice` runs only with an allowed status and at most 10 time
 the model is told which rule refused it. The check sits in each tool's invoker, so it holds for every run mode.
 [docs/OPENAI-AGENTS.md](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
 
+## Composio: guard hundreds of SaaS tools
+
+```python
+from composio import Composio
+from benchpress.shims.composio import guard_composio      # pip install "benchpress-agent[composio]"
+
+composio = guard_composio(Composio(), "guard.json", receipts="receipts.jsonl")   # same policy file as mcp-guard
+```
+
+Every `tools.execute` (and the provider execute hook agents use) is classified and checked against the policy before
+Composio runs it; refusals never execute, and every call leaves a receipt. `composio_executor(client, user_id=...)`
+lets `benchpress.wrap(...)` drive Composio tools through the full loop.
+[docs/COMPOSIO.md](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
+
 ## Policy packs and the public gate-rule corpus
 
 ```bash
@@ -162,7 +176,7 @@ Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP and OpenAI Agents SDK support ship as the `[mcp]` and `[openai-agents]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
+`ModelConfig`, `Ablations`, `Gate`. MCP, OpenAI Agents SDK and Composio support ship as the `[mcp]`, `[openai-agents]` and `[composio]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
 New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)

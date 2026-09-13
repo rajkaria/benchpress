@@ -4,6 +4,16 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.5.0 (2026-09-13)
+- **Composio** (optional `[composio]` extra, verified against `composio` 0.21.1):
+  `benchpress.shims.composio.guard_composio(Composio(), policy, receipts=...)` checks every tool execution against
+  the shared guard policy **before** it reaches Composio (declared classes, policy classes, tool metadata hints,
+  then the shared name heuristic), refuses without executing, and writes a JSONL receipt per call. By default it
+  replaces the client's own `execute` and the provider execute hook, so the unguarded path is closed.
+  `composio_executor(client, user_id=...)` lets the full Benchpress loop drive Composio tools through the gate.
+  See [docs/COMPOSIO.md](docs/COMPOSIO.md).
+- The name heuristic and refusal message now live in `benchpress.shims.guard_policy`, shared by all three guards.
+
 ## 0.4.0 (2026-09-13)
 - **OpenAI Agents SDK** (optional `[openai-agents]` extra, verified against `openai-agents` 0.22.2):
   `benchpress.shims.openai_agents.guard_tools(tools, policy, receipts=...)` returns guarded copies of your
