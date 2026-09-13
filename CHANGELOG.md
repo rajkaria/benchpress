@@ -4,6 +4,16 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.6.1 (2026-09-13)
+- **The `claude-*` path, proven offline.** Contract tests for the Anthropic Messages transport over
+  `httpx.MockTransport` (headers, top-level `system`, `input_schema` tools, forced `tool_choice`, `tool_use` /
+  `thinking` / `text` blocks, `tool_result` turns, stop reasons, usage, 429/529/400 errors) found and fixed five bugs:
+  529 `overloaded` was not retried; cached prompt tokens were under-counted in cost (Anthropic's `input_tokens`
+  excludes cache reads/writes; cache writes now bill at 1.25x input); thinking blocks were dropped between tool turns
+  in the explore loop; adaptive thinking + effort was sent to models that reject it (Haiku 4.5 and older); pricing
+  entries added for current Claude models. Still not exercised against the live API (no key during the build).
+- Python 3.13 verified: full suite and pyright strict pass.
+
 ## 0.6.0 (2026-09-13)
 - **GitHub playbook** (`github`, also registered as the `code_host` role): issue and pull-request search with look-alike
   evidence, policy sources from CONTRIBUTING / SECURITY / CODEOWNERS and policy-labelled issues, issue updates
