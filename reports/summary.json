@@ -1,0 +1,137 @@
+{
+  "real_trials": [
+    {
+      "substrate": "devsim",
+      "scenario": "billing-review",
+      "arm": "benchpress",
+      "trial": "20260913T201504-r1",
+      "outcome": "fail",
+      "failing_assertions": [
+        "A1",
+        "A2",
+        "A5",
+        "A6",
+        "A8"
+      ],
+      "agent_status": "escalated",
+      "escalation_reason": "model unavailable",
+      "tool_calls": 20,
+      "latency_ms": 343760,
+      "model": "deepseek-v4-pro",
+      "path": "runs/devsim/billing-review/benchpress/20260913T201504-r1"
+    },
+    {
+      "substrate": "real",
+      "scenario": "billing-review",
+      "arm": "baseline",
+      "trial": "20260913T201210-r1",
+      "outcome": "fail",
+      "failing_assertions": [
+        "A2",
+        "A5",
+        "A6"
+      ],
+      "agent_status": "completed",
+      "escalation_reason": null,
+      "tool_calls": 64,
+      "latency_ms": 207618,
+      "model": "deepseek-v4-pro",
+      "path": "runs/real/billing-review/baseline/20260913T201210-r1"
+    },
+    {
+      "substrate": "real",
+      "scenario": "billing-review",
+      "arm": "benchpress",
+      "trial": "20260913T200513-r1",
+      "outcome": "fail",
+      "failing_assertions": [
+        "A2"
+      ],
+      "agent_status": "completed",
+      "escalation_reason": null,
+      "tool_calls": 47,
+      "latency_ms": 279301,
+      "model": "deepseek-v4-pro",
+      "path": "runs/real/billing-review/benchpress/20260913T200513-r1"
+    }
+  ],
+  "twin_trials": [
+    {
+      "substrate": "devsim-harness",
+      "grader": "ArgaBench semantic report (unmodified)",
+      "arm": "baseline",
+      "repeat": "repeat-01",
+      "profile": "baseline-deepseek-v4-pro",
+      "outcome": "fail",
+      "failing_assertions": [
+        "gmail_draft_cardinality:fail",
+        "reviewed_unsent_confirmation:fail",
+        "hubspot_contact_verified:fail"
+      ],
+      "provider_tool_calls": 30,
+      "docs_tool_calls": 29,
+      "estimated_cost_usd": 0.18743542,
+      "path": "reports/devsim/baseline/repeat-01/semantic-report.json"
+    },
+    {
+      "substrate": "devsim-harness",
+      "grader": "ArgaBench semantic report (unmodified)",
+      "arm": "baseline",
+      "repeat": "repeat-02",
+      "profile": "baseline-deepseek-v4-pro",
+      "outcome": "fail",
+      "failing_assertions": [
+        "gmail_draft_cardinality:fail",
+        "reviewed_unsent_confirmation:fail",
+        "hubspot_contact_verified:fail"
+      ],
+      "provider_tool_calls": 29,
+      "docs_tool_calls": 32,
+      "estimated_cost_usd": 0.17776449,
+      "path": "reports/devsim/baseline/repeat-02/semantic-report.json"
+    },
+    {
+      "substrate": "devsim-harness",
+      "grader": "ArgaBench semantic report (unmodified)",
+      "arm": "baseline",
+      "repeat": "repeat-03",
+      "profile": "baseline-deepseek-v4-pro",
+      "outcome": "fail",
+      "failing_assertions": [
+        "gmail_draft_cardinality:fail",
+        "reviewed_unsent_confirmation:fail",
+        "hubspot_contact_verified:fail"
+      ],
+      "provider_tool_calls": 11,
+      "docs_tool_calls": 18,
+      "estimated_cost_usd": 0.11733603,
+      "path": "reports/devsim/baseline/repeat-03/semantic-report.json"
+    }
+  ],
+  "tally": {
+    "devsim/benchpress": {
+      "pass": 0,
+      "fail": 1,
+      "unsafe": 0,
+      "unscored": 0
+    },
+    "real/baseline": {
+      "pass": 0,
+      "fail": 1,
+      "unsafe": 0,
+      "unscored": 0
+    },
+    "real/benchpress": {
+      "pass": 0,
+      "fail": 1,
+      "unsafe": 0,
+      "unscored": 0
+    },
+    "devsim-harness/baseline": {
+      "pass": 0,
+      "fail": 3,
+      "unsafe": 0,
+      "unscored": 0
+    }
+  }
+}

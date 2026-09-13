@@ -484,8 +484,9 @@ class ModelClient:
             {"role": "user", "content": content},
         ]
         last_error = ""
+        max_tokens = self.config.max_tokens
         for attempt in range(retries + 1):
-            payload_text = await self._emit_once(phase, messages, tool, tool_name, schema)
+            payload_text = await self._emit_once(phase, messages, tool, tool_name, schema, max_tokens=max_tokens)
             try:
                 data = _loads_object(payload_text)
                 return schema.model_validate(data)
@@ -494,8 +495,10 @@ class ModelClient:
                 if attempt >= retries:
                     break
                 if not payload_text.strip():
-                    # An empty reply (a truncated or reasoning-only turn) is retried as-is, not "corrected".
+                    # An empty reply (a reasoning-only turn that hit max_tokens, or a dropped response) is
+                    # retried as-is with a larger budget, not "corrected".
                     self._forced_tool_unsupported = True
+                    max_tokens = min(max_tokens * 2, 65_536)
                     continue
                 messages.append({"role": "assistant", "content": payload_text})
                 messages.append(
@@ -516,6 +519,8 @@ class ModelClient:
         tool: dict[str, Any],
         tool_name: str,
         schema: type[BaseModel],
+        *,
+        max_tokens: int | None = None,
     ) -> str:
         if not self._forced_tool_unsupported:
             try:
@@ -524,6 +529,7 @@ class ModelClient:
                     phase=phase,
                     tools=[tool],
                     tool_choice={"type": "function", "function": {"name": tool_name}},
+                    max_tokens=max_tokens,
                 )
             except ModelAPIError as exc:
                 if exc.status_code is not None and 400 <= exc.status_code < 500:
@@ -546,7 +552,7 @@ class ModelClient:
                 f"schema (no prose, no code fences):\n{schema_hint}"
             ),
         }
-        response = await self.complete(json_messages, phase=phase, json_mode=True)
+        response = await self.complete(json_messages, phase=phase, json_mode=True, max_tokens=max_tokens)
         return _extract_json_text(response.text)
 
     async def explore(
