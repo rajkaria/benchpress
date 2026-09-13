@@ -83,7 +83,11 @@ Rules:
 - near_duplicate_ids: EVERY other candidate that shares significant name tokens with a chosen
   target, plus every Prospect/Archive/Test/Sandbox variant. These become a code-enforced deny
   list.
-- If two candidates are equally supported by evidence, set ambiguous=true and explain.""",
+- A variant of the same organisation (a sub-unit, region, "Operations"/"Archive"/"Prospect" record,
+  a subdomain of the same root domain) is NOT a tie: choose the root-domain / primary customer record
+  and list the variant in near_duplicate_ids.
+- Set ambiguous=true only when two candidates are indistinguishable on name, domain/email AND
+  lifecycle, or when no candidate matches the request's identifiers at all; then explain.""",
     "dod": """Write the definition of done as data.
 
 Task frame:
