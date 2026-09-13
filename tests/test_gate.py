@@ -179,6 +179,33 @@ def test_gmail_label_smuggling_to_sent_is_refused_on_threads_and_batches(context
     assert "send_email" not in classify("gmail", "POST", path, {"addLabelIds": ["STARRED"]})
 
 
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("attached as summary.pdf", set[str]()),
+        ("see index.html, export.csv and release v2.1", set[str]()),
+        ("uploaded to paste.outside.example as summary.pdf", {"paste.outside.example"}),
+        ("https://files.outside.example/summary.pdf", {"files.outside.example"}),
+        ("mail it to ap@summary.pdf", {"summary.pdf"}),
+        ("https://user@summary.pdf:8443/x", {"summary.pdf"}),
+        ("www.summary.pdf", {"www.summary.pdf"}),
+        ("grab report.zip", {"report.zip"}),
+    ],
+)
+def test_destination_domains_ignore_bare_file_names(text: str, expected: set[str]) -> None:
+    from benchpress.normalize import destination_domains_in
+
+    assert set(destination_domains_in(text)) == expected
+
+
+def test_filename_in_channel_post_is_not_an_external_destination(context: Context) -> None:
+    action = make_action(
+        provider="slack", method="POST", path="/api/chat.postMessage", body={"text": "see summary.pdf"}
+    )
+    verdict = _gate(context).evaluate(action)
+    assert verdict.rule != "external_destination", verdict.reason
+
+
 def test_github_merge_is_refused_when_forbidden(context: Context) -> None:
     context.dod = context.dod.model_copy(update={"forbidden": (*context.dod.forbidden, "merge_pr")})
     context.dod = context.dod.model_copy(update={"write_scope": (*context.dod.write_scope, "github")})

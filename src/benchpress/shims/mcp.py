@@ -34,7 +34,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Literal, cast
+from typing import Any, cast
 from urllib.parse import unquote
 
 try:
@@ -45,9 +45,8 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
         "benchpress.shims.mcp needs the MCP SDK: install the extra with `pip install 'benchpress-agent[mcp]'`"
     ) from exc
 
+from benchpress.shims.guard_policy import ToolClass
 from benchpress.tools import PROVIDER_API, PROVIDER_DOCS, ToolExecutor
-
-ToolClass = Literal["read", "write", "destructive"]
 
 CLASS_METHODS: Mapping[ToolClass, frozenset[str]] = {
     "read": frozenset({"GET"}),

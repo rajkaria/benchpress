@@ -4,6 +4,7 @@
 
 - [x] Repo public: `github.com/rajkaria/benchpress`. README opens with one-liner, receipt screenshot, results table, reproduce commands.
 - [x] `docs/RELIABILITY-BRIEF.md` ≤ 2 pages, exported to `docs/RELIABILITY-BRIEF.pdf`.
+- [x] Landing page live at `https://benchpress-ten.vercel.app` (`site/`, static on Vercel; `/receipt` serves the sample receipt, `/llms.txt` for AI readers). After any `reports/` change: `uv run python scripts/build_site.py && vercel deploy --prod --cwd site`.
 - [ ] Video ≤ 2:00, YouTube unlisted, link in README and form.
 - [x] Brief requirement check: *one useful multi-step agent* ✓ · *≥ 3 external apps* (real Slack + Stripe + HubSpot + Gmail) ✓ · *show how you know it works* (unmodified-grader trials, same-substrate baseline, ablations, gate replay) ✓.
 - [x] Every number in README and brief matches `reports/` (video: check against `docs/DEMO-SCRIPT.md` when cut). Grep for `[X` placeholders: none left.

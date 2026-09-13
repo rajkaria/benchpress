@@ -16,6 +16,7 @@
   <b>Built by Raj Karia</b> ·
   <a href="https://x.com/rajkaria_">X @rajkaria_</a> ·
   <a href="https://github.com/rajkaria">GitHub @rajkaria</a> ·
+  <a href="https://benchpress-ten.vercel.app">benchpress-ten.vercel.app</a> ·
   <a href="https://multiappagenthackathon.com/">Multi-App AI Agent Hackathon 2026</a>
 </p>
 
@@ -42,7 +43,7 @@ under ArgaBench's unmodified runner**, and behind ArgaBench's `invoke_model` can
 
 <p align="center">
   <img src="docs/img/receipt-hero.png" alt="A Benchpress receipt: request, policies found (including a flagged prompt injection), candidates with the chosen target and the protected look-alike" width="88%">
-  <br><sub>A Benchpress receipt (<a href="docs/img/receipt-sample.html">full sample page</a>). The policy sweep found an operating rule and flagged an injection attempt as <i>suspicious</i>. Candidate resolution picked one account with cited evidence and locked the look-alike.</sub>
+  <br><sub>A Benchpress receipt (<a href="https://benchpress-ten.vercel.app/receipt">full sample page</a>, source in <a href="docs/img/receipt-sample.html"><code>docs/img</code></a>). The policy sweep found an operating rule and flagged an injection attempt as <i>suspicious</i>. Candidate resolution picked one account with cited evidence and locked the look-alike.</sub>
 </p>
 
 ---
@@ -556,6 +557,7 @@ What makes it hard to copy:
 uvx --from benchpress-agent benchpress demo      # the whole loop offline: policy sweep, gate refusal, read-back, receipt
 pip install benchpress-agent                     # wrap your own tool layer
 pip install "benchpress-agent[mcp]"              # + MCP executor and the mcp-guard proxy
+pip install "benchpress-agent[openai-agents]"    # + guard for OpenAI Agents SDK function tools
 benchpress policy list && benchpress gate check  # policy packs + the public gate-rule corpus
 ```
 
@@ -706,6 +708,7 @@ devsim/                    grader-faithful local twins under ArgaBench's unmodif
   calibration/             per-provider notes, line by line against the graders
 scripts/                   bp_gate_replay.py · gmail_oauth.py
 reports/                   committed reports (gate replay, compare tables)
+site/                      landing page (static, Vercel); scripts/build_site.py fills its numbers from reports/
 tests/                     470+ tests across gate, playbooks, gateway, assertions, twins, run loop
 docs/                      build spec, strategy, research, plans, demo script, submission kit
 ```
@@ -733,9 +736,10 @@ docs/                      build spec, strategy, research, plans, demo script, s
 
 **Already shipped from this roadmap during the hackathon, on PyPI as
 [`benchpress-agent`](https://pypi.org/project/benchpress-agent/):** `wrap(model, executor)` (0.1.0), the offline
-`benchpress demo` (0.1.1), the MCP executor plus `mcp-guard` proxy (0.2.0), and policy packs, the public gate-rule corpus and
-Rehearse/replay (0.3.0). Every release is tagged in git. Not shipped yet: Composio/OpenAI Agents SDK/Vercel AI SDK
-shims, playbooks beyond Slack/Gmail/HubSpot/Stripe, the 40-task ArgaBench row, live-state forking, hosted receipts.
+`benchpress demo` (0.1.1), the MCP executor plus `mcp-guard` proxy (0.2.0), policy packs, the public gate-rule corpus and
+Rehearse/replay (0.3.0), gate fixes for every gap the corpus found (0.3.2-0.3.3), and the OpenAI Agents SDK tool
+guard (0.4.0). Every release is tagged in git with notes in [CHANGELOG.md](CHANGELOG.md). Not shipped yet: Composio and
+Vercel AI SDK shims, playbooks beyond Slack/Gmail/HubSpot/Stripe, the 40-task ArgaBench row, live-state forking, hosted receipts.
 
 | Horizon | Product |
 |---|---|

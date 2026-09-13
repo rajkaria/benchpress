@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "benchpress-agent"
-version = "0.3.2"
+version = "0.4.0"
 description = "The reliability layer for AI agents with write access: policy-first, code-gated, read-back-verified multi-app execution"
 readme = "docs/PYPI.md"
 requires-python = ">=3.12"
@@ -42,6 +42,9 @@ benchpress = "benchpress.cli:main"
 mcp = [
     "mcp>=2.2.0",
 ]
+openai-agents = [
+    "openai-agents>=0.22.2",
+]
 
 [dependency-groups]
 dev = [
@@ -58,6 +61,8 @@ dev = [
     "typer>=0.15.0",
     # benchpress.shims.mcp tests (the optional `mcp` extra)
     "mcp>=2.2.0",
+    # benchpress.shims.openai_agents tests (the optional `openai-agents` extra)
+    "openai-agents>=0.22.2",
 ]
 
 [tool.setuptools.packages.find]

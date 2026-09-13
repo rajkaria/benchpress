@@ -82,12 +82,27 @@ digest, the decision and the rule. `benchpress.shims.mcp.mcp_executor(...)` goes
 turns MCP client sessions into an executor, so the full loop can drive MCP tools. Policy format,
 client config and limits: [docs/MCP.md](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md).
 
+## OpenAI Agents SDK: guard your function tools
+
+```python
+from agents import Agent, Runner
+from benchpress.shims.openai_agents import guard_tools     # pip install "benchpress-agent[openai-agents]"
+
+policy = {"rules": [{"tool": "update_invoice", "arguments": {"status": "sent|paid"}, "max_calls": 10}]}
+tools = guard_tools([get_invoice, update_invoice, delete_invoice], policy, receipts="receipts.jsonl")
+result = Runner.run_sync(Agent(name="billing-ops", instructions="...", tools=tools), "Mark INV-7 as paid")
+```
+
+Reads run; `update_invoice` runs only with an allowed status and at most 10 times; `delete_invoice` never runs, and
+the model is told which rule refused it. The check sits in each tool's invoker, so it holds for every run mode.
+[docs/OPENAI-AGENTS.md](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+
 ## Policy packs and the public gate-rule corpus
 
 ```bash
 benchpress policy list                 # billing, customer-success, it-offboarding, release-engineering
 benchpress policy show billing
-benchpress gate check                  # 139 bundled cases: what the gate allows and refuses, and why
+benchpress gate check                  # 150+ bundled cases: what the gate allows and refuses, and why
 benchpress gate check my-cases/        # add your own YAML cases
 ```
 
@@ -97,7 +112,7 @@ and names the rule id in every refusal:
 `benchpress.wrap(model, executor, providers=[...], policy_packs=benchpress.load_policy_packs(["billing"]))`. From the CLI:
 `benchpress run --providers stripe,gmail --policy-pack billing --prompt "..."`.
 Packs only ever add refusals; with no pack the gate behaves exactly as before. The corpus documents the gate's
-real behavior, including five known gaps recorded as strict xfails.
+real behavior; the five gaps it originally recorded as strict xfails were fixed in 0.3.2 and 0.3.3.
 [Packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md) ·
 [corpus format](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
 
@@ -135,7 +150,11 @@ P5 execute through the gate + read-back → P6 verify (+ one repair round) → P
 Benchpress was built for the Multi-App AI Agent Hackathon (2026-09-13) and is measured against
 ArgaBench's hardest published scenario, graded by ArgaBench's verifier on the published seed rebuilt
 locally and on real Slack, Gmail, HubSpot and Stripe (test mode). It makes no claim about the
-official leaderboard. Methods, results, failures and cost are in the repository:
+official leaderboard. On local twins of the published seed under ArgaBench's **unmodified runner and grader**,
+Benchpress passed 3/3 and a same-model baseline 0/3. On real Slack/Gmail/HubSpot/Stripe (test mode), scored by a
+line-cited port of the criteria, both arms failed 0/2: Benchpress missed one assertion, the baseline three, and
+neither was unsafe. Every trial: [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md).
+Methods, results, failures and cost are in the repository:
 [README](https://github.com/rajkaria/benchpress#readme) ·
 [reports](https://github.com/rajkaria/benchpress/tree/main/reports) ·
 [disclosure](https://github.com/rajkaria/benchpress#17-disclosure).
@@ -143,7 +162,7 @@ official leaderboard. Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP support ships as the `[mcp]` extra; policy packs, the gate-rule corpus and Rehearse ship in the core package.
+`ModelConfig`, `Ablations`, `Gate`. MCP and OpenAI Agents SDK support ship as the `[mcp]` and `[openai-agents]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
 New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)

@@ -93,6 +93,9 @@ The calling model sees why and can adjust.
 }
 ```
 
+The policy model lives in `benchpress.shims.guard_policy` and is shared with the OpenAI Agents SDK
+shim ([docs/OPENAI-AGENTS.md](./OPENAI-AGENTS.md)), so one file can govern both.
+
 `classes` overrides annotations (use it for servers you do not control; annotations are hints written
 by the server). Argument regexes use Python `re.fullmatch` against the argument's string value, or its
 canonical JSON for non-strings. Unknown keys and invalid regexes fail at startup.
