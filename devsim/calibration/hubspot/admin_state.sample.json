@@ -1,0 +1,488 @@
+{
+ "_calibration_note": "Real Arga HubSpot twin /admin/state (fixture CRM-01 baseline; events trimmed to one per event_type, write events borrowed from CRM-01/02/04 final states). objects.* carries counts only; records are NOT exposed by the real twin. Post-write: final objects counts change (merge archives), events gain propertyChange/associationChange/merge/creation entries, logical_now advances.",
+ "_final_objects_after_merge_CRM-01": {
+  "companies": {
+   "active": 3,
+   "archived": 2,
+   "object_type_id": "0-2"
+  },
+  "contacts": {
+   "active": 4,
+   "archived": 0,
+   "object_type_id": "0-1"
+  },
+  "deals": {
+   "active": 2,
+   "archived": 1,
+   "object_type_id": "0-3"
+  }
+ },
+ "_final_objects_after_note_create_CRM-02": {
+  "companies": {
+   "active": 4,
+   "archived": 0,
+   "object_type_id": "0-2"
+  },
+  "contacts": {
+   "active": 4,
+   "archived": 0,
+   "object_type_id": "0-1"
+  },
+  "deals": {
+   "active": 3,
+   "archived": 0,
+   "object_type_id": "0-3"
+  },
+  "notes": {
+   "active": 1,
+   "archived": 0,
+   "object_type_id": "0-46"
+  }
+ },
+ "deliveries": [],
+ "events": [
+  {
+   "created_at": "2026-08-15T19:47:17.093Z",
+   "event_type": "companie.merge",
+   "id": 9159462720,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 9159462720,
+    "objectId": 5913071684,
+    "occurredAt": 1786823237093,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "companie.merge"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:48:21.163Z",
+   "event_type": "note.creation",
+   "id": 9159462720,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "NEW",
+    "changeSource": "CRM",
+    "eventId": 9159462720,
+    "objectId": 198631683,
+    "occurredAt": 1786823301163,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "note.creation"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:45:13.730Z",
+   "event_type": "contact.creation",
+   "id": 9109319459,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "NEW",
+    "changeSource": "CRM",
+    "eventId": 9109319459,
+    "objectId": 9670042293,
+    "occurredAt": 1786823113730,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "contact.creation"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:45:15.245Z",
+   "event_type": "deal.creation",
+   "id": 8624272231,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "NEW",
+    "changeSource": "CRM",
+    "eventId": 8624272231,
+    "objectId": 1534846457,
+    "occurredAt": 1786823115245,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "deal.creation"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:45:14.436Z",
+   "event_type": "companie.creation",
+   "id": 8515496253,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "NEW",
+    "changeSource": "CRM",
+    "eventId": 8515496253,
+    "objectId": 8056196239,
+    "occurredAt": 1786823114436,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "companie.creation"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:45:15.391Z",
+   "event_type": "contact.associationChange",
+   "id": 4077825522,
+   "payload": {
+    "appId": 1000001,
+    "associationRemoved": false,
+    "associationType": "CONTACT_TO_COMPANIE",
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 4077825522,
+    "fromObjectId": 6505263334,
+    "isPrimaryAssociation": false,
+    "objectId": 6505263334,
+    "occurredAt": 1786823115391,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "contact.associationChange",
+    "toObjectId": 5913071684
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:48:20.998Z",
+   "event_type": "deal.propertyChange",
+   "id": 4077825522,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 4077825522,
+    "objectId": 5619403463,
+    "occurredAt": 1786823300998,
+    "portalId": 12345678,
+    "propertyName": "dealstage",
+    "propertyValue": "decisionmakerboughtin",
+    "sourceId": "twin",
+    "subscriptionType": "deal.propertyChange"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:50:03.482Z",
+   "event_type": "companie.propertyChange",
+   "id": 4077825522,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 4077825522,
+    "objectId": 5913071684,
+    "occurredAt": 1786823403482,
+    "portalId": 12345678,
+    "propertyName": "description",
+    "propertyValue": "Cedar Health US opportunity FY27 Renewal closes 2026-10-31. AT RISK: security review is blocking renewal (champion report via #customer-risk, 2026-08-15). Green health score is stale \u2014 last calculated before the report; do not treat as healthy.",
+    "sourceId": "twin",
+    "subscriptionType": "companie.propertyChange"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:48:45.751Z",
+   "event_type": "note.associationChange",
+   "id": 1485564809,
+   "payload": {
+    "appId": 1000001,
+    "associationRemoved": false,
+    "associationType": "NOTE_TO_DEAL",
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 1485564809,
+    "fromObjectId": 198631683,
+    "isPrimaryAssociation": false,
+    "objectId": 198631683,
+    "occurredAt": 1786823325751,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "note.associationChange",
+    "toObjectId": 5619403463
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:47:29.356Z",
+   "event_type": "deal.merge",
+   "id": 1360900369,
+   "payload": {
+    "appId": 1000001,
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 1360900369,
+    "objectId": 5619403463,
+    "occurredAt": 1786823249356,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "deal.merge"
+   },
+   "pending": true
+  },
+  {
+   "created_at": "2026-08-15T19:47:39.691Z",
+   "event_type": "deal.associationChange",
+   "id": 1305628764,
+   "payload": {
+    "appId": 1000001,
+    "associationRemoved": false,
+    "associationType": "DEAL_TO_COMPANIE",
+    "attemptNumber": 0,
+    "changeFlag": "UPDATED",
+    "changeSource": "CRM",
+    "eventId": 1305628764,
+    "fromObjectId": 5619403463,
+    "isPrimaryAssociation": false,
+    "objectId": 5619403463,
+    "occurredAt": 1786823259691,
+    "portalId": 12345678,
+    "sourceId": "twin",
+    "subscriptionType": "deal.associationChange",
+    "toObjectId": 5913071684
+   },
+   "pending": true
+  }
+ ],
+ "failure_rules": [],
+ "files": [],
+ "forms": [],
+ "generic_hits": [],
+ "generic_resources": {},
+ "generic_singletons": {},
+ "hub": {
+  "account_type": "STANDARD",
+  "app_id": 1000001,
+  "hub_domain": "hubspot-twin.local",
+  "hub_id": 12345678,
+  "portal_id": 12345678
+ },
+ "lists": [],
+ "logical_now": "2026-08-15T19:45:23.004Z",
+ "objects": {
+  "companies": {
+   "active": 5,
+   "archived": 0,
+   "object_type_id": "0-2"
+  },
+  "contacts": {
+   "active": 4,
+   "archived": 0,
+   "object_type_id": "0-1"
+  },
+  "deals": {
+   "active": 3,
+   "archived": 0,
+   "object_type_id": "0-3"
+  }
+ },
+ "owners": [
+  {
+   "archived": false,
+   "createdAt": "2026-08-15T19:45:12.241Z",
+   "email": "admin@hubspot-twin.local",
+   "firstName": "Admin",
+   "id": "41629779",
+   "lastName": "Twin",
+   "teams": [],
+   "type": "PERSON",
+   "updatedAt": "2026-08-15T19:45:12.241Z",
+   "userId": 9876543,
+   "userIdIncludingInactive": 9876543
+  }
+ ],
+ "pipelines": {
+  "deals": [
+   {
+    "archived": false,
+    "createdAt": "2026-08-15T19:45:12.241Z",
+    "displayOrder": 0,
+    "id": "default",
+    "label": "Sales Pipeline",
+    "stages": [
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 0,
+      "id": "appointmentscheduled",
+      "label": "Appointment scheduled",
+      "metadata": {
+       "isClosed": "false",
+       "probability": "0.2"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 1,
+      "id": "qualifiedtobuy",
+      "label": "Qualified to buy",
+      "metadata": {
+       "isClosed": "false",
+       "probability": "0.4"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 2,
+      "id": "presentationscheduled",
+      "label": "Presentation scheduled",
+      "metadata": {
+       "isClosed": "false",
+       "probability": "0.6"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 3,
+      "id": "decisionmakerboughtin",
+      "label": "Decision maker bought-in",
+      "metadata": {
+       "isClosed": "false",
+       "probability": "0.8"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 4,
+      "id": "closedwon",
+      "label": "Closed won",
+      "metadata": {
+       "isClosed": "true",
+       "probability": "1.0"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 5,
+      "id": "closedlost",
+      "label": "Closed lost",
+      "metadata": {
+       "isClosed": "true",
+       "probability": "0.0"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     }
+    ],
+    "updatedAt": "2026-08-15T19:45:12.241Z"
+   }
+  ],
+  "tickets": [
+   {
+    "archived": false,
+    "createdAt": "2026-08-15T19:45:12.241Z",
+    "displayOrder": 0,
+    "id": "0",
+    "label": "Support Pipeline",
+    "stages": [
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 0,
+      "id": "1",
+      "label": "New",
+      "metadata": {
+       "ticketState": "OPEN"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 1,
+      "id": "2",
+      "label": "Waiting on contact",
+      "metadata": {
+       "ticketState": "OPEN"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 2,
+      "id": "3",
+      "label": "Waiting on us",
+      "metadata": {
+       "ticketState": "OPEN"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     },
+     {
+      "archived": false,
+      "createdAt": "2026-08-15T19:45:12.241Z",
+      "displayOrder": 3,
+      "id": "4",
+      "label": "Closed",
+      "metadata": {
+       "ticketState": "CLOSED"
+      },
+      "updatedAt": "2026-08-15T19:45:12.241Z",
+      "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+     }
+    ],
+    "updatedAt": "2026-08-15T19:45:12.241Z"
+   }
+  ]
+ },
+ "properties": {
+  "calls": 5,
+  "communications": 6,
+  "companies": 15,
+  "contacts": 9,
+  "deals": 8,
+  "emails": 5,
+  "meetings": 5,
+  "notes": 5,
+  "tasks": 5,
+  "tickets": 6
+ },
+ "rate_limiting_enabled": false,
+ "seed": 1,
+ "settings": {},
+ "subscriptions": [],
+ "users": [
+  {
+   "email": "admin@hubspot-twin.local",
+   "firstName": "Admin",
+   "id": "9876543",
+   "lastName": "Twin",
+   "primaryTeamId": null,
+   "roleId": "superAdmin",
+   "superAdmin": true
+  }
+ ]
+}

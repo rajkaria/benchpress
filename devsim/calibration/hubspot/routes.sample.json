@@ -1,0 +1,1464 @@
+{
+ "_calibration_note": "Real Arga HubSpot twin responses recorded in tests/fixtures/argabench_crm_legacy/historical-fable-5-high-crm.tar.gz (invocation.json provider_api events). One sample per (method, path shape, status). Result lists trimmed to 2 entries.",
+ "samples": [
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/lists/",
+    "query": {
+     "count": 50
+    }
+   },
+   "response": {
+    "body": {
+     "detail": "Method Not Allowed"
+    },
+    "status_code": 405
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": {
+     "count": 100,
+     "offset": 0,
+     "query": ""
+    },
+    "method": "POST",
+    "path": "/crm/v3/lists/search",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "count": 100,
+     "createdAt": "2026-08-15T19:50:49.460Z",
+     "id": "8349254955",
+     "lastAction": "search",
+     "offset": 0,
+     "query": "",
+     "updatedAt": "2026-08-15T19:50:49.460Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/companies",
+    "query": {
+     "limit": 100,
+     "properties": "name,domain,description"
+    }
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:02.150Z",
+       "id": "5913071684",
+       "properties": {
+        "description": "Cedar Health US opportunity FY27 Renewal closes 2026-10-31. AT RISK: security review is blocking renewal (champion report via #customer-risk, 2026-08-15). Green health score is stale \u2014 last calculated before the report; do not treat as healthy.",
+        "domain": "cedarhealth.example",
+        "hs_object_id": "5913071684",
+        "name": "Cedar Health US"
+       },
+       "updatedAt": "2026-08-15T19:50:03.482Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:02.274Z",
+       "id": "6710991451",
+       "properties": {
+        "description": "Cedar Health Canada renewal closes 2027-02-28 and its security review is complete.",
+        "domain": "cedarhealth.ca",
+        "hs_object_id": "6710991451",
+        "name": "Cedar Health Canada"
+       },
+       "updatedAt": "2026-08-15T19:48:02.274Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-03",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/companies/5913071684",
+    "query": {
+     "associations": "contacts,deals",
+     "properties": "name,domain,lifecyclestage,hs_lead_status,description"
+    }
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "associations": {
+      "contacts": {
+       "paging": {},
+       "results": [
+        {
+         "id": "6505263334",
+         "type": "company_to_contact"
+        }
+       ]
+      },
+      "deals": {
+       "paging": {},
+       "results": []
+      }
+     },
+     "createdAt": "2026-08-15T19:47:42.612Z",
+     "id": "5913071684",
+     "properties": {
+      "description": "The parent is Driftline Logistics; the Platform business unit has no open opportunity.",
+      "domain": "platform.driftline.example",
+      "hs_object_id": "5913071684",
+      "lifecyclestage": null,
+      "name": "Driftline Logistics \u2014 Platform"
+     },
+     "updatedAt": "2026-08-15T19:47:42.612Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": {
+     "properties": {
+      "description": "Cedar Health US opportunity FY27 Renewal closes 2026-10-31. AT RISK: security review is blocking renewal (champion report via #customer-risk, 2026-08-15). Green health score is stale \u2014 last calculated before the report; do not treat as healthy."
+     }
+    },
+    "method": "PATCH",
+    "path": "/crm/v3/objects/companies/5913071684",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:48:02.150Z",
+     "id": "5913071684",
+     "properties": {
+      "createdate": "2026-08-15T19:48:02.150Z",
+      "description": "Cedar Health US opportunity FY27 Renewal closes 2026-10-31. AT RISK: security review is blocking renewal (champion report via #customer-risk, 2026-08-15). Green health score is stale \u2014 last calculated before the report; do not treat as healthy.",
+      "domain": "cedarhealth.example",
+      "hs_object_id": "5913071684",
+      "lastmodifieddate": "2026-08-15T19:50:03.482Z",
+      "name": "Cedar Health US"
+     },
+     "updatedAt": "2026-08-15T19:50:03.482Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": {
+     "objectIdToMerge": "6710991451",
+     "primaryObjectId": "5913071684"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/companies/merge",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:45:14.001Z",
+     "id": "5913071684",
+     "properties": {
+      "createdate": "2026-08-15T19:45:14.001Z",
+      "description": "buyer@northstar-robotics.example submitted the enterprise demo form.",
+      "domain": "northstar-robotics.example",
+      "hs_object_id": "5913071684",
+      "lastmodifieddate": "2026-08-15T19:45:14.001Z",
+      "name": "Northstar Robotics"
+     },
+     "updatedAt": "2026-08-15T19:47:17.093Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": {
+     "limit": 20,
+     "properties": [
+      "name",
+      "domain",
+      "website",
+      "lifecyclestage",
+      "hs_lastmodifieddate",
+      "numberofemployees",
+      "phone",
+      "city"
+     ],
+     "query": "Northstar"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/companies/search",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:14.580Z",
+       "id": "4386297717",
+       "properties": {
+        "city": null,
+        "domain": "archive.northstarlabs.example",
+        "hs_lastmodifieddate": null,
+        "hs_object_id": "4386297717",
+        "lifecyclestage": null,
+        "name": "Northstar Labs \u2014 Archive",
+        "numberofemployees": null,
+        "phone": null,
+        "website": null
+       },
+       "updatedAt": "2026-08-15T19:45:14.580Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:14.001Z",
+       "id": "5913071684",
+       "properties": {
+        "city": null,
+        "domain": "northstar-robotics.example",
+        "hs_lastmodifieddate": null,
+        "hs_object_id": "5913071684",
+        "lifecyclestage": null,
+        "name": "Northstar Robotics",
+        "numberofemployees": null,
+        "phone": null,
+        "website": null
+       },
+       "updatedAt": "2026-08-15T19:45:14.001Z"
+      }
+     ],
+     "total": 5
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/contacts",
+    "query": {
+     "limit": 100,
+     "properties": "email,firstname,lastname,lifecyclestage,hs_lead_status,company"
+    }
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:47.317Z",
+       "id": "71589999",
+       "properties": {
+        "email": "attendee10@growth10.example",
+        "firstname": "Attendee10",
+        "hs_object_id": "71589999",
+        "lastname": "Lead",
+        "lifecyclestage": "lead"
+       },
+       "updatedAt": "2026-08-15T19:48:47.317Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:43.484Z",
+       "id": "193452252",
+       "properties": {
+        "email": "person3@company3.example",
+        "firstname": "Duplicate3",
+        "hs_object_id": "193452252",
+        "lastname": "Attendee",
+        "lifecyclestage": "lead"
+       },
+       "updatedAt": "2026-08-15T19:48:43.484Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-03",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/contacts/6505263334",
+    "query": {
+     "associations": "companies,deals",
+     "properties": "email,firstname,lastname,lifecyclestage,hs_lead_status,company,notes_last_updated"
+    }
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "associations": {
+      "companies": {
+       "paging": {},
+       "results": [
+        {
+         "id": "5913071684",
+         "type": "contact_to_company"
+        }
+       ]
+      },
+      "deals": {
+       "paging": {},
+       "results": []
+      }
+     },
+     "createdAt": "2026-08-15T19:47:41.757Z",
+     "id": "6505263334",
+     "properties": {
+      "email": "nia.ford@platform.driftline.example",
+      "firstname": "Driftline",
+      "hs_object_id": "6505263334",
+      "lastname": "Contact",
+      "lifecyclestage": "lead"
+     },
+     "updatedAt": "2026-08-15T19:47:41.757Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-03",
+   "request": {
+    "body": {
+     "properties": {
+      "firstname": "Nia",
+      "lastname": "Ford",
+      "lifecyclestage": "salesqualifiedlead"
+     }
+    },
+    "method": "PATCH",
+    "path": "/crm/v3/objects/contacts/6505263334",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:47:41.757Z",
+     "id": "6505263334",
+     "properties": {
+      "createdate": "2026-08-15T19:47:41.757Z",
+      "email": "nia.ford@platform.driftline.example",
+      "firstname": "Nia",
+      "hs_object_id": "6505263334",
+      "lastmodifieddate": "2026-08-15T19:49:41.760Z",
+      "lastname": "Ford",
+      "lifecyclestage": "salesqualifiedlead",
+      "notes": "The parent is Driftline Logistics; the Platform business unit has no open opportunity."
+     },
+     "updatedAt": "2026-08-15T19:49:41.760Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-07",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/contacts/6505263334/associations/companies",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "code": "endpoint_not_implemented",
+     "detail": "Twin endpoint is not implemented.",
+     "failure": {
+      "code": "endpoint_not_implemented",
+      "kind": "unsupported_endpoint",
+      "phase": "fidelity",
+      "public_message": "Twin endpoint is not implemented.",
+      "retryable": false
+     },
+     "request_id": "b1a59712aed94adc9d684482ddf9cde6"
+    },
+    "status_code": 501
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": {
+     "limit": 20,
+     "properties": [
+      "email",
+      "firstname",
+      "lastname",
+      "lifecyclestage",
+      "company"
+     ],
+     "query": "northstar"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/contacts/search",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:13.867Z",
+       "id": "193452252",
+       "properties": {
+        "email": "archive+northstar-labs@acme.example",
+        "firstname": "Archive",
+        "hs_object_id": "193452252",
+        "lastname": "Northstar",
+        "lifecyclestage": "lead"
+       },
+       "updatedAt": "2026-08-15T19:45:13.867Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:13.578Z",
+       "id": "5767971140",
+       "properties": {
+        "email": "contact@northstarlabs.example",
+        "firstname": "Regional",
+        "hs_object_id": "5767971140",
+        "lastname": "Contact",
+        "lifecyclestage": "lead"
+       },
+       "updatedAt": "2026-08-15T19:45:13.578Z"
+      }
+     ],
+     "total": 4
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/deals",
+    "query": {
+     "limit": 100,
+     "properties": "dealname,dealstage,pipeline,amount,closedate"
+    }
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:02.969Z",
+       "id": "1534846457",
+       "properties": {
+        "amount": "95000",
+        "closedate": null,
+        "dealname": "FY27 Renewal \u2014 Earlier review",
+        "dealstage": "closedlost",
+        "hs_object_id": "1534846457",
+        "pipeline": "default"
+       },
+       "updatedAt": "2026-08-15T19:48:02.969Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:02.683Z",
+       "id": "5619403463",
+       "properties": {
+        "amount": "120000",
+        "closedate": null,
+        "dealname": "FY27 Renewal",
+        "dealstage": "contractsent",
+        "hs_object_id": "5619403463",
+        "pipeline": "default"
+       },
+       "updatedAt": "2026-08-15T19:48:02.683Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-03",
+   "request": {
+    "body": {
+     "associations": [
+      {
+       "to": {
+        "id": "6505263334"
+       },
+       "types": [
+        {
+         "associationCategory": "HUBSPOT_DEFINED",
+         "associationTypeId": 3
+        }
+       ]
+      },
+      {
+       "to": {
+        "id": "5913071684"
+       },
+       "types": [
+        {
+         "associationCategory": "HUBSPOT_DEFINED",
+         "associationTypeId": 5
+        }
+       ]
+      }
+     ],
+     "properties": {
+      "dealname": "Driftline Logistics \u2014 Platform BU Evaluation (Q4 deployment, 240 operators)",
+      "dealstage": "appointmentscheduled",
+      "description": "Inbound demo form + email from Nia Ford (platform.driftline.example): deployment for 240 operators in Q4, September evaluation confirmed. Distinct from Driftline Freight Brokerage (driftline.example), disqualified 2024 for consumer shipment tracker \u2014 prior DQ does not apply to this business unit.",
+      "pipeline": "default"
+     }
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/deals",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:49:41.959Z",
+     "id": "6393445122",
+     "properties": {
+      "createdate": "2026-08-15T19:49:41.959Z",
+      "dealname": "Driftline Logistics \u2014 Platform BU Evaluation (Q4 deployment, 240 operators)",
+      "dealstage": "appointmentscheduled",
+      "description": "Inbound demo form + email from Nia Ford (platform.driftline.example): deployment for 240 operators in Q4, September evaluation confirmed. Distinct from Driftline Freight Brokerage (driftline.example), disqualified 2024 for consumer shipment tracker \u2014 prior DQ does not apply to this business unit.",
+      "hs_object_id": "6393445122",
+      "lastmodifieddate": "2026-08-15T19:49:41.959Z",
+      "pipeline": "default"
+     },
+     "updatedAt": "2026-08-15T19:49:41.959Z"
+    },
+    "status_code": 201
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/deals/5619403463",
+    "query": {
+     "properties": "dealname,dealstage,pipeline,description,closedate,amount,notes_last_contacted,dealtype,hs_next_step"
+    }
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:45:14.645Z",
+     "id": "5619403463",
+     "properties": {
+      "amount": "120000",
+      "closedate": null,
+      "dealname": "Alder Bank Expansion",
+      "dealstage": "contractsent",
+      "hs_object_id": "5619403463",
+      "pipeline": "default"
+     },
+     "updatedAt": "2026-08-15T19:45:14.645Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": {
+     "properties": {
+      "dealstage": "decisionmakerboughtin"
+     }
+    },
+    "method": "PATCH",
+    "path": "/crm/v3/objects/deals/5619403463",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:45:14.645Z",
+     "id": "5619403463",
+     "properties": {
+      "amount": "120000",
+      "createdate": "2026-08-15T19:45:14.645Z",
+      "dealname": "Alder Bank Expansion",
+      "dealstage": "decisionmakerboughtin",
+      "description": "Alder Bank expansion / procurement review",
+      "hs_object_id": "5619403463",
+      "lastmodifieddate": "2026-08-15T19:48:20.998Z",
+      "pipeline": "default"
+     },
+     "updatedAt": "2026-08-15T19:48:20.998Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/deals/5619403463/associations/companies",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "code": "endpoint_not_implemented",
+     "detail": "Twin endpoint is not implemented.",
+     "failure": {
+      "code": "endpoint_not_implemented",
+      "kind": "unsupported_endpoint",
+      "phase": "fidelity",
+      "public_message": "Twin endpoint is not implemented.",
+      "retryable": false
+     },
+     "request_id": "3bc531cf63e44589a833bcea0fa773b9"
+    },
+    "status_code": 501
+   }
+  },
+  {
+   "fixture_task": "CRM-06",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/deals/5619403463/associations/notes",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "code": "endpoint_not_implemented",
+     "detail": "Twin endpoint is not implemented.",
+     "failure": {
+      "code": "endpoint_not_implemented",
+      "kind": "unsupported_endpoint",
+      "phase": "fidelity",
+      "public_message": "Twin endpoint is not implemented.",
+      "retryable": false
+     },
+     "request_id": "0daaab12ad5149179d6e7b3e21ca7d1a"
+    },
+    "status_code": 501
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": {
+     "objectIdToMerge": "7688528393",
+     "primaryObjectId": "5619403463"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/deals/merge",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:45:14.718Z",
+     "id": "5619403463",
+     "properties": {
+      "amount": "120000",
+      "createdate": "2026-08-15T19:45:14.718Z",
+      "dealname": "NSR Expansion",
+      "dealstage": "appointmentscheduled",
+      "description": "Northstar Robotics / buyer@northstar-robotics.example",
+      "hs_object_id": "5619403463",
+      "lastmodifieddate": "2026-08-15T19:45:14.718Z",
+      "pipeline": "default"
+     },
+     "updatedAt": "2026-08-15T19:47:29.355Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": {
+     "limit": 20,
+     "properties": [
+      "dealname",
+      "dealstage",
+      "amount",
+      "pipeline",
+      "closedate"
+     ],
+     "query": "northstar"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/deals/search",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:15.245Z",
+       "id": "1534846457",
+       "properties": {
+        "amount": "95000",
+        "closedate": null,
+        "dealname": "NSR Expansion \u2014 Earlier review",
+        "dealstage": "closedlost",
+        "hs_object_id": "1534846457",
+        "pipeline": "default"
+       },
+       "updatedAt": "2026-08-15T19:45:15.245Z"
+      },
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:14.718Z",
+       "id": "5619403463",
+       "properties": {
+        "amount": "120000",
+        "closedate": null,
+        "dealname": "NSR Expansion",
+        "dealstage": "appointmentscheduled",
+        "hs_object_id": "5619403463",
+        "pipeline": "default"
+       },
+       "updatedAt": "2026-08-15T19:45:14.718Z"
+      }
+     ],
+     "total": 3
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/objects/notes",
+    "query": {
+     "limit": 100,
+     "properties": "hs_note_body"
+    }
+   },
+   "response": {
+    "body": {
+     "results": []
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": {
+     "associations": [
+      {
+       "to": {
+        "id": "5619403463"
+       },
+       "types": [
+        {
+         "associationCategory": "HUBSPOT_DEFINED",
+         "associationTypeId": 214
+        }
+       ]
+      },
+      {
+       "to": {
+        "id": "6505263334"
+       },
+       "types": [
+        {
+         "associationCategory": "HUBSPOT_DEFINED",
+         "associationTypeId": 202
+        }
+       ]
+      }
+     ],
+     "properties": {
+      "hs_note_body": "Deal desk update \u2014 Alder Bank Expansion: Champion Renee Cho (renee.cho@alderbank.example) replied 2026-08-12 with procurement requirements: vendor security review and data-processing addendum (DPA) are pending. Reply confirmed to belong to Alder Bank (alderbank.example), NOT Alder Credit Union (aldercu.example, separate public-sector renewal). Deal stage was stuck on an invalid stage (contractsent) not present in the Sales Pipeline; corrected to 'Decision maker bought-in'. Next steps: complete vendor security review and execute DPA.",
+      "hs_timestamp": "2026-08-15T19:48:00Z"
+     }
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/notes",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "createdAt": "2026-08-15T19:48:21.162Z",
+     "id": "198631683",
+     "properties": {
+      "createdate": "2026-08-15T19:48:21.162Z",
+      "hs_note_body": "Deal desk update \u2014 Alder Bank Expansion: Champion Renee Cho (renee.cho@alderbank.example) replied 2026-08-12 with procurement requirements: vendor security review and data-processing addendum (DPA) are pending. Reply confirmed to belong to Alder Bank (alderbank.example), NOT Alder Credit Union (aldercu.example, separate public-sector renewal). Deal stage was stuck on an invalid stage (contractsent) not present in the Sales Pipeline; corrected to 'Decision maker bought-in'. Next steps: complete vendor security review and execute DPA.",
+      "hs_object_id": "198631683",
+      "hs_timestamp": "2026-08-15T19:48:00Z",
+      "lastmodifieddate": "2026-08-15T19:48:21.162Z"
+     },
+     "updatedAt": "2026-08-15T19:48:21.162Z"
+    },
+    "status_code": 201
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": {
+     "limit": 20,
+     "properties": [
+      "hs_note_body",
+      "hs_timestamp"
+     ],
+     "query": "alder"
+    },
+    "method": "POST",
+    "path": "/crm/v3/objects/notes/search",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "results": [],
+     "total": 0
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-06",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/owners",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:45.614Z",
+       "email": "admin@hubspot-twin.local",
+       "firstName": "Admin",
+       "id": "41629779",
+       "lastName": "Twin",
+       "teams": [],
+       "type": "PERSON",
+       "updatedAt": "2026-08-15T19:48:45.614Z",
+       "userId": 9876543,
+       "userIdIncludingInactive": 9876543
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/owners/",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:48:42.451Z",
+       "email": "admin@hubspot-twin.local",
+       "firstName": "Admin",
+       "id": "41629779",
+       "lastName": "Twin",
+       "teams": [],
+       "type": "PERSON",
+       "updatedAt": "2026-08-15T19:48:42.451Z",
+       "userId": 9876543,
+       "userIdIncludingInactive": 9876543
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/pipelines/deals",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "results": [
+      {
+       "archived": false,
+       "createdAt": "2026-08-15T19:45:13.210Z",
+       "displayOrder": 0,
+       "id": "default",
+       "label": "Sales Pipeline",
+       "stages": [
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 0,
+         "id": "appointmentscheduled",
+         "label": "Appointment scheduled",
+         "metadata": {
+          "isClosed": "false",
+          "probability": "0.2"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        },
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 1,
+         "id": "qualifiedtobuy",
+         "label": "Qualified to buy",
+         "metadata": {
+          "isClosed": "false",
+          "probability": "0.4"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        },
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 2,
+         "id": "presentationscheduled",
+         "label": "Presentation scheduled",
+         "metadata": {
+          "isClosed": "false",
+          "probability": "0.6"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        },
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 3,
+         "id": "decisionmakerboughtin",
+         "label": "Decision maker bought-in",
+         "metadata": {
+          "isClosed": "false",
+          "probability": "0.8"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        },
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 4,
+         "id": "closedwon",
+         "label": "Closed won",
+         "metadata": {
+          "isClosed": "true",
+          "probability": "1.0"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        },
+        {
+         "archived": false,
+         "createdAt": "2026-08-15T19:45:13.210Z",
+         "displayOrder": 5,
+         "id": "closedlost",
+         "label": "Closed lost",
+         "metadata": {
+          "isClosed": "true",
+          "probability": "0.0"
+         },
+         "updatedAt": "2026-08-15T19:45:13.210Z",
+         "writePermissions": "CRM_PERMISSIONS_ENFORCEMENT"
+        }
+       ],
+       "updatedAt": "2026-08-15T19:45:13.210Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/properties/companies",
+    "query": {
+     "archived": false
+    }
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:01.500Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "text",
+       "formField": false,
+       "groupName": "companyinformation",
+       "hasUniqueValue": false,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "Company name",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "name",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "string",
+       "updatedAt": "2026-08-15T19:48:01.500Z"
+      },
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:01.500Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "text",
+       "formField": false,
+       "groupName": "companyinformation",
+       "hasUniqueValue": true,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "Company Domain Name",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "domain",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "string",
+       "updatedAt": "2026-08-15T19:48:01.500Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/properties/contacts",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:42.451Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "text",
+       "formField": false,
+       "groupName": "contactinformation",
+       "hasUniqueValue": true,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "Email",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "email",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "string",
+       "updatedAt": "2026-08-15T19:48:42.451Z"
+      },
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:42.451Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "text",
+       "formField": false,
+       "groupName": "contactinformation",
+       "hasUniqueValue": false,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "First Name",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "firstname",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "string",
+       "updatedAt": "2026-08-15T19:48:42.451Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/properties/contacts/hs_lead_status",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "category": "OBJECT_NOT_FOUND",
+     "correlationId": "94809939-fa5b-46fc-bf41-f672f21d7678",
+     "links": {
+      "knowledge-base": "https://knowledge.hubspot.com/integrations/working-with-hubspots-api"
+     },
+     "message": "Property 'hs_lead_status' does not exist",
+     "status": "error",
+     "subCategory": "PROPERTY_DOESNT_EXIST"
+    },
+    "status_code": 404
+   }
+  },
+  {
+   "fixture_task": "CRM-05",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/properties/contacts/lifecyclestage",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "archived": false,
+     "calculated": false,
+     "createdAt": "2026-08-15T19:48:42.451Z",
+     "dataSensitivity": "non_sensitive",
+     "description": "",
+     "displayOrder": -1,
+     "externalOptions": false,
+     "fieldType": "select",
+     "formField": false,
+     "groupName": "contactinformation",
+     "hasUniqueValue": false,
+     "hidden": false,
+     "hubspotDefined": true,
+     "label": "Lifecycle Stage",
+     "modificationMetadata": {
+      "archivable": false,
+      "readOnlyDefinition": true,
+      "readOnlyValue": false
+     },
+     "name": "lifecyclestage",
+     "options": [],
+     "referencedObjectType": null,
+     "type": "enumeration",
+     "updatedAt": "2026-08-15T19:48:42.451Z"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-04",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v3/properties/deals",
+    "query": {
+     "archived": false
+    }
+   },
+   "response": {
+    "body": {
+     "_trimmed_results_to": 2,
+     "results": [
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:01.500Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "text",
+       "formField": false,
+       "groupName": "dealinformation",
+       "hasUniqueValue": false,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "Deal Name",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "dealname",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "string",
+       "updatedAt": "2026-08-15T19:48:01.500Z"
+      },
+      {
+       "archived": false,
+       "calculated": false,
+       "createdAt": "2026-08-15T19:48:01.500Z",
+       "dataSensitivity": "non_sensitive",
+       "description": "",
+       "displayOrder": -1,
+       "externalOptions": false,
+       "fieldType": "number",
+       "formField": false,
+       "groupName": "dealinformation",
+       "hasUniqueValue": false,
+       "hidden": false,
+       "hubspotDefined": true,
+       "label": "Amount",
+       "modificationMetadata": {
+        "archivable": false,
+        "readOnlyDefinition": true,
+        "readOnlyValue": false
+       },
+       "name": "amount",
+       "options": [],
+       "referencedObjectType": null,
+       "type": "number",
+       "updatedAt": "2026-08-15T19:48:01.500Z"
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v4/objects/companies/5913071684/associations/contacts",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "paging": {},
+     "results": [
+      {
+       "associationTypes": [
+        {
+         "category": "HUBSPOT_DEFINED",
+         "label": null,
+         "typeId": 1
+        }
+       ],
+       "toObjectId": 6505263334
+      }
+     ]
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v4/objects/companies/5913071684/associations/deals",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "paging": {},
+     "results": []
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v4/objects/deals/5619403463/associations/companies",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "paging": {},
+     "results": []
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-01",
+   "request": {
+    "body": null,
+    "method": "PUT",
+    "path": "/crm/v4/objects/deals/5619403463/associations/default/companies/5913071684",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "fromObjectId": 5619403463,
+     "fromObjectTypeId": "0-3",
+     "labels": [
+      {
+       "category": "HUBSPOT_DEFINED",
+       "label": null,
+       "typeId": 5
+      }
+     ],
+     "toObjectId": 5913071684,
+     "toObjectTypeId": "0-2"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-03",
+   "request": {
+    "body": null,
+    "method": "PUT",
+    "path": "/crm/v4/objects/deals/6393445122/associations/default/contacts/6505263334",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "fromObjectId": 6393445122,
+     "fromObjectTypeId": "0-3",
+     "labels": [
+      {
+       "category": "HUBSPOT_DEFINED",
+       "label": null,
+       "typeId": 3
+      }
+     ],
+     "toObjectId": 6505263334,
+     "toObjectTypeId": "0-1"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "GET",
+    "path": "/crm/v4/objects/notes/198631683/associations/deals",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "paging": {},
+     "results": []
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "PUT",
+    "path": "/crm/v4/objects/notes/198631683/associations/default/contacts/6505263334",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "fromObjectId": 198631683,
+     "fromObjectTypeId": "0-46",
+     "labels": [
+      {
+       "category": "HUBSPOT_DEFINED",
+       "label": null,
+       "typeId": 1
+      }
+     ],
+     "toObjectId": 6505263334,
+     "toObjectTypeId": "0-1"
+    },
+    "status_code": 200
+   }
+  },
+  {
+   "fixture_task": "CRM-02",
+   "request": {
+    "body": null,
+    "method": "PUT",
+    "path": "/crm/v4/objects/notes/198631683/associations/default/deals/5619403463",
+    "query": null
+   },
+   "response": {
+    "body": {
+     "fromObjectId": 198631683,
+     "fromObjectTypeId": "0-46",
+     "labels": [
+      {
+       "category": "HUBSPOT_DEFINED",
+       "label": null,
+       "typeId": 1
+      }
+     ],
+     "toObjectId": 5619403463,
+     "toObjectTypeId": "0-3"
+    },
+    "status_code": 200
+   }
+  }
+ ]
+}
