@@ -99,7 +99,18 @@ def main(argv: list[str] | None = None) -> int:
         metavar="OUT",
         help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
     )
+    guard = sub.add_parser("mcp-guard", help="MCP stdio proxy: writes are refused unless a policy rule allows them")
+    guard.add_argument("--policy", required=True, help="guard policy JSON (see docs/MCP.md)")
+    guard.add_argument("--receipts", help="JSONL receipt path; defaults to mcp-guard-receipts.jsonl next to the policy")
+    guard.add_argument("upstream", nargs=argparse.REMAINDER, help="-- <upstream MCP server command...>")
     args = parser.parse_args(argv)
+    if args.command == "mcp-guard":
+        try:
+            from benchpress.shims import mcp_guard  # the mcp extra is optional; import only when asked
+        except ImportError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        return mcp_guard.main(args.policy, args.upstream, args.receipts)
     if args.command == "run":
         return asyncio.run(_run(args))
     if args.command == "receipt":
