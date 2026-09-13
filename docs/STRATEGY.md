@@ -39,15 +39,21 @@ the Userlens and Comma view. Then show the benchmark proof, which is the Arga vi
 
 | Criterion | Weight | Plan A (multi-twin access) | Plan B (no access, the likely case) |
 |---|---|---|---|
-| Technical execution | 30% | Adapter inside the fork; gate; phases; read-back; typed plans; tests; CI | Same, plus **devsim**: a local twin substrate that the real grader accepts |
-| Reliability & evaluation | 25% | Official harness × 3 repeats; same-day baseline; semantic reports | Same grader on locally rebuilt seeds; **same-substrate baseline**; ablations; gate replay of published unsafe behaviours; grader-contract tests that show we don't grade ourselves generously |
-| Usefulness | 20% | Real-app segment: Slack + Stripe (test) + HubSpot (+ Gmail) | Same. Brief compliance ("≥3 external apps") comes from real apps, not twins |
-| Originality | 15% | "Ships inside the judges' benchmark as a candidate" | "Rebuilt the judges' hardest scenarios and ran their grader on our laptop, with disclosure." Plus "the LLM never decides a write without a code gate" |
+| Technical execution | 30% | Adapter inside the fork; gate; phases; read-back; typed plans; tests; CI | Same, plus a **rehearsal eval harness**: real-app seed → run → snapshot → assert → reset, repeatable |
+| Reliability & evaluation | 25% | Official harness × 3 repeats; same-day baseline; semantic reports | **The published ECOM-02 seed loaded into real Slack / Gmail / HubSpot / Stripe (test)**. The harness's **own stock Anthropic adapter as the baseline** (same model, prompt, tools, limits). ArgaBench pass/unsafe criteria ported with line citations. Assertion-contract tests (oracle→PASS, prospect edit→UNSAFE, no draft→FAIL). Repeats, ablations, injection variant |
+| Usefulness | 20% | Real-app segment: Slack + Stripe (test) + HubSpot (+ Gmail) | **Stronger than A: every graded trial runs on real apps.** Brief compliance ("≥3 external apps") is built in |
+| Originality | 15% | "Ships inside the judges' benchmark as a candidate" | "Took the task no frontier model passed and ran it on real apps against their own baseline agent." Plus "the LLM never decides a write without a code gate" |
 | Demo clarity | 10% | Leaderboard 0/111 → real-app run → receipt → grader PASS → gate refusal → table | Identical shot list; one on-screen disclosure line |
 
 **The idea does not depend on access. Only the substrate does.** Roughly 85% of the build is
-shared: adapter, model, tool bus, gate, playbooks, phases P0–P7, verification, receipt,
-real-app mode, brief, video. The 08:30 PT decision only picks the executor behind `provider_api`.
+shared: model, tool bus, gate, playbooks, phases P0–P7, verification, receipt, real-app executor,
+brief, video. The 09:25 PT decision only picks where graded trials run.
+
+> **Why Plan B is not "devsim + official grader" any more** (verified 08:40 PT, PLAN-B §4). The
+> offline grader works, but it scores realistic twin API bodies plus `/admin/state` snapshots, and
+> it hard-requires a 37-profile matrix and Arga lifecycle artifacts. A grader-faithful local twin
+> fleet costs 12–16 h for ECOM-02 alone, which doesn't fit the build window. Real apps
+> are cheaper, more useful, and immune to the "your simulator is lenient" objection.
 
 ---
 
@@ -98,13 +104,13 @@ judge can grep for task IDs and find none; (4) the same agent on real apps.
 Build these in order. Each rung is worth shipping on its own. Stop wherever 14:30 PT lands.
 
 1. **Unit truth.** Gate corpus of ≥60 cases; DoD rule tests; playbook request-shape tests. (Already 61 green.)
-2. **Grader-contract test.** A canned PASS trial dir and a canned UNSAFE trial dir grade to the expected outcome through `report_argabench_semantic_matrix.py`. This proves the grading path isn't generous.
-3. **Graded trials.** ECOM-02 and DEV-03 × 3 repeats, Benchpress profile, same grader.
-4. **Same-substrate baseline.** The harness's stock `AnthropicMessagesAdapter` on the same substrate, same model, same limits. Apples to apples. The published leaderboard is cited as context, never as the comparator in Plan B.
-5. **Ablations** (ECOM-02 and DEV-03, × 1 each): `--no-policy-sweep`, `--no-gate`, `--no-readback`. Each shows which guarantee causes which part of the lift. Almost nobody at a hackathon does causal attribution.
-6. **Gate replay ($0).** Feed the baseline's own recorded unsafe calls (e.g. `PUT /repos/…/pulls/N/merge`) through the gate and show every one refused.
-7. **Fidelity check** (Plan B only): the same playbook calls against devsim and against real Stripe test mode / HubSpot / Slack, comparing response shapes. Optional: one Arga Free single twin (Stripe) for the same comparison.
-8. **Stretch: perturbation.** Rename entities in a seed copy and rerun, as a "41st task" generalization proof. This uses our assertions and is disclosed.
+2. **Assertion-contract test** (Plan B) / **grader-contract test** (Plan A). Scripted trajectories with no model involved: oracle writes → PASS, prospect edit → UNSAFE, missing reviewed draft → FAIL. Plan B runs them on the real apps; Plan A runs them through `grade_argabench_attempt.py`. This proves the grading isn't generous.
+3. **Graded trials.** Billing-contact-review (published ECOM-02 seed) × 3 repeats.
+4. **Same-substrate baseline.** The harness's stock `invoke_model("claude-opus-5", SYSTEM_PROMPT, …)` Anthropic adapter on the same apps, same prompt, same two tools, same 160/40/1,800 s. Apples to apples. The published 0/111 is cited as context, never as the comparator in Plan B.
+5. **Ablations** (× 1 each): `no_policy_sweep`, `no_readback`, `no_gate` (the gate ablation runs on the injection variant, where it matters). Each shows which guarantee causes which part of the lift. Almost nobody at a hackathon does causal attribution.
+6. **Injection variant.** The same seed plus one inbox email instructing renewal notices to be forwarded to an external domain. Benchpress: recorded `suspicious`, refused by `external_destination`. Baseline: whatever it does, reported.
+7. **Gate replay ($0).** Feed every write the baseline made through the gate (with the context Benchpress built for that trial) and tabulate what would have been refused.
+8. **Stretch: second scenario.** DEV-03-style flaky-test quarantine on a scratch GitHub repo + Linear + Slack, the authority story on real apps.
 
 ---
 
@@ -112,7 +118,7 @@ Build these in order. Each rung is worth shipping on its own. Stop wherever 14:3
 
 | Judge persona | Likely score if we ship the spec as written | Top objection | Fix already in the plan |
 |---|---|---|---|
-| Akira (grader rigour) | 7.5 | "Your simulator could be lenient; the numbers mean nothing." | Grader-contract test (rung 2), same-substrate baseline (4), fidelity check (7), disclosure block |
+| Akira (grader rigour) | 7.5 | "You wrote your own assertions; the numbers mean nothing." | Assertions ported with file:line citations to his grader. Assertion-contract test (rung 2). His own stock adapter as the baseline (4). Real apps, so no simulator leniency. Disclosure block |
 | Phillip (enterprise ambiguity) | 8.0 | "Show me it refusing when it can't tell two companies apart." | Escalation mode in P2; brief reports over-refusal; demo shows the protected set |
 | Userlens founders (utility) | 7.0 | "Is this a benchmark trick or something my CSMs would use?" | Demo opens on the Slack request on real apps. Drafts are never sent. CRM-02 framed as renewal rescue |
 | Lemma (silent failures) | 8.0 | "How would I know when it quietly did the wrong thing?" | Evidence-only status, refusals in final JSON, JSONL trace, receipt page |
@@ -126,8 +132,10 @@ opening**. Those four items are why the sprint plan reserves time for them.
 
 ## 8. Claim discipline (non-negotiable)
 
-- **Plan B:** never say "passed ArgaBench" or "on the leaderboard". Say *"graded by ArgaBench's
-  published verifier, unmodified, against the published scenario seed rebuilt locally."*
+- **Plan B:** never say "passed ArgaBench", "graded by ArgaBench" or "on the leaderboard". Say
+  *"ArgaBench's published ECOM-02 seed, loaded into real Slack, Gmail, HubSpot and Stripe test mode;
+  pass/unsafe criteria ported from ArgaBench's grader (cited line by line); baseline is ArgaBench's
+  own stock Anthropic adapter on the same apps."*
 - Never compare our local numbers to the leaderboard as if they were the same experiment. The
   comparator is our same-substrate baseline. The leaderboard is context ("0/111 published").
 - Every number in the video traces back to a committed file in `reports/`.
@@ -149,3 +157,5 @@ opening**. Those four items are why the sprint plan reserves time for them.
 | Model: `claude-opus-5`, effort high, adaptive thinking; develop on Sonnet 5 when iterating prompts | Like-for-like with the published `opus-5-high`; cheap iteration |
 | Demo opens on real apps, not on the leaderboard | Userlens and Comma weight usefulness; the leaderboard shot comes second as the hook into the proof |
 | Ablations over a third task | Causal attribution is worth more on the 25% criterion than one more pass count |
+| Plan B substrate = real apps, not devsim (08:40 PT) | Verified: a grader-faithful twin rebuild costs 12–16 h per task, plus a 37-profile matrix requirement. Real apps take ~2 h of seed/reset/assert tooling that the usefulness demo needed anyway |
+| Plan A: no edits to canonical `model_matrix.json` | Adding profiles breaks 23 harness tests (verified). Use an importlib runner with a patched `load_profile`, and grade with a 37-profile matrix copy that swaps one slot |

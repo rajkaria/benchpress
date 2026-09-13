@@ -29,15 +29,16 @@ with the benchmark judges' own grader.**
 > deny-list enforced by a code gate, not a prompt. It plans only the writes the definition of done
 > needs and reads back every one. Customer-facing messages are left as drafts for the owner to
 > review. Status is computed from evidence alone. It runs on real Slack, Stripe (test mode),
-> HubSpot and Gmail. To show it works, we rebuilt ArgaBench's published scenarios locally and
-> graded runs with ArgaBench's own verifier, unmodified. The runs include a same-model baseline on
-> the same substrate, 3 repeats, and ablations that remove each guarantee. Results: [fill from
-> reports]. Not run on Arga twins; the brief states exactly what is real. Task-agnostic: no code
-> references a task, name or domain.
+> HubSpot and Gmail. To show it works, we loaded ArgaBench's published seed for a task no model
+> passed into those real apps and ran ArgaBench's own stock agent as the baseline: same model,
+> prompt, tools and limits. Both were scored on pass/unsafe rules ported line by line from
+> ArgaBench's grader, over 3 repeats, with a prompt-injection variant and ablations that switch off
+> each guarantee. Results: [fill from reports]. Not run on Arga twins; the brief states exactly
+> what is real. Task-agnostic: no code references a task, name or domain.
 
-**Plan A swap:** replace "we rebuilt … unmodified" with "we shipped it as a candidate adapter
-inside ArgaBench and ran it on Arga twins under the same tools, limits and grader as every
-published model", and delete "Not run on Arga twins".
+**Plan A swap:** replace "we loaded … ported line by line from ArgaBench's grader" with "we
+shipped it as a candidate adapter inside ArgaBench and ran it on Arga twins under the same tools,
+limits and unmodified grader as every published model", and delete "Not run on Arga twins".
 
 ## 60-second live pitch (if asked to present)
 
@@ -51,7 +52,8 @@ published model", and delete "Not run on Arga twins".
 | Question | Answer |
 |---|---|
 | "Isn't this overfit to the benchmark?" | "Grep the repo for any task id, seeded name or domain: none. The rules are generic operational categories. The ablations show the lift comes from the loop's structure. [If run: we renamed every entity in a seed copy and it still passed.]" |
-| "Your simulator could be more lenient than a twin." (Akira) | "Three controls: the grader-contract test shows a known-unsafe trial grades UNSAFE through the same path; the baseline runs on the same simulator, so leniency would help it equally; and the fidelity report compares simulator responses to real Stripe/HubSpot/Slack for every call the playbooks make." |
+| "You wrote your own assertions." (Akira) | "Ported from your grader. Every assertion cites its file and line in `argabench_mkt_ecom_legacy.py` / `argabench_fair.py`. Three controls: scripted trajectories with no model grade PASS, UNSAFE and FAIL exactly as expected; the baseline is your stock adapter scored by the same code; and it all runs on real apps, so no simulator leniency. With twin access, the same adapter plugs into your harness unchanged. It's already written to your `invoke_model` contract." |
+| "Why not twins?" | "Free is one twin per run and the task needs four. We needed resettable real sandboxes, so we built seed/reset for four apps by hand. That's two hours of exactly the pain Arga removes, and it's in the brief." |
 | "Why not just prompt better?" | "The baseline is the same model with the harness prompt. Safety in a prompt is a suggestion. The gate refuses the merge call before it leaves the process. You can see it in the trace." |
 | "What happens when it can't tell two companies apart?" (Phillip) | "It escalates in the originating channel with the candidates and the evidence, and makes no primary write. Over-refusal is measured and reported in the brief." |
 | "Did it send the email only once?" (Phillip) | "It sends no email at all when a review policy applies. Drafts are the only write primitive, and send endpoints are a forbidden class in the gate. Every write has an idempotency fingerprint, so a retry can't duplicate." |

@@ -24,8 +24,8 @@ high) for multi-app operational work. Apps used: Slack, Gmail, HubSpot, Stripe, 
 
 | Item | Value |
 |---|---|
-| Substrate | [Plan B: devsim — published seed `benchmark/argabench_40/scenarios/*.json` rebuilt locally · Plan A: Arga twins] |
-| Grader | `argabench_fair` via `scripts/report_argabench_semantic_matrix.py`, unmodified, harness commit `4a81785` |
+| Substrate | [Plan B: real Slack workspace, Gmail account, HubSpot free portal, Stripe **test mode**, seeded each trial from `benchmark/argabench_40/scenarios/ecom-02.json` and reset after · Plan A: Arga twins] |
+| Grader | [Plan B: `evals/assertions.py`, ArgaBench ECOM-02 pass/unsafe criteria ported with file:line citations, harness commit `4a81785` · Plan A: `argabench_fair` unmodified] |
 | Tasks × repeats | [ECOM-02 × 3, DEV-03 × 3, CRM-02 × N] |
 | Baseline | Harness stock `AnthropicMessagesAdapter`, same model/effort, same substrate, same 160/40/1,800 s limits |
 | Limits | 160 `provider_api`, 40 `provider_docs`, 1,800 s, harness system prompt |
@@ -56,9 +56,9 @@ Tool calls (median), latency (median), cost per trial: [ ] (`reports/compare.md`
 
 ## 4. How we know the grading is honest
 
-1. **Grader-contract test:** a canned known-PASS and a known-UNSAFE trial grade to exactly those outcomes through the same script (`tests/test_devsim_grader_contract.py`).
-2. **Same-substrate baseline:** any leniency in the substrate would benefit the baseline equally.
-3. **Fidelity:** every request shape the playbooks issue was compared between devsim and real Stripe test / HubSpot / Slack (`reports/fidelity.md`). [Differences found: ].
+1. **Assertion-contract test:** scripted trajectories with no model involved (oracle / prospect edit / no draft) grade PASS / UNSAFE / FAIL on the real apps (`reports/assertion-contract.json`).
+2. **Ported criteria:** each assertion cites the ArgaBench grader line it reproduces (`evals/assertions.py`). Where we could not reproduce a check exactly, it is listed here: [ ].
+3. **Same baseline code as the benchmark:** ArgaBench's stock `invoke_model` Anthropic adapter, the same system prompt and tool schema, scored by the same assertions.
 4. **Task-agnostic code:** `grep -rniE "ECOM|CRM-|DEV-0|northwind|alder|checkout_tax"` over `src/` returns nothing (CI step).
 
 ## 5. What still fails (honest)
@@ -84,10 +84,11 @@ Tool calls (median), latency (median), cost per trial: [ ] (`reports/compare.md`
 ## 7. Disclosure
 
 **Substrate.** [Plan B:] Arga's Free plan allows one twin per run, and ArgaBench tasks provision
-three to five, so we did not run on Arga twins. Graded results come from rebuilding the published
-scenario seed into a local deterministic simulator (`devsim/`). The real-app segment ran the same
-agent code on real Slack / Stripe test mode / HubSpot [/ Gmail]. Outcomes were graded by
-ArgaBench's own verifier, unmodified. We make no claim about the official leaderboard.
+three to five, so we did not run on Arga twins. Every trial loaded ArgaBench's published ECOM-02
+seed into real Slack (scratch workspace; seeded messages posted by our bot under the seeded
+display names), Gmail (scratch account; seeded mail inserted via API), HubSpot (free portal) and
+Stripe (test mode), and reset afterwards. Outcomes were scored by our port of ArgaBench's
+pass/unsafe criteria, not by the official grader. We make no claim about the official leaderboard.
 **Prep.** Specs and the `normalize/context/gate/tools` modules with 61 tests were written
 2026-09-12 (commits [sha]). Phases, playbooks, substrate, evals and reports were built during the
 build window.

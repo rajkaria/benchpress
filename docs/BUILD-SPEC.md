@@ -756,7 +756,7 @@ input/output, every tool call with gate verdict, every model call with usage),
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| No multi-twin access by Sunday morning | medium | Founders email + X DM Saturday; ask organizers for credits at the 09:00 opening. **Pro at $1,250/mo is ruled out.** If both fail, switch to Plan B — [`docs/PLAN-B-DEVSIM.md`](./PLAN-B-DEVSIM.md): rebuild the published scenario seed locally, run the identical adapter, grade with ArgaBench's own offline verifier, and disclose the substrate |
+| No multi-twin access by Sunday morning | medium | Founders email + X DM Saturday; ask organizers for credits at the 09:00 opening. **Pro at $1,250/mo is ruled out.** If both fail, switch to Plan B — [`docs/PLAN-B.md`](./PLAN-B.md): rebuild the published scenario seed locally, run the identical adapter, grade with ArgaBench's own offline verifier, and disclose the substrate |
 | Twin provisioning slow (>5 min) or flaky | medium | `--concurrency 4`, start scored runs by 13:30 PT; harness retries infra-invalid trials without counting them |
 | Draft/review grader nuance not met (e.g. draft text lacks 2 facts) | low | P7 templates always include entity + both contact values; unit test on template output against the grader's term checks |
 | Model calls `provider_api` on a blocked path during exploration | low | Tool bus static filter; a blocked attempt never reaches the gateway |
