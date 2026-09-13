@@ -4,6 +4,16 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.4.0 (2026-09-13)
+- **OpenAI Agents SDK** (optional `[openai-agents]` extra, verified against `openai-agents` 0.22.2):
+  `benchpress.shims.openai_agents.guard_tools(tools, policy, receipts=...)` returns guarded copies of your
+  `FunctionTool`s. Every call is classified (read / write / destructive) and checked against the policy **before
+  the tool body runs**, under `Runner.run`, `run_sync`, streaming and agents-as-tools; refusals go back to the model
+  as a tool error string and every call leaves a JSONL receipt. Policy packs apply to tools mapped to provider
+  requests. See [docs/OPENAI-AGENTS.md](docs/OPENAI-AGENTS.md).
+- One policy format for both shims: the guard policy model moved to `benchpress.shims.guard_policy`, shared by
+  `mcp-guard` and the OpenAI Agents guard.
+
 ## 0.3.3 (2026-09-13)
 - **Last corpus gap closed: fewer false refusals.** A bare filename in a message (`summary.pdf`, `index.html`) is
   no longer mistaken for an external domain; real external domains, external URLs and external email addresses

@@ -82,6 +82,21 @@ digest, the decision and the rule. `benchpress.shims.mcp.mcp_executor(...)` goes
 turns MCP client sessions into an executor, so the full loop can drive MCP tools. Policy format,
 client config and limits: [docs/MCP.md](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md).
 
+## OpenAI Agents SDK: guard your function tools
+
+```python
+from agents import Agent, Runner
+from benchpress.shims.openai_agents import guard_tools     # pip install "benchpress-agent[openai-agents]"
+
+policy = {"rules": [{"tool": "update_invoice", "arguments": {"status": "sent|paid"}, "max_calls": 10}]}
+tools = guard_tools([get_invoice, update_invoice, delete_invoice], policy, receipts="receipts.jsonl")
+result = Runner.run_sync(Agent(name="billing-ops", instructions="...", tools=tools), "Mark INV-7 as paid")
+```
+
+Reads run; `update_invoice` runs only with an allowed status and at most 10 times; `delete_invoice` never runs, and
+the model is told which rule refused it. The check sits in each tool's invoker, so it holds for every run mode.
+[docs/OPENAI-AGENTS.md](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+
 ## Policy packs and the public gate-rule corpus
 
 ```bash
@@ -143,7 +158,7 @@ official leaderboard. Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP support ships as the `[mcp]` extra; policy packs, the gate-rule corpus and Rehearse ship in the core package.
+`ModelConfig`, `Ablations`, `Gate`. MCP and OpenAI Agents SDK support ship as the `[mcp]` and `[openai-agents]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
 New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)
