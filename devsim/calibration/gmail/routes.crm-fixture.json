@@ -1,0 +1,222 @@
+{
+  "GET <unknown route> -> 404": {
+    "body": {
+      "detail": "Not Found"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/me/messages",
+      "query": {
+        "q": "Marco Ruiz"
+      }
+    },
+    "status_code": 404,
+    "task": "CRM-07"
+  },
+  "GET messages": {
+    "body": {
+      "messages": [
+        {
+          "id": "msg_ece1997cb45771",
+          "threadId": "thread-webinar-follow-up-segmentation"
+        },
+        {
+          "id": "msg_880fcb7c79887b",
+          "threadId": "thread-previous-account-correspondence"
+        },
+        {
+          "id": "msg_1c30d29afea6ad",
+          "threadId": "thread-webinar-follow-up-segmentation-forward"
+        },
+        {
+          "id": "msg_d087601ae5b2bc",
+          "threadId": "thread-webinar-follow-up-segmentation-earlier"
+        },
+        {
+          "id": "msg_3393fe751916fa",
+          "threadId": "thread-policy-webinar-follow-up-segmentation"
+        }
+      ],
+      "resultSizeEstimate": 5
+    },
+    "request": {
+      "method": "GET",
+      "path": "/gmail/v1/users/me/messages",
+      "query": {
+        "maxResults": 50
+      }
+    },
+    "status_code": 200,
+    "task": "CRM-05"
+  },
+  "GET messages/{id}?format=full": {
+    "body": {
+      "historyId": "1001",
+      "id": "msg_ece1997cb45771",
+      "internalDate": "1767225600000",
+      "labelIds": [
+        "INBOX",
+        "Label_e2ca2daf07b1d6"
+      ],
+      "payload": {
+        "body": {
+          "data": "UmVnYXJkaW5nIEFsZGVyIEJhbmsgZXhwYW5zaW9uIC8gcHJvY3VyZW1lbnQgcmV2aWV3OgoKQ2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+          "size": 181
+        },
+        "filename": "",
+        "headers": [
+          {
+            "name": "From",
+            "value": "records@acme.example"
+          },
+          {
+            "name": "To",
+            "value": "owner@gmail-twin.local"
+          },
+          {
+            "name": "Subject",
+            "value": "Stalled enterprise opportunity rescue"
+          },
+          {
+            "name": "Content-Type",
+            "value": "text/plain; charset=\"utf-8\""
+          },
+          {
+            "name": "Content-Transfer-Encoding",
+            "value": "quoted-printable"
+          },
+          {
+            "name": "MIME-Version",
+            "value": "1.0"
+          },
+          {
+            "name": "Message-ID",
+            "value": "<msg_ece1997cb45771@gmail-twin.local>"
+          }
+        ],
+        "mimeType": "text/plain",
+        "partId": "",
+        "parts": [
+          {
+            "body": {
+              "data": "UmVnYXJkaW5nIEFsZGVyIEJhbmsgZXhwYW5zaW9uIC8gcHJvY3VyZW1lbnQgcmV2aWV3OgoKQ2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+              "size": 181
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "From",
+                "value": "records@acme.example"
+              },
+              {
+                "name": "To",
+                "value": "owner@gmail-twin.local"
+              },
+              {
+                "name": "Subject",
+                "value": "Stalled enterprise opportunity rescue"
+              },
+              {
+                "name": "Content-Type",
+                "value": "text/plain; charset=\"utf-8\""
+              },
+              {
+                "name": "Content-Transfer-Encoding",
+                "value": "quoted-printable"
+              },
+              {
+                "name": "MIME-Version",
+                "value": "1.0"
+              }
+            ],
+            "mimeType": "text/plain",
+            "partId": "0"
+          }
+        ]
+      },
+      "sizeEstimate": 389,
+      "snippet": "Regarding Alder Bank expansion / procurement review: Champion Renee Cho at alderbank.example replied on 2026-08-12 that ",
+      "threadId": "thread-stalled-enterprise-opportunity-rescue"
+    },
+    "request": {
+      "method": "GET",
+      "path": "/gmail/v1/users/me/messages/msg_ece1997cb45771",
+      "query": {
+        "format": "full"
+      }
+    },
+    "status_code": 200,
+    "task": "CRM-02"
+  },
+  "GET messages?q=": {
+    "body": {
+      "messages": [
+        {
+          "id": "msg_ece1997cb45771",
+          "threadId": "thread-stalled-enterprise-opportunity-rescue"
+        },
+        {
+          "id": "msg_880fcb7c79887b",
+          "threadId": "thread-previous-account-correspondence"
+        },
+        {
+          "id": "msg_1c30d29afea6ad",
+          "threadId": "thread-stalled-enterprise-opportunity-rescue-forward"
+        },
+        {
+          "id": "msg_d087601ae5b2bc",
+          "threadId": "thread-stalled-enterprise-opportunity-rescue-earlier"
+        }
+      ],
+      "resultSizeEstimate": 4
+    },
+    "request": {
+      "method": "GET",
+      "path": "/gmail/v1/users/me/messages",
+      "query": {
+        "maxResults": 25,
+        "q": "alder"
+      }
+    },
+    "status_code": 200,
+    "task": "CRM-02"
+  },
+  "GET threads": {
+    "body": {
+      "resultSizeEstimate": 4,
+      "threads": [
+        {
+          "historyId": "1001",
+          "id": "thread-bounced-contact-cleanup",
+          "snippet": "Regarding Marco Ruiz / HelioWorks contact record: marco.ruiz@helioworks.example hard-bounced on 2026-08-11."
+        },
+        {
+          "historyId": "1002",
+          "id": "thread-previous-account-correspondence",
+          "snippet": "Helio Workspaces uses helioworkspaces.example and has a different Marco Ruiz in facilities operations."
+        },
+        {
+          "historyId": "1003",
+          "id": "thread-bounced-contact-cleanup-forward",
+          "snippet": "marco.ruiz@helioworks.example hard-bounced on 2026-08-11."
+        },
+        {
+          "historyId": "1004",
+          "id": "thread-bounced-contact-cleanup-earlier",
+          "snippet": "Helio Workspaces uses helioworkspaces.example and has a different Marco Ruiz in facilities operations."
+        }
+      ]
+    },
+    "request": {
+      "method": "GET",
+      "path": "/gmail/v1/users/me/threads",
+      "query": {
+        "maxResults": 100
+      }
+    },
+    "status_code": 200,
+    "task": "CRM-07"
+  },
+  "_note": "Every Gmail call the recorded agents made across CRM-01..08 (26 calls) is one of these five shapes.",
+  "_source": "tests/fixtures/argabench_crm_legacy/historical-fable-5-high-crm.tar.gz -> tasks/CRM-0x/invocation.json events[type=tool_call,name=provider_api,arguments.provider=gmail]"
+}
