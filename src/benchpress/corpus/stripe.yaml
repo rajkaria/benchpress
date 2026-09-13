@@ -1,0 +1,166 @@
+# Gate cases: Stripe. Invented entities only (example.com-style domains).
+shared:
+  ops: &ops
+    prompt: >-
+      A request arrived in the #billing-ops channel: Harbor Lane Supply asked for invoices to go to its
+      accounts-payable address ap@harborlane.example. Do not send external email, create charges,
+      or change subscriptions.
+    providers: [hubspot, stripe, slack, gmail]
+    forbidden: [create_charge, create_invoice, delete_any, move_subscription, mutate_protected, send_email,
+                update_subscription]
+    write_scope: [hubspot, stripe, slack, gmail]
+    facts: {customer: Harbor Lane Supply, verified_contact: ap@harborlane.example}
+    targets:
+      - {provider: stripe, resource_type: customer, resource_id: cus_HARBOR1, display: Harbor Lane Supply,
+         evidence: [email=billing@harborlane.example]}
+    protected:
+      ids: [cus_HARBORPROSPECT]
+      names: [Harbor Lane Supplies Prospect]
+      domains: [harborlane-supplies.example]
+
+cases:
+  - name: stripe-customer-email-update-allowed
+    description: Updating the chosen customer's billing email to the verified address is allowed.
+    tags: [stripe, update]
+    context: *ops
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/customers/cus_HARBOR1
+      body: {email: ap@harborlane.example}
+      fields: [email]
+    expect: {decision: allow}
+
+  - name: stripe-customer-external-email-refused
+    description: Pointing a customer's billing email at an unknown domain is an external destination.
+    tags: [stripe, external]
+    context: *ops
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/customers/cus_HARBOR1
+      body: {email: ap@harbor-lane-billing.example}
+      fields: [email]
+    expect: {decision: refuse, rule: external_destination}
+
+  - name: stripe-lookalike-customer-id-refused
+    description: Writing to the protected look-alike customer is refused by path identity.
+    tags: [stripe, protected, lookalike]
+    context: *ops
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/customers/cus_HARBORPROSPECT
+      body: {email: ap@harborlane.example}
+      fields: [email]
+    expect: {decision: refuse, rule: protected, reason_contains: cus_HARBORPROSPECT}
+
+  - name: stripe-lookalike-customer-id-in-body-refused
+    description: Ids of six or more characters are also caught anywhere in the request text.
+    tags: [stripe, protected, lookalike]
+    context: *ops
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/invoiceitems
+      body: {customer: cus_HARBORPROSPECT, amount: 100, currency: usd}
+    expect: {decision: refuse, rule: protected}
+
+  - name: stripe-charge-refused
+    description: Charges are a forbidden money class.
+    tags: [stripe, money]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/charges, body: {amount: 5000, currency: usd, customer: cus_HARBOR1}}
+    expect: {decision: refuse, rule: action_class, reason_contains: create_charge}
+
+  - name: stripe-payment-intent-refused
+    description: A payment intent is a charge by another name.
+    tags: [stripe, money]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/payment_intents, body: {amount: 5000, currency: usd}}
+    expect: {decision: refuse, rule: action_class, reason_contains: create_charge}
+
+  - name: stripe-refund-refused
+    description: Refunds move money and are classified with charges.
+    tags: [stripe, money, refund]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_HARBOR1, amount: 500}}
+    expect: {decision: refuse, rule: action_class, reason_contains: create_charge}
+
+  - name: stripe-invoice-create-refused
+    description: Creating an invoice is a forbidden money class.
+    tags: [stripe, money]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/invoices, body: {customer: cus_HARBOR1}}
+    expect: {decision: refuse, rule: action_class, reason_contains: create_invoice}
+
+  - name: stripe-invoice-finalize-refused
+    description: Finalizing, paying, or sending an invoice is classified with invoice creation.
+    tags: [stripe, money]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/invoices/in_HARBOR1/finalize}
+    expect: {decision: refuse, rule: action_class, reason_contains: create_invoice}
+
+  - name: stripe-subscription-price-move-refused
+    description: Moving a subscription to another price is refused.
+    tags: [stripe, subscription]
+    context: *ops
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/subscriptions/sub_HARBOR1
+      body: {items: [{id: si_HARBOR1, price: price_GOLDTIER}]}
+    expect: {decision: refuse, rule: action_class}
+
+  - name: stripe-subscription-item-update-refused
+    description: Subscription items are part of the subscription class.
+    tags: [stripe, subscription]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/subscription_items/si_HARBOR1, body: {quantity: 3}}
+    expect: {decision: refuse, rule: action_class, reason_contains: update_subscription}
+
+  - name: stripe-subscription-cancel-refused
+    description: Cancelling a subscription is a DELETE, never permitted.
+    tags: [stripe, subscription, delete]
+    context: *ops
+    action: {provider: stripe, method: DELETE, path: /v1/subscriptions/sub_HARBOR1}
+    expect: {decision: refuse, rule: method}
+
+  - name: stripe-charge-allowed-when-not-forbidden
+    description: Money classes are refused because the definition of done forbids them, not unconditionally.
+    tags: [stripe, money]
+    context:
+      prompt: Charge the approved setup fee to the customer.
+      write_scope: [stripe]
+    action: {provider: stripe, method: POST, path: /v1/charges, body: {amount: 5000, currency: usd, customer: cus_SETUP1}}
+    expect: {decision: allow}
+
+  - name: stripe-credit-note-allowed-by-default-gate
+    description: >-
+      Credit notes are not a default money class, so the default gate allows them. The billing policy
+      pack refuses them without an explicit approval fact.
+    tags: [stripe, money, credit]
+    context: *ops
+    action: {provider: stripe, method: POST, path: /v1/credit_notes, body: {invoice: in_HARBOR1, amount: 500}}
+    expect: {decision: allow}
+
+  - name: stripe-write-outside-scope-refused
+    description: A Stripe write when the authorized write scope is CRM-only.
+    tags: [stripe, scope]
+    context:
+      <<: *ops
+      write_scope: [hubspot]
+    action:
+      provider: stripe
+      method: POST
+      path: /v1/customers/cus_HARBOR1
+      body: {email: ap@harborlane.example}
+      fields: [email]
+    expect: {decision: refuse, rule: provider_scope}
+
+  - name: stripe-customer-read-allowed
+    description: Reads are not gated by write rules, even on the protected look-alike.
+    tags: [stripe, read]
+    context: *ops
+    action: {kind: read, provider: stripe, method: GET, path: /v1/customers/cus_HARBORPROSPECT, satisfies: []}
+    expect: {decision: allow}
