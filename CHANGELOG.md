@@ -6,6 +6,13 @@ The TypeScript guard is on npm as [`benchpress-guard`](https://www.npmjs.com/pac
 pyright strict, the task-agnostic grep) and, after upload, was installed back from PyPI into a clean virtualenv and
 imported before its GitHub release was cut; CI also builds the wheel and runs the user-facing commands from a clean venv.
 
+## 0.7.1 (2026-09-13)
+- Documentation and repository hygiene only; no behavior changes. The PyPI description now reflects every feature
+  through 0.7.0 and the npm guard, with results stated under the pre-0.3.2 gate they were produced on. Internal
+  planning documents were removed from the public tree, code comments that pointed at them were made
+  self-contained, and the reliability brief (Markdown and PDF), reports index, README, VISION and `llms.txt` were
+  re-verified against the code.
+
 ## benchpress-guard 0.1.0 on npm (2026-09-13)
 - **Vercel AI SDK guard**, published to npm as [`benchpress-guard`](https://www.npmjs.com/package/benchpress-guard)
   (TypeScript, ESM + CJS + types, zero runtime deps, verified against `ai` 7.0.99). `guardTools(tools, policy)`
