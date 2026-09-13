@@ -8,7 +8,7 @@ import importlib
 import json
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol, cast
@@ -16,7 +16,9 @@ from typing import Any, Protocol, cast
 from benchpress.controller import run_trial
 from benchpress.model import ModelConfig
 from benchpress.phases.common import Ablations
+from benchpress.playbooks import Playbook
 from benchpress.receipt_html import write_receipt_html
+from benchpress.rehearse import ModelFactory, Rehearsal, StageFactory, rehearse, replay
 from benchpress.report import receipt_summary
 
 
@@ -77,6 +79,73 @@ async def _run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _import_callable(spec: str, flag: str) -> Callable[..., Any]:
+    module_name, _, attribute = spec.partition(":")
+    if not module_name or not attribute:
+        raise ValueError(f"{flag} expects module:callable, got {spec!r}")
+    target = getattr(importlib.import_module(module_name), attribute, None)
+    if not callable(target):
+        raise ValueError(f"{flag} {spec!r} is not a module:callable")
+    return cast(Callable[..., Any], target)
+
+
+async def _rehearse(args: argparse.Namespace) -> int:
+    prompt = Path(args.prompt_file).read_text() if args.prompt_file else str(args.prompt or "")
+    if not prompt.strip():
+        print("a --prompt or --prompt-file is required", file=sys.stderr)
+        return 2
+    providers = [name.strip() for name in str(args.providers).split(",") if name.strip()]
+    try:
+        stage_builder = _import_callable(args.stage, "--stage")
+        model_factory: ModelFactory | None = None
+        if args.model_factory:
+            model_factory = cast(ModelFactory, _import_callable(args.model_factory, "--model-factory"))
+        playbook_builder = _import_callable(args.playbooks, "--playbooks") if args.playbooks else None
+    except (ValueError, ImportError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    stage_factory = cast(StageFactory, stage_builder(providers, args.seed))
+    playbooks = cast(Mapping[str, Playbook], playbook_builder(providers)) if playbook_builder else None
+    result = await rehearse(
+        prompt,
+        providers,
+        stage_factory,
+        n=args.n,
+        system_prompt=DEFAULT_SYSTEM_PROMPT,
+        config=None if model_factory is not None else ModelConfig.from_env(model=args.model),
+        model_factory=model_factory,
+        playbooks=playbooks,
+        trace_dir=Path(args.trace_dir) if args.trace_dir else None,
+    )
+    out = result.write_json(Path(args.out))
+    print(result.summary())
+    print(f"\nrehearsal: {out}")
+    return 0 if result.converged else 1
+
+
+async def _never_execute(tool_name: str, tool_input: dict[str, Any]) -> object:
+    raise RuntimeError("replay of a non-converged rehearsal must not call a provider")
+
+
+async def _replay(args: argparse.Namespace) -> int:
+    rehearsal = Rehearsal.read_json(Path(args.path))
+    if not rehearsal.converged:
+        receipt = await replay(rehearsal, _never_execute)
+    else:
+        providers = [name.strip() for name in str(args.providers or "").split(",") if name.strip()]
+        realapp = importlib.import_module("benchpress.realapp")
+        factory = cast(GatewayFactory, getattr(realapp, "gateway_from_env"))  # noqa: B009 - resolved at runtime
+        gateway = factory(providers or list(rehearsal.providers))
+        try:
+            receipt = await replay(rehearsal, gateway.execute_tool)
+        finally:
+            await gateway.aclose()
+    if args.out:
+        receipt.write_json(Path(args.out))
+    print(receipt.summary())
+    return 0 if receipt.status == "completed" else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     _load_env()
     parser = argparse.ArgumentParser(
@@ -99,9 +168,31 @@ def main(argv: list[str] | None = None) -> int:
         metavar="OUT",
         help="also render the self-contained receipt page; defaults to receipt.html next to the JSON",
     )
+    rehearsal = sub.add_parser("rehearse", help="run a request n times on fresh stages and check convergence")
+    rehearsal.add_argument("--prompt")
+    rehearsal.add_argument("--prompt-file")
+    rehearsal.add_argument("--providers", default="slack,gmail,hubspot,stripe")
+    rehearsal.add_argument("--n", type=int, default=3)
+    rehearsal.add_argument("--out", default="rehearsal.json")
+    rehearsal.add_argument(
+        "--stage", required=True, help="module:callable taking (providers, seed_file) and returning a StageFactory"
+    )
+    rehearsal.add_argument("--seed", help="seed file handed to the --stage callable")
+    rehearsal.add_argument("--model-factory", help="module:callable taking a run index and returning a ModelClient")
+    rehearsal.add_argument("--playbooks", help="module:callable taking providers and returning playbooks")
+    rehearsal.add_argument("--trace-dir")
+    rehearsal.add_argument("--model", default=os.environ.get("BENCHPRESS_MODEL"))
+    replay_cmd = sub.add_parser("replay", help="replay a converged rehearsal against gateway_from_env targets")
+    replay_cmd.add_argument("path")
+    replay_cmd.add_argument("--providers", help="override the rehearsal's providers")
+    replay_cmd.add_argument("--out", help="write the replay receipt JSON here")
     args = parser.parse_args(argv)
     if args.command == "run":
         return asyncio.run(_run(args))
+    if args.command == "rehearse":
+        return asyncio.run(_rehearse(args))
+    if args.command == "replay":
+        return asyncio.run(_replay(args))
     if args.command == "receipt":
         path = Path(args.path)
         if path.is_dir():
