@@ -146,6 +146,10 @@ class FakeHubSpot:
             return httpx.Response(200, json=payload)
         if match := re.fullmatch(r"/crm/v3/objects/(\w+)/(\d+)", path):
             kind, object_id = match.group(1), match.group(2)
+            if method == "GET":
+                if object_id in self.objects[kind]:
+                    return httpx.Response(200, json=self.objects[kind][object_id])
+                return httpx.Response(404, json={"message": "not found"})
             if method == "DELETE":
                 if object_id not in self.objects[kind]:
                     return httpx.Response(404, json={"message": "not found"})
