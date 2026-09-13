@@ -28,6 +28,32 @@ jobs:
             echo "Task-specific reference found in src/benchpress"; exit 1
           fi
 
+  guard-npm:
+    # benchpress-guard (npm): build ESM + CJS + types, run the tests against the committed Python parity fixture,
+    # type-check against the real `ai` package, and confirm the tarball ships only dist, README and LICENSE.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/benchpress-guard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: packages/benchpress-guard/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Tarball contains only the intended files
+        run: |
+          npm pack --dry-run --json > /tmp/pack.json
+          FILES=$(jq -r '.[0].files[].path' /tmp/pack.json | sort)
+          echo "$FILES"
+          if echo "$FILES" | grep -vE '^(dist/|README\.md$|LICENSE$|package\.json$)'; then
+            echo "unexpected file in the npm tarball"; exit 1
+          fi
+
   package:
     # The published artifact, not the repo: build the wheel, install it into a clean venv, run what users run.
     runs-on: ubuntu-latest
