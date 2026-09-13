@@ -60,6 +60,7 @@ p code,li code,td code{background:var(--panel-2);border:1px solid var(--line);bo
 .nav-links a:hover{color:var(--text);text-decoration:none}
 .nav-cta{display:flex;gap:10px}
 @media (max-width:860px){.nav-links{display:none}.nav-cta{margin-left:auto}}
+@media (max-width:480px){.nav-cta .btn:not(.btn-primary){display:none}}
 
 /* buttons */
 .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:9px;font:500 14px/1 var(--sans);border:1px solid var(--line-2);color:var(--text);background:var(--panel);white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s}
