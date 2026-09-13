@@ -1,35 +1,42 @@
 # Benchpress
 
-> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` (Apache-2.0, Python 3.12+). Built for the Multi-App AI Agent Hackathon, 2026-09-13.
+> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` 0.7.0 (Apache-2.0, Python 3.12+) and on npm as `benchpress-guard` 0.1.0. Built for the Multi-App AI Agent Hackathon, 2026-09-13.
 
-Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, and shows the gate refusing a planted write to a look-alike record.
+Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, shows the gate refusing a planted write to a look-alike record, verifies 12 of 12 checks, and writes `receipt.json` + `receipt.html` (with `--trace-dir`).
 
 ## Start here
 - [README](https://github.com/rajkaria/benchpress/blob/main/README.md): product story, architecture, the eight phases, the gate, substrates, results, disclosure
-- [PyPI page](https://pypi.org/project/benchpress-agent/): install and API quickstart (source: docs/PYPI.md)
-- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release shipped during the hackathon, 0.1.0 onward
-- [Reliability brief](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md): numbers, methods, failures, cost
-- [VISION](https://github.com/rajkaria/benchpress/blob/main/VISION.md): what it becomes, business model
+- [PyPI page](https://pypi.org/project/benchpress-agent/): install and API quickstart (source: [docs/PYPI.md](https://github.com/rajkaria/benchpress/blob/main/docs/PYPI.md))
+- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release, 0.1.0 to 0.7.0 and benchpress-guard 0.1.0
+- [Reliability brief](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md) ([PDF](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.pdf)): numbers, methods, failures, cost
+- [VISION](https://github.com/rajkaria/benchpress/blob/main/VISION.md): what is shipped, what is roadmap, business model
+- [Step-through replay of a real demo run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
+- Landing page: https://benchpress-ten.vercel.app
+
+## Releases
+- PyPI `benchpress-agent`: 0.1.0, 0.1.1, 0.2.0, 0.3.0, 0.3.1, 0.3.2, 0.3.3, 0.4.0, 0.5.0, 0.6.0, 0.6.1, 0.7.0 (git tags `v*`)
+- Extras: `[mcp]` (MCP executor + `mcp-guard`), `[openai-agents]` (OpenAI Agents SDK guard), `[composio]` (Composio guard + executor)
+- npm `benchpress-guard` 0.1.0 (git tag `benchpress-guard-v0.1.0`): the guard for Vercel AI SDK tools, source in `packages/benchpress-guard/`
 
 ## Public API (Python)
-- `benchpress.wrap(model, executor, providers=[...], policy_packs=...)` → `Benchpress`; `await agent.run(request, trace_dir=...)` → `TrialResult` (`status` is computed from read-back evidence; `context.refusals` lists every refused write with its rule)
-- `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.ModelConfig`, `benchpress.Ablations`
-- `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
-- `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
+- `benchpress.wrap(model, executor, providers=[...], policy_packs=...)` → `Benchpress`; `await agent.run(request, ...)` or `agent.run_sync(...)` → `TrialResult` (`status` is computed from read-back evidence; `context.refusals` lists every refused write with its rule)
+- `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.GateRefusal`, `benchpress.ModelConfig`, `benchpress.Ablations`
+- `benchpress.load_policy_pack(...)`, `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
+- `benchpress.load_corpus(...)`, `benchpress.run_case(...)`: the gate-rule corpus
+- `benchpress.rehearse.rehearse(...)` / `benchpress.rehearse.replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
 - `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`), `benchpress.shims.composio.guard_composio(...)` / `composio_executor(...)` (extra `[composio]`)
-
-- TypeScript: `npm install benchpress-guard` → `guardTools(tools, policy)` for Vercel AI SDK tools, byte-compatible policy/receipts with the Python shims ([package](https://www.npmjs.com/package/benchpress-guard))
+- TypeScript: `npm install benchpress-guard` → `guardTools(tools, policy)` for Vercel AI SDK tools, byte-compatible policy and receipts with the Python shims ([package](https://www.npmjs.com/package/benchpress-guard))
 
 ## CLI
-- `benchpress demo`: offline end-to-end demo with receipts
-- `benchpress run --providers slack,gmail,hubspot,stripe --prompt ... [--policy-pack billing]`: real apps
-- `benchpress receipt DIR --html`: receipt summary and self-contained page
-- `benchpress gate check [PATH]`: the public gate-rule corpus (178 cases, all passing)
-- `benchpress policy list|show NAME`
-- `benchpress rehearse ... --n 3` / `benchpress replay rehearsal.json`
-- `benchpress mcp-guard --policy guard.json -- <upstream MCP server>`
-- `benchpress regress RECEIPT --out DIR`: turn a run into permanent gate-corpus regression cases
-- `benchpress receipts export PATH... --format csv|jsonl`: audit log of every write attempt
+- `benchpress demo [--trace-dir DIR]`: offline end-to-end demo with receipts
+- `benchpress run --prompt TEXT | --prompt-file FILE --providers slack,gmail,hubspot,stripe [--policy-pack NAME] [--trace-dir DIR] [--ablations ...]`: one request on real apps
+- `benchpress receipt PATH [--html [OUT]]`: receipt summary and self-contained page
+- `benchpress gate check [-v] [PATH ...]`: the public gate-rule corpus (178 cases, 178 passing)
+- `benchpress policy list` / `benchpress policy show NAME`: policy packs
+- `benchpress rehearse --prompt-file FILE --providers ... --n 3 --out rehearsal.json` / `benchpress replay rehearsal.json [--providers ...] [--out FILE]`
+- `benchpress mcp-guard --policy guard.json [--receipts FILE] -- <upstream MCP server>`
+- `benchpress regress RECEIPT [--out DIR]`: turn a run into permanent gate-corpus regression cases
+- `benchpress receipts export PATH... [--format jsonl|csv] [--out FILE]`: audit log of every write attempt
 
 ## Docs
 - [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
@@ -40,16 +47,20 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - [Composio guard and executor](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
 - [GitHub playbook](https://github.com/rajkaria/benchpress/blob/main/docs/PLAYBOOK-GITHUB.md)
 - [Audit export](https://github.com/rajkaria/benchpress/blob/main/docs/AUDIT-EXPORT.md)
-- [Step-through replay of a real run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
+- [Vercel AI SDK guard (npm)](https://github.com/rajkaria/benchpress/blob/main/packages/benchpress-guard/README.md)
 
 ## Evidence (claim discipline: we never say "passed ArgaBench")
-- [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).
-  - Local twins of the published seed under ArgaBench's **unmodified runner and grader**: Benchpress 3/3 pass, same-model baseline 0/3.
-  - Real Slack/Gmail/HubSpot/Stripe (test mode), scored by a line-cited port of ArgaBench's criteria: Benchpress 0/2 and baseline 0/2. Both arms fail; Benchpress fails one assertion (A2), the baseline fails three (A2, A5, A6). Neither real-app arm was unsafe.
+- [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Task: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data). Model `deepseek-v4-pro` on both arms.
+  - Local twins of the published seed, graded by ArgaBench's **unmodified runner and grader**: Benchpress 3/3 pass, same-model stock baseline 0/3. Ablations (3 repeats each): policy sweep off 0/3, gate off 3/3, read-back off 3/3.
+  - Real Slack/Gmail/HubSpot/Stripe (test mode) with the published seed, scored by a line-cited port of ArgaBench's criteria: Benchpress 0/2 and baseline 0/2. Benchpress fails one assertion (A2: real HubSpot rejects the seed's reserved `.example` email); the baseline fails three (A2, A5, A6). Neither arm was unsafe.
+  - Real apps with the seed's `.example` hosts rewritten so HubSpot accepts them (`billing-review-routable`): Benchpress 1/1 pass, 13 of 13 assertions. Baseline not run on this variant.
+  - Injection variant on local twins (ported grader): baseline fail (A2, A5, A6), Benchpress pass, `no_gate` pass; no arm wrote to the planted destination.
+  - The headline twin results and published-seed real-app trials were committed before the 0.3.2/0.3.3 gate fixes, so they ran on the earlier gate.
+- [reports/compare.md](https://github.com/rajkaria/benchpress/blob/main/reports/compare.md): ported-grader trials per scenario and arm, per-assertion failures, calls, latency, cost
 - [reports/INDEX.md](https://github.com/rajkaria/benchpress/blob/main/reports/INDEX.md): how to verify any number
-- [reports/gate-replay-historical.md](https://github.com/rajkaria/benchpress/blob/main/reports/gate-replay-historical.md): the gate replayed against ArgaBench's own recorded trials
-- No claim about the official ArgaBench leaderboard. The substrate, prep work, failures and cost are all disclosed in the README.
+- [reports/gate-replay-historical.md](https://github.com/rajkaria/benchpress/blob/main/reports/gate-replay-historical.md): ArgaBench's own recorded CRM trials replayed through the gate; 15 of 62 mutating writes would have been refused (a floor, not a pass claim)
+- No claim about the official ArgaBench leaderboard. The substrate, prep work, failures and cost are disclosed in the README.
 
 ## Engineering
 - Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
-- pyright strict, ruff, 1,000+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`
+- pyright strict, ruff, 1,034 Python tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, runs `demo`, `gate check` and `policy list`, and builds and tests the npm guard
