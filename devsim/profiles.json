@@ -57,6 +57,62 @@
       "cache_read_usd_per_million": 0.2,
       "pricing_source": "https://platform.claude.com/docs/en/about-claude/pricing",
       "agent": "benchpress"
+    },
+    {
+      "id": "benchpress-deepseek-v4-pro",
+      "label": "benchpress-deepseek-v4-pro",
+      "provider": "openai",
+      "model_id": "deepseek-v4-pro",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 1.32,
+      "output_usd_per_million": 3.96,
+      "cache_read_usd_per_million": 0.044,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing (peak rates, 2026-09-13)",
+      "agent": "benchpress"
+    },
+    {
+      "id": "baseline-deepseek-v4-pro",
+      "label": "baseline-deepseek-v4-pro",
+      "provider": "openai",
+      "model_id": "deepseek-v4-pro",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 1.32,
+      "output_usd_per_million": 3.96,
+      "cache_read_usd_per_million": 0.044,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing (peak rates, 2026-09-13)",
+      "agent": "baseline"
+    },
+    {
+      "id": "benchpress-deepseek-flash",
+      "label": "benchpress-deepseek-flash",
+      "provider": "openai",
+      "model_id": "deepseek-flash",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 0.3,
+      "output_usd_per_million": 1.2,
+      "cache_read_usd_per_million": 0.006,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing (peak rates, 2026-09-13)",
+      "agent": "benchpress"
+    },
+    {
+      "id": "baseline-deepseek-flash",
+      "label": "baseline-deepseek-flash",
+      "provider": "openai",
+      "model_id": "deepseek-flash",
+      "requested_effort": "default",
+      "api_effort": "default",
+      "thinking": "model_default",
+      "input_usd_per_million": 0.3,
+      "output_usd_per_million": 1.2,
+      "cache_read_usd_per_million": 0.006,
+      "pricing_source": "https://api-docs.deepseek.com/quick_start/pricing (peak rates, 2026-09-13)",
+      "agent": "baseline"
     }
   ]
 }

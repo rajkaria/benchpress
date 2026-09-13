@@ -208,4 +208,5 @@ def test_ensure_harness_importable_is_idempotent() -> None:
     before = list(sys.path)
     harness_bridge.ensure_harness_importable()
     assert sys.path == before
-    assert sum(1 for entry in sys.path if entry.endswith("arga-twins-benchmark/src")) == 1
+    resolved = {str(Path(entry).resolve()) for entry in sys.path if entry.endswith("arga-twins-benchmark/src")}
+    assert len(resolved) == 1

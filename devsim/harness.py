@@ -51,7 +51,8 @@ def ensure_importable(root: Path | None = None) -> Path:
 
     resolved = root.resolve() if root is not None else harness_root()
     src = str(resolved / "src")
-    if not {src, str(Path(src).resolve())} & set(sys.path):
+    wanted = Path(src).resolve()
+    if not any(Path(entry).resolve() == wanted for entry in sys.path if entry):
         sys.path.insert(0, src)
     return resolved
 

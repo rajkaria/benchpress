@@ -79,7 +79,8 @@ def harness_root() -> Path:
 def ensure_harness_importable() -> None:
     """Put `<root>/src` on `sys.path` once so `arga_twins_benchmark` imports in-process."""
     src = harness_root() / "src"
-    if not {str(src), str(src.resolve())} & set(sys.path):
+    wanted = src.resolve()
+    if not any(Path(entry).resolve() == wanted for entry in sys.path if entry):
         sys.path.insert(0, str(src))
 
 
