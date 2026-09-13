@@ -60,9 +60,28 @@ Slack, Stripe (test mode), HubSpot and Gmail.
 
 ```bash
 uv sync --group dev
-uv run pytest -q                      # gate, DoD rules, playbooks, real-app gateway, assertion units
-cp .env.example .env                  # add ANTHROPIC_API_KEY
-# B4: exact eval commands land here
+uv run pytest -q                      # gate, DoD rules, playbooks, twins, assertions, run loop (580+ tests)
+cp .env.example .env                  # model key (DeepSeek/OpenAI-compatible or Anthropic) + app tokens
+
+# 1. Grader contract: scripted oracle / look-alike edit / no-draft trajectories must grade pass / unsafe / fail
+uv run python -m devsim serve --task ECOM-02 --print-env   # local grader-faithful twins (separate shell)
+uv run python -m evals.contract --substrate devsim         # prints oracle=pass unsafe=unsafe fail=fail
+uv run python -m evals.contract --substrate real           # same on real Slack, Stripe (test), HubSpot, Gmail
+
+# 2. Scored trials, Benchpress vs the stock loop, same model / prompt / tools / limits
+uv run python -m evals.run --scenario billing-review --agent benchpress --substrate real --apps slack,stripe,hubspot,gmail
+uv run python -m evals.run --scenario billing-review --agent baseline   --substrate real --apps slack,stripe,hubspot,gmail
+uv run python -m evals.compare runs/ --out reports/
+
+# 3. The unmodified ArgaBench runner + graders over local twins (Track D)
+uv run python -m devsim run --task ECOM-02 --profile benchpress-deepseek-v4-pro \
+    --candidate module:devsim.benchpress_candidate:benchpress --output runs/devsim-harness/benchpress --repeat 3
+uv run python -m devsim run --task ECOM-02 --profile baseline-deepseek-v4-pro \
+    --candidate module:devsim.baseline_candidate:baseline --output runs/devsim-harness/baseline --repeat 3
+uv run python -m devsim report runs/devsim-harness/benchpress --profile benchpress-deepseek-v4-pro
+
+# 4. Receipt page for any trial
+uv run benchpress receipt runs/real/billing-review/benchpress/<trial>/receipt.json --html
 ```
 
 ## Docs
