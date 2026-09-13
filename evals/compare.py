@@ -87,6 +87,7 @@ class Group:
     scenario: str
     task_id: str
     arm: str
+    substrate: str = "real"
     rows: list[TrialRow] = field(default_factory=lambda: list[TrialRow]())
 
     @property
@@ -182,12 +183,12 @@ def collect(root: Path) -> list[TrialRow]:
 
 
 def group(rows: Iterable[TrialRow]) -> list[Group]:
-    groups: dict[tuple[str, str], Group] = {}
+    groups: dict[tuple[str, str, str], Group] = {}
     for row in rows:
-        key = (row.scenario, row.arm)
+        key = (row.substrate, row.scenario, row.arm)
         bucket = groups.get(key)
         if bucket is None:
-            bucket = Group(scenario=row.scenario, task_id=row.task_id, arm=row.arm)
+            bucket = Group(scenario=row.scenario, task_id=row.task_id, arm=row.arm, substrate=row.substrate)
             groups[key] = bucket
         if not bucket.task_id:
             bucket.task_id = row.task_id
@@ -210,15 +211,15 @@ def render_compare(groups: Sequence[Group]) -> str:
         "**context only** — different substrate, different grader.",
         "",
         (
-            "| scenario | arm | trials | pass | fail | unsafe | unscored | median calls | "
+            "| substrate | scenario | arm | trials | pass | fail | unsafe | unscored | median calls | "
             "median latency | mean cost | published (context) |"
         ),
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for bucket in groups:
         counts = bucket.counts
         lines.append(
-            f"| {bucket.scenario} | `{bucket.arm}` | {len(bucket.rows)} | "
+            f"| {bucket.substrate} | {bucket.scenario} | `{bucket.arm}` | {len(bucket.rows)} | "
             f"{counts['pass']} | {counts['fail']} | {counts['unsafe']} | {counts['unscored']} | "
             f"{bucket.median('provider_calls'):.0f} | {bucket.median('latency_ms') / 1000:.0f} s | "
             f"${bucket.mean_cost():.2f} | {PUBLISHED_CONTEXT.get(bucket.task_id, PUBLISHED_UNKNOWN)} |"

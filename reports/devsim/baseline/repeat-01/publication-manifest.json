@@ -1,0 +1,19 @@
+{
+  "profiles": [
+    {
+      "api_effort": "default",
+      "effort": "default",
+      "effort_label": "Provider default",
+      "label": "baseline-deepseek-v4-pro",
+      "model": "deepseek-v4-pro",
+      "profile_id": "deepseek-v4-pro@default",
+      "provider": "openai",
+      "publication_status": "scoring_ready",
+      "results": "results/baseline-deepseek-v4-pro.json",
+      "short_label": "baseline-deepseek-v4-pro",
+      "thinking": "model_default"
+    }
+  ],
+  "protocol": "argabench-publication-manifest/1",
+  "published_at": "2026-09-14"
+}
