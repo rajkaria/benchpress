@@ -245,8 +245,15 @@ def update_text(ctx: Context) -> str:
 
 
 def escalation_facts(ctx: Context) -> list[str]:
-    """Task facts an escalation post can cite: subject entities and request identifiers."""
-    facts = [*ctx.frame.subject_entities, *ctx.frame.observed_identifiers, *ctx.dod.facts.values()]
+    """Task facts an escalation post can cite: subject entities first, then request identifiers.
+
+    Empty when no subject entity is known: a post that names no task fact is an irrelevant additive
+    write, so the escalation then stays in the final status instead of the channel.
+    """
+    entities = [entity for entity in ctx.frame.subject_entities if entity and not _protected(ctx, entity)]
+    if not entities:
+        return []
+    facts = [*entities, *ctx.frame.observed_identifiers, *ctx.dod.facts.values()]
     return [fact for fact in dict.fromkeys(facts) if fact and not _protected(ctx, fact)]
 
 

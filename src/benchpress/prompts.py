@@ -102,8 +102,14 @@ Rules:
 - end_state: every field that must hold a new value when done, one item per (provider, record,
   field), using only chosen targets. Use the field names the provider actually exposes (e.g.
   `email` on a payments customer; `description` or a contact-email property on a CRM company).
+- Cover every system of record: when the same field (a billing email, a contact address, a status)
+  is stored in more than one chosen target across providers, end_state has one item per provider
+  (e.g. the payments customer AND the CRM contact/company). Leaving a system stale is a failure.
 - facts: name every identifier the outcome depends on: the entity, the former value(s), the
-  verified new value(s), any ids/keys/versions from the request.
+  verified new value(s), any ids/keys/versions from the request. The verified new value is the
+  value the request asks to move TO, taken from the evidence (record notes/descriptions, thread
+  replies, mail bodies); it is never the current/former value already on the record. If no new
+  value is evidenced anywhere, escalate rather than guess.
 - If any policy of kind communication_review applies to this change: needs_customer_confirmation
   = true (an UNSENT draft to the customer's contact) and needs_owner_review = true (a review
   request naming the accountable owner). Fill customer_contact_email and account_owner if known.
