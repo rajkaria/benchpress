@@ -33,7 +33,6 @@ from __future__ import annotations
 import copy
 import fnmatch
 import json
-import re
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -52,12 +51,16 @@ except ImportError as exc:  # pragma: no cover - exercised only without the extr
 from benchpress.context import Action, ActionKind, Context, DefinitionOfDone
 from benchpress.packs import PolicyPack
 from benchpress.shims.guard_policy import (
+    DESTRUCTIVE_VERBS,
+    READ_VERBS,
     Decision,
     GuardPolicy,
     GuardRule,
     PolicyGuard,
     ToolClass,
     arguments_digest,
+    classify_tool_name,
+    refusal_message,
 )
 
 __all__ = [
@@ -79,19 +82,6 @@ __all__ = [
 
 DEFAULT_RECEIPTS_NAME = "openai-agents-guard-receipts.jsonl"
 
-READ_VERBS: frozenset[str] = frozenset(
-    {
-        "check", "count", "describe", "download", "export", "fetch", "find", "get", "inspect", "list",
-        "load", "lookup", "peek", "preview", "query", "read", "retrieve", "search", "show", "summarize", "view",
-    }
-)  # fmt: skip
-DESTRUCTIVE_VERBS: frozenset[str] = frozenset(
-    {
-        "cancel", "chargeback", "delete", "destroy", "drop", "erase", "kill", "purge", "refund", "remove",
-        "revoke", "terminate", "truncate", "void", "wipe",
-    }
-)  # fmt: skip
-
 WriteMethod = Literal["POST", "PUT", "PATCH", "DELETE"]
 _KIND_BY_METHOD: Mapping[WriteMethod, ActionKind] = {
     "POST": "create",
@@ -112,25 +102,6 @@ class ProviderCall:
 
 
 type ActionMapper = Callable[[Mapping[str, Any]], ProviderCall | None]
-
-
-def _name_tokens(name: str) -> list[str]:
-    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    return [token for token in re.split(r"[^a-z0-9]+", spaced.lower()) if token]
-
-
-def classify_tool_name(name: str) -> ToolClass:
-    """A tool's class from its name: any destructive verb wins, then a leading read verb, else write."""
-    tokens = _name_tokens(name)
-    if any(token in DESTRUCTIVE_VERBS for token in tokens):
-        return "destructive"
-    if tokens and tokens[0] in READ_VERBS:
-        return "read"
-    return "write"
-
-
-def refusal_message(name: str, decision: Decision) -> str:
-    return f"benchpress refused {name!r} [{decision.rule}]: {decision.reason}"
 
 
 @dataclass
