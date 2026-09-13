@@ -53,7 +53,8 @@ print(result.context.refusals)        # every write the gate refused, with the r
 
 - `model` is a model id (`DEEPSEEK_API_KEY` / `BENCHPRESS_API_KEY` + `BENCHPRESS_API_BASE` for any
   OpenAI-compatible endpoint, `ANTHROPIC_API_KEY` for `claude-*`), a `benchpress.ModelConfig`, or
-  `None` to read `BENCHPRESS_MODEL`.
+  `None` to read `BENCHPRESS_MODEL`. The Anthropic transport is covered by offline contract tests but has not
+  been exercised against the live API; the published results used `deepseek-v4-pro`.
 - `executor` is an async `execute_tool(tool_name, tool_input)` function or any object exposing one.
 - Built-in playbooks cover **Slack, Gmail, HubSpot, Stripe and GitHub**; pass `playbooks=` for your own systems.
 - `transport=` swaps the model wire protocol (bring your own client, or a scripted one in tests).
@@ -180,8 +181,10 @@ ArgaBench's hardest published scenario, graded by ArgaBench's verifier on the pu
 locally and on real Slack, Gmail, HubSpot and Stripe (test mode). It makes no claim about the
 official leaderboard. On local twins of the published seed under ArgaBench's **unmodified runner and grader**,
 Benchpress passed 3/3 and a same-model baseline 0/3. On real Slack/Gmail/HubSpot/Stripe (test mode), scored by a
-line-cited port of the criteria, both arms failed 0/2: Benchpress missed one assertion, the baseline three, and
-neither was unsafe. Every trial: [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md).
+line-cited port of the criteria, both arms failed 0/2 on the published seed: Benchpress missed one assertion (real
+HubSpot rejects the seed's reserved `.example` address), the baseline three, and neither was unsafe. On a seed
+adaptation with routable addresses, one Benchpress trial passed 13/13 (no baseline was run there). These trials ran
+on the build-day gate, before the 0.3.2 gate fixes. Every trial: [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md).
 Methods, results, failures and cost are in the repository:
 [README](https://github.com/rajkaria/benchpress#readme) ·
 [reports](https://github.com/rajkaria/benchpress/tree/main/reports) ·
