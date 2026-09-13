@@ -1,3 +1,4 @@
+# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
 """HubSpot twin: seeded state, calibrated shapes, grader-facing invariants.
 
 The bulk of the tests use a synthetic seed shaped like the benchmark's CRM/ECOM seeds (companies,
@@ -5,7 +6,6 @@ contacts, deals with `properties`, an `associations` list keyed by domain/email)
 names. One test loads the real ECOM-02 seed from the vendored benchmark when it is present.
 """
 
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
 from __future__ import annotations
 
 import json
@@ -16,10 +16,10 @@ from typing import Any, cast
 
 import httpx
 import pytest
-from devsim.twins.hubspot import OBJECT_TYPES, SPEC, HubSpotStore, default_association_type_id, make_data_app
 
 from devsim.twins import available, load_spec
 from devsim.twins.base import Store
+from devsim.twins.hubspot import OBJECT_TYPES, SPEC, HubSpotStore, default_association_type_id, make_data_app
 
 REPO = Path(__file__).resolve().parents[2]
 CALIBRATION = REPO / "devsim" / "calibration" / "hubspot"

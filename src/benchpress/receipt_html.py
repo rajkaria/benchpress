@@ -1,3 +1,4 @@
+# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
 """The receipt page: one self-contained HTML file rendered from a receipt payload.
 
 The page is the human-readable twin of `receipt.json`. It is built with the standard
@@ -6,7 +7,6 @@ network and there is no script. The same rule applies as to the JSON: every ✓ 
 computed from `evidence` (provider state read back), never from the plan or the model.
 """
 
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
 from __future__ import annotations
 
 import base64
