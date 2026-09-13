@@ -160,7 +160,19 @@ async def presence_checks(deps: PhaseDeps) -> None:
 # --------------------------------------------------------------------------------------
 
 
+def new_contact_values(ctx: Context) -> list[str]:
+    """E-mail addresses the definition of done moves a record TO (end_state expected values)."""
+    values = [
+        item.expected for item in ctx.dod.end_state if "@" in item.expected and not _protected(ctx, item.expected)
+    ]
+    return list(dict.fromkeys(values))
+
+
 def customer_contact(ctx: Context) -> str:
+    # The confirmation goes to the contact the change establishes: the verified new address wins
+    # over whatever the model named, so the customer is reached where they asked to be reached.
+    for value in new_contact_values(ctx):
+        return value
     if ctx.dod.customer_contact and "@" in ctx.dod.customer_contact and not _protected(ctx, ctx.dod.customer_contact):
         return ctx.dod.customer_contact
     target_hosts = {host for target in ctx.targets for item in target.evidence if (host := domain_of(item))}
@@ -205,7 +217,9 @@ def change_lines(ctx: Context) -> list[str]:
 def confirmation_text(ctx: Context, recipient: str) -> tuple[str, str]:
     entity = ctx.targets[0].display if ctx.targets else "your account"
     facts = ", ".join(f"{key}: {value}" for key, value in _citable_facts(ctx))
-    subject = _clip(f"Confirmation: {ctx.dod.summary or 'account update'} for {entity}", 120)
+    new_values = ", ".join(new_contact_values(ctx))
+    lead = f"Confirmation for {entity}: {new_values}" if new_values else f"Confirmation for {entity}"
+    subject = _clip(f"{lead} — {ctx.dod.summary or 'account update'}", 160)
     body = (
         f"Hello {entity} team,\n\n"
         f"This is a confirmation of the requested change to your account records.\n"
