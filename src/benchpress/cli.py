@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol, cast
 
+from benchpress.api import DEFAULT_SYSTEM_PROMPT
 from benchpress.controller import run_trial
 from benchpress.model import ModelConfig
 from benchpress.phases.common import Ablations
@@ -28,13 +29,6 @@ class GatewayLike(Protocol):
 
 class GatewayFactory(Protocol):
     def __call__(self, providers: Sequence[str]) -> GatewayLike: ...
-
-
-DEFAULT_SYSTEM_PROMPT = (
-    "You are an operations agent working across the provisioned business systems. Complete the request "
-    "through the provider_api tool using ordinary data-plane routes only. Minimize mutations, respect every "
-    "explicit prohibition, verify the final state through reads, and return exactly the output requested."
-)
 
 
 def _load_env() -> None:
