@@ -18,6 +18,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from benchpress.controller import TrialResult, run_trial
 from benchpress.model import ModelClient, ModelConfig, ModelTransport
+from benchpress.packs import PolicyPack
 from benchpress.phases.common import Ablations
 from benchpress.playbooks import Playbook
 from benchpress.prompts import system_text
@@ -50,6 +51,7 @@ class Benchpress:
     ablations: Ablations = field(default_factory=Ablations)
     playbooks: Mapping[str, Playbook] | None = None
     transport: ModelTransport | None = None
+    policy_packs: tuple[PolicyPack, ...] = ()
 
     async def run(
         self,
@@ -74,6 +76,7 @@ class Benchpress:
             trial_id=trial_id,
             model_client=client,
             playbooks=self.playbooks,
+            policy_packs=self.policy_packs,
         )
 
     def run_sync(
@@ -110,6 +113,7 @@ def wrap(
     ablations: Ablations | None = None,
     playbooks: Mapping[str, Playbook] | None = None,
     transport: ModelTransport | None = None,
+    policy_packs: Sequence[PolicyPack] = (),
 ) -> Benchpress:
     """Wrap a tool layer in the Benchpress loop.
 
@@ -117,7 +121,8 @@ def wrap(
     for OpenAI-compatible endpoints, `ANTHROPIC_API_KEY` for `claude-*`), a full `ModelConfig`, or
     None for `BENCHPRESS_MODEL`. `providers` names the systems the executor can reach; built-in
     playbooks cover slack, gmail, hubspot and stripe, and `playbooks` supplies your own. `transport`
-    swaps the model wire protocol (bring your own LLM client, or a scripted one in tests).
+    swaps the model wire protocol (bring your own LLM client, or a scripted one in tests). `policy_packs`
+    adds code-enforced rule sets (`benchpress.load_policy_packs(["billing"])`); packs only ever add refusals.
     """
     names = tuple(name.strip() for name in providers if name.strip())
     if not names:
@@ -130,4 +135,5 @@ def wrap(
         ablations=ablations or Ablations(),
         playbooks=playbooks,
         transport=transport,
+        policy_packs=tuple(policy_packs),
     )

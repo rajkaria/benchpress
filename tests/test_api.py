@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 import benchpress
-from benchpress import Ablations, Benchpress, ModelConfig, wrap
+from benchpress import Ablations, Benchpress, ModelConfig, load_policy_packs, wrap
 from benchpress.demo import (
     PROMPT,
     GmailBook,
@@ -90,3 +90,19 @@ def test_public_surface_and_version_match_the_distribution() -> None:
         assert name in benchpress.__all__ and hasattr(benchpress, name)
     assert (ROOT / "src" / "benchpress" / "py.typed").exists()
     assert (ROOT / "LICENSE").read_text().lstrip().startswith("Apache License")
+
+
+@pytest.mark.asyncio
+async def test_wrap_passes_policy_packs_through_to_the_gate() -> None:
+    packs = load_policy_packs(["billing"])
+    agent = wrap(
+        ModelConfig(model="scripted"),
+        Workspace(),
+        providers=PROVIDERS,
+        playbooks=BOOKS,
+        transport=ScriptedTransport(),
+        policy_packs=packs,
+    )
+    assert agent.policy_packs == tuple(packs) and len(packs) == 1
+    result = await agent.run(PROMPT)
+    assert result.error is None

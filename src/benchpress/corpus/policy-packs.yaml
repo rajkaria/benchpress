@@ -1,0 +1,318 @@
+# Gate cases run under policy packs. Every bundled pack rule has a refusal case here, next to the
+# nearest action the same pack still allows. Contexts forbid no default classes, so what refuses is
+# the pack rule, not a default rule.
+shared:
+  lean: &lean
+    prompt: Operations request from the internal team at corp.example.
+  approved: &approved
+    prompt: Operations request from the internal team at corp.example.
+    facts: {refund_approval: approved, credit_approval: approved, charge_approval: approved,
+            offboarding_approval: approved, merge_approval: approved, release_approval: approved}
+
+cases:
+  # --- billing ---------------------------------------------------------------------------
+  - name: billing-pack-gmail-send-refused
+    packs: [billing]
+    context: *lean
+    action:
+      provider: gmail
+      method: POST
+      path: /gmail/v1/users/me/messages/send
+      body: {raw: {$base64url: "To: finance@corp.example\r\nSubject: Invoice\r\n\r\nAttached."}}
+    expect: {decision: refuse, rule: "pack:billing.email-draft-only", reason_contains: billing.email-draft-only}
+
+  - name: billing-pack-gmail-draft-allowed
+    packs: [billing]
+    context: *lean
+    action:
+      provider: gmail
+      method: POST
+      path: /gmail/v1/users/me/drafts
+      body: {message: {raw: {$base64url: "To: finance@corp.example\r\nSubject: Invoice\r\n\r\nFor review."}}}
+    expect: {decision: allow}
+
+  - name: billing-pack-refund-without-approval-refused
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_ACME1, amount: 500}}
+    expect: {decision: refuse, rule: "pack:billing.refund-requires-approval", reason_contains: refund_approval}
+
+  - name: billing-pack-refund-with-pending-approval-refused
+    description: Only an approving value (approved, granted, true, yes) lifts the rule.
+    packs: [billing]
+    context:
+      <<: *lean
+      facts: {refund_approval: pending}
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_ACME1, amount: 500}}
+    expect: {decision: refuse, rule: "pack:billing.refund-requires-approval"}
+
+  - name: billing-pack-refund-with-approval-allowed
+    packs: [billing]
+    context: *approved
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_ACME1, amount: 500}}
+    expect: {decision: allow}
+
+  - name: billing-pack-approval-does-not-relax-default-gate
+    description: Packs only add refusals. An approval fact never lifts a class the definition of done forbids.
+    packs: [billing]
+    context:
+      <<: *approved
+      forbidden: [create_charge]
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_ACME1, amount: 500}}
+    expect: {decision: refuse, rule: action_class}
+
+  - name: billing-pack-credit-note-refused
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: POST, path: /v1/credit_notes, body: {invoice: in_ACME1, amount: 500}}
+    expect: {decision: refuse, rule: "pack:billing.credit-requires-approval"}
+
+  - name: billing-pack-balance-credit-refused
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: POST, path: /v1/customers/cus_ACME1/balance_transactions, body: {amount: -500, currency: usd}}
+    expect: {decision: refuse, rule: "pack:billing.credit-requires-approval"}
+
+  - name: billing-pack-charge-refused
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: POST, path: /v1/payment_intents, body: {amount: 5000, currency: usd, customer: cus_ACME1}}
+    expect: {decision: refuse, rule: "pack:billing.charge-requires-approval"}
+
+  - name: billing-pack-invoice-void-refused
+    packs: [billing]
+    context: *approved
+    action: {provider: stripe, method: POST, path: /v1/invoices/in_ACME1/void}
+    expect: {decision: refuse, rule: "pack:billing.no-void-or-write-off"}
+
+  - name: billing-pack-stripe-delete-names-pack-rule
+    description: Pack rules run before the method rule, so the refusal names the pack rule.
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: DELETE, path: /v1/subscriptions/sub_ACME1}
+    expect: {decision: refuse, rule: "pack:billing.no-money-deletes"}
+
+  - name: billing-pack-customer-email-update-allowed
+    packs: [billing]
+    context: *lean
+    action: {provider: stripe, method: POST, path: /v1/customers/cus_ACME1, body: {email: ap@corp.example}, fields: [email]}
+    expect: {decision: allow}
+
+  # --- customer-success --------------------------------------------------------------------
+  - name: customer-success-pack-gmail-send-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/drafts/r-1/send}
+    expect: {decision: refuse, rule: "pack:customer-success.email-draft-only"}
+
+  - name: customer-success-pack-slack-post-allowed
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/chat.postMessage, body: {channel: C0CS1, text: "Account updated"}}
+    expect: {decision: allow}
+
+  - name: customer-success-pack-slack-reaction-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/reactions.add, body: {channel: C0CS1, name: eyes, timestamp: "1700000000.000100"}}
+    expect: {decision: refuse, rule: "pack:customer-success.chat-post-only"}
+
+  - name: customer-success-pack-slack-chat-update-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/chat.update, body: {channel: C0CS1, ts: "1700000000.000100", text: edited}}
+    expect: {decision: refuse, rule: "pack:customer-success.chat-post-only"}
+
+  - name: customer-success-pack-slack-join-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/conversations.join, body: {channel: C0OTHER}}
+    expect: {decision: refuse, rule: "pack:customer-success.chat-post-only"}
+
+  - name: customer-success-pack-slack-chat-delete-refused
+    description: Closes the chat.delete gap the default gate has (see slack-chat-delete-by-post-should-refuse).
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/chat.delete, body: {channel: C0CS1, ts: "1700000000.000100"}}
+    expect: {decision: refuse, rule: "pack:customer-success.chat-post-only"}
+
+  - name: customer-success-pack-slack-history-read-allowed
+    description: Pack rules never apply to reads.
+    packs: [customer-success]
+    context: *lean
+    action: {kind: read, provider: slack, method: GET, path: /api/conversations.history, query: {channel: C0CS1}}
+    expect: {decision: allow}
+
+  - name: customer-success-pack-control-plane-still-first
+    description: The control-plane rule runs before every pack rule.
+    packs: [customer-success]
+    context: *lean
+    action: {provider: slack, method: POST, path: /_twin/state}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: customer-success-pack-crm-delete-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: hubspot, method: DELETE, path: /crm/v3/objects/contacts/5501}
+    expect: {decision: refuse, rule: "pack:customer-success.no-crm-delete"}
+
+  - name: customer-success-pack-crm-batch-archive-refused
+    description: Closes the batch/archive gap the default gate has (see hubspot-batch-archive-should-refuse).
+    packs: [customer-success]
+    context: *lean
+    action: {provider: hubspot, method: POST, path: /crm/v3/objects/contacts/batch/archive, body: {inputs: [{id: "5501"}]}}
+    expect: {decision: refuse, rule: "pack:customer-success.no-crm-archive-or-merge"}
+
+  - name: customer-success-pack-crm-merge-refused
+    packs: [customer-success]
+    context: *lean
+    action: {provider: hubspot, method: POST, path: /crm/v3/objects/companies/merge, body: {primaryObjectId: "9001", objectIdToMerge: "9002"}}
+    expect: {decision: refuse, rule: "pack:customer-success.no-crm-archive-or-merge"}
+
+  - name: customer-success-pack-crm-update-allowed
+    packs: [customer-success]
+    context: *lean
+    action: {provider: hubspot, method: PATCH, path: /crm/v3/objects/companies/9001, body: {properties: {description: "Renewal owner confirmed"}}, fields: [description]}
+    expect: {decision: allow}
+
+  - name: customer-success-pack-refund-refused
+    packs: [customer-success]
+    context: *approved
+    action: {provider: stripe, method: POST, path: /v1/refunds, body: {charge: ch_ACME1}}
+    expect: {decision: refuse, rule: "pack:customer-success.no-money-movement"}
+
+  - name: two-packs-first-refusing-pack-wins
+    description: Packs are consulted in the order given; the first refusing rule is reported.
+    packs: [billing, customer-success]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/messages/send, body: {raw: {$base64url: "To: a@corp.example\r\n\r\nhi"}}}
+    expect: {decision: refuse, rule: "pack:billing.email-draft-only"}
+
+  # --- it-offboarding ----------------------------------------------------------------------
+  - name: default-gate-internal-forwarding-address-allowed
+    description: Without the pack, forwarding to an internal address is an ordinary allowed write.
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/leaver@corp.example/settings/forwardingAddresses, body: {forwardingEmail: archive@corp.example}}
+    expect: {decision: allow}
+
+  - name: it-offboarding-pack-forwarding-address-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/leaver@corp.example/settings/forwardingAddresses, body: {forwardingEmail: archive@corp.example}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-mail-forwarding"}
+
+  - name: it-offboarding-pack-auto-forwarding-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: PUT, path: /gmail/v1/users/me/settings/autoForwarding, body: {enabled: true, emailAddress: archive@corp.example}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-mail-forwarding"}
+
+  - name: it-offboarding-pack-forwarding-filter-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/settings/filters, body: {criteria: {from: billing}, action: {forward: archive@corp.example}}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-forwarding-filters"}
+
+  - name: it-offboarding-pack-labeling-filter-allowed
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/settings/filters, body: {criteria: {from: billing}, action: {addLabelIds: [Label_7]}}}
+    expect: {decision: allow}
+
+  - name: it-offboarding-pack-mailbox-batch-delete-refused
+    description: Closes the batchDelete gap the default gate has (see gmail-batch-delete-by-post-should-refuse).
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/messages/batchDelete, body: {ids: [m-1, m-2]}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-mailbox-purge"}
+
+  - name: it-offboarding-pack-thread-trash-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/threads/t-9/trash}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-mailbox-purge"}
+
+  - name: it-offboarding-pack-drive-share-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: google_drive, method: POST, path: /drive/v3/files/f-100/permissions, body: {role: writer, type: anyone}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-external-share"}
+
+  - name: it-offboarding-pack-account-delete-refused
+    packs: [it-offboarding]
+    context: *approved
+    action: {provider: okta, method: DELETE, path: /api/v1/users/00u1leaver}
+    expect: {decision: refuse, rule: "pack:it-offboarding.no-account-deletion"}
+
+  - name: it-offboarding-pack-deactivate-without-approval-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: okta, method: POST, path: /api/v1/users/00u1leaver/lifecycle/deactivate}
+    expect: {decision: refuse, rule: "pack:it-offboarding.deactivation-requires-approval", reason_contains: offboarding_approval}
+
+  - name: it-offboarding-pack-deactivate-with-approval-allowed
+    packs: [it-offboarding]
+    context: *approved
+    action: {provider: okta, method: POST, path: /api/v1/users/00u1leaver/lifecycle/deactivate}
+    expect: {decision: allow}
+
+  - name: it-offboarding-pack-slack-user-remove-refused
+    packs: [it-offboarding]
+    context: *lean
+    action: {provider: slack, method: POST, path: /api/admin.users.remove, body: {team_id: T0CORP, user_id: U0LEAVER}}
+    expect: {decision: refuse, rule: "pack:it-offboarding.deactivation-requires-approval"}
+
+  # --- release-engineering -----------------------------------------------------------------
+  - name: release-engineering-pack-force-push-refused
+    packs: [release-engineering]
+    context: *approved
+    action: {provider: github, method: PATCH, path: /repos/acme/app/git/refs/heads/main, body: {sha: 4f2a9c1e, force: true}}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-force-push"}
+
+  - name: release-engineering-pack-fast-forward-allowed
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: PATCH, path: /repos/acme/app/git/refs/heads/main, body: {sha: 4f2a9c1e, force: false}}
+    expect: {decision: allow}
+
+  - name: release-engineering-pack-protection-change-refused
+    packs: [release-engineering]
+    context: *approved
+    action: {provider: github, method: PUT, path: /repos/acme/app/branches/main/protection, body: {enforce_admins: false}}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-branch-protection-change"}
+
+  - name: release-engineering-pack-branch-delete-refused
+    packs: [release-engineering]
+    context: *approved
+    action: {provider: github, method: DELETE, path: /repos/acme/app/git/refs/heads/feature-x}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-branch-deletion"}
+
+  - name: release-engineering-pack-workflow-disable-refused
+    packs: [release-engineering]
+    context: *approved
+    action: {provider: github, method: PUT, path: /repos/acme/app/actions/workflows/ci.yml/disable}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-workflow-disable"}
+
+  - name: release-engineering-pack-merge-without-approval-refused
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: PUT, path: /repos/acme/app/pulls/12/merge, body: {merge_method: squash}}
+    expect: {decision: refuse, rule: "pack:release-engineering.merge-requires-approval", reason_contains: merge_approval}
+
+  - name: release-engineering-pack-merge-with-approval-allowed
+    packs: [release-engineering]
+    context: *approved
+    action: {provider: github, method: PUT, path: /repos/acme/app/pulls/12/merge, body: {merge_method: squash}}
+    expect: {decision: allow}
+
+  - name: release-engineering-pack-release-without-approval-refused
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: POST, path: /repos/acme/app/releases, body: {tag_name: v2-4-0, draft: false}}
+    expect: {decision: refuse, rule: "pack:release-engineering.release-requires-approval"}
+
+  - name: release-engineering-pack-issue-comment-allowed
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: POST, path: /repos/acme/app/issues/12/comments, body: {body: "CI is green on the release branch"}}
+    expect: {decision: allow}

@@ -1,0 +1,83 @@
+# Gate cases: control-plane paths. These are refused for every method, read or write, before
+# the request can leave the process.
+cases:
+  - name: control-plane-admin-state-read-refused
+    tags: [control-plane]
+    action: {kind: read, provider: hubspot, method: GET, path: /admin/state}
+    expect: {decision: refuse, rule: control_plane, reason_contains: /admin}
+
+  - name: control-plane-twin-state-write-refused
+    tags: [control-plane]
+    action: {provider: slack, method: POST, path: /_twin/state, body: {reset: true}}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-underscore-admin-reset-refused
+    tags: [control-plane]
+    action: {provider: stripe, method: POST, path: /_admin/reset}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-reset-refused
+    tags: [control-plane]
+    action: {provider: gmail, method: POST, path: /reset}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-well-known-refused
+    tags: [control-plane]
+    action: {kind: read, provider: gmail, method: GET, path: /.well-known/openid-configuration}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-openapi-spec-refused
+    tags: [control-plane]
+    action: {kind: read, provider: stripe, method: GET, path: /openapi.json}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-health-with-query-refused
+    description: A query string glued onto a blocked prefix does not escape it.
+    tags: [control-plane]
+    action: {kind: read, provider: hubspot, method: GET, path: "/health?verbose=1"}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-metrics-refused
+    tags: [control-plane]
+    action: {kind: read, provider: slack, method: GET, path: /metrics}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-uppercase-path-refused
+    description: Path matching is case-insensitive.
+    tags: [control-plane]
+    action: {kind: read, provider: hubspot, method: GET, path: /ADMIN/State}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-missing-leading-slash-refused
+    description: A relative path is normalized before matching.
+    tags: [control-plane]
+    action: {kind: read, provider: hubspot, method: GET, path: admin/state}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-root-refused
+    tags: [control-plane]
+    action: {kind: read, provider: stripe, method: GET, path: /}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-absolute-url-refused
+    description: An absolute URL is not a data-plane path; it could point anywhere.
+    tags: [control-plane, external]
+    action: {kind: read, provider: stripe, method: GET, path: "https://api.stripe.com/v1/customers"}
+    expect: {decision: refuse, rule: control_plane, reason_contains: absolute}
+
+  - name: control-plane-graphql-introspection-refused
+    tags: [control-plane]
+    action: {provider: linear, method: POST, path: /graphql, body: {query: "{ __schema { types { name } } }"}}
+    expect: {decision: refuse, rule: control_plane, reason_contains: introspection}
+
+  - name: control-plane-delete-reports-control-plane-first
+    description: Control plane is the first rule; a DELETE on a control-plane path reports control_plane.
+    tags: [control-plane, delete, priority]
+    action: {provider: hubspot, method: DELETE, path: /admin/records}
+    expect: {decision: refuse, rule: control_plane}
+
+  - name: control-plane-prefix-is-segment-bounded
+    description: A data-plane path that merely starts with the same letters as a blocked prefix is allowed.
+    tags: [control-plane]
+    action: {kind: read, provider: hubspot, method: GET, path: /administrators-report}
+    expect: {decision: allow}

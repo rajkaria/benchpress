@@ -82,6 +82,40 @@ digest, the decision and the rule. `benchpress.shims.mcp.mcp_executor(...)` goes
 turns MCP client sessions into an executor, so the full loop can drive MCP tools. Policy format,
 client config and limits: [docs/MCP.md](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md).
 
+## Policy packs and the public gate-rule corpus
+
+```bash
+benchpress policy list                 # billing, customer-success, it-offboarding, release-engineering
+benchpress policy show billing
+benchpress gate check                  # 139 bundled cases: what the gate allows and refuses, and why
+benchpress gate check my-cases/        # add your own YAML cases
+```
+
+Policy packs are YAML rule sets per business function (draft-only outbound mail, no refunds or deletes on
+money objects without an approval fact, no CRM deletes, no force-push). The gate enforces them **in code**
+and names the rule id in every refusal:
+`benchpress.wrap(model, executor, providers=[...], policy_packs=benchpress.load_policy_packs(["billing"]))`.
+Packs only ever add refusals; with no pack the gate behaves exactly as before. The corpus documents the gate's
+real behavior, including five known gaps recorded as strict xfails.
+[Packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md) ·
+[corpus format](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
+
+## Rehearse: the model never decides a production write live
+
+```python
+from benchpress.rehearse import rehearse, replay
+
+rehearsal = await rehearse(request, providers, stage_factory, n=3)   # n runs, each on a fresh copy of state
+if rehearsal.converged:                                              # same normalized final state, same writes, zero refusals
+    receipt = await replay(rehearsal, production.execute_tool)       # no model: gate + id substitution + read-back per write
+```
+
+A rehearsal converges only when every run ends in the same normalized state hash, with identical writes and zero gate
+refusals; otherwise you get a divergence report naming the first differing state path and write. Replay refuses a
+non-converged rehearsal and stops at the first refusal or read-back mismatch. You supply the stage factory (sandbox,
+twin, or seeded copy); forking live production state is not automated yet.
+[docs/REHEARSE.md](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
+
 ## The loop
 
 `P0 orient → P1 policy sweep → P2 resolve (lock look-alikes) → P3 definition of done → P4 plan →
@@ -108,7 +142,7 @@ official leaderboard. Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP support ships as the `[mcp]` extra. Expect additions (policy packs, Rehearse) in minor
-releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
+`ModelConfig`, `Ablations`, `Gate`. MCP support ships as the `[mcp]` extra; policy packs, the gate-rule corpus and Rehearse ship in the core package.
+New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)
