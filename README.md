@@ -4,10 +4,11 @@
 
 <p align="center">
   <a href="https://github.com/rajkaria/benchpress/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/rajkaria/benchpress/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://pypi.org/project/benchpress-agent/"><img alt="PyPI" src="https://img.shields.io/pypi/v/benchpress-agent?label=pypi%20benchpress-agent&color=3775A9&logo=pypi&logoColor=white"></a>
   <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white">
   <img alt="pyright strict" src="https://img.shields.io/badge/pyright-strict-2F74C0">
   <img alt="ruff" src="https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black">
-  <img alt="tests" src="https://img.shields.io/badge/tests-470%2B-3FB950">
+  <img alt="tests" src="https://img.shields.io/badge/tests-600%2B-3FB950">
   <img alt="task-agnostic" src="https://img.shields.io/badge/task--specific%20code-0%20lines-58A6FF">
 </p>
 
@@ -518,6 +519,26 @@ What makes it hard to copy:
 
 ## 13. Quickstart
 
+### From PyPI (no clone, no keys)
+
+```bash
+uvx --from benchpress-agent benchpress demo      # the whole loop offline: policy sweep, gate refusal, read-back, receipt
+pip install benchpress-agent                     # wrap your own tool layer
+pip install "benchpress-agent[mcp]"              # + MCP executor and the mcp-guard proxy
+```
+
+```python
+import benchpress
+
+agent = benchpress.wrap("deepseek-v4-pro", my_gateway.execute_tool, providers=["hubspot", "stripe"])
+result = await agent.run("Acme asked for renewal notices to go to ap@acme.example. Do not send external mail.")
+print(result.status, result.context.refusals)   # status from read-back evidence; every refused write with its rule
+```
+
+Package docs: [PyPI page](https://pypi.org/project/benchpress-agent/) · MCP: [docs/MCP.md](docs/MCP.md).
+
+### From source
+
 ```bash
 git clone https://github.com/rajkaria/benchpress && cd benchpress
 uv sync --group dev
@@ -677,6 +698,10 @@ docs/                      build spec, strategy, research, plans, demo script, s
 ---
 
 ## 16. What Benchpress becomes
+
+**Already shipped from this roadmap during the hackathon, on PyPI as
+[`benchpress-agent`](https://pypi.org/project/benchpress-agent/):** `wrap(model, executor)` (0.1.0), the offline
+`benchpress demo` (0.1.1), and the MCP executor plus `mcp-guard` proxy (0.2.0). Every release is tagged in git.
 
 | Horizon | Product |
 |---|---|
