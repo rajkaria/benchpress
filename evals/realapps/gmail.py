@@ -25,7 +25,7 @@ from typing import Any, cast
 import httpx
 
 from evals.realapps.base import RealAppClient, SeedManifest, SeedResult, require_scratch_ok
-from evals.realapps.gmail_auth import HeadersProvider
+from evals.realapps.gmail_auth import GmailTokenProvider, HeadersProvider
 
 BASE_URL = "https://gmail.googleapis.com"
 API = "/gmail/v1/users/me"
@@ -384,3 +384,11 @@ class GmailApp:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+
+
+def from_env(env: Mapping[str, str]) -> GmailApp:
+    address = env.get("GMAIL_ADDRESS", "")
+    if "@" not in address:
+        raise ValueError("GMAIL_ADDRESS is not set (the scratch mailbox address)")
+    provider = GmailTokenProvider(env)
+    return GmailApp(provider.headers, address=address, base_url=env.get("DEVSIM_GMAIL_URL") or BASE_URL)

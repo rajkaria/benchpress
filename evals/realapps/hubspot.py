@@ -160,6 +160,13 @@ class HubSpotApp:
             raise ValueError("a HubSpot private-app token is required")
         self._client = RealAppClient(base_url, {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
         self._seeded_properties: dict[str, set[str]] = {object_type: set() for object_type in OBJECT_TYPES}
+        self._since: float | None = None
+        self._manifest_ids: dict[str, list[str]] = {}
+
+    def remember(self, manifest: SeedManifest) -> None:
+        """Learn the seed timestamp and ids from an earlier manifest (for verify without reset)."""
+        self._since = manifest.seeded_at
+        self._manifest_ids = {object_type: list(manifest.ids("hubspot", object_type)) for object_type in OBJECT_TYPES}
 
     async def _request(
         self,
@@ -372,17 +379,25 @@ class HubSpotApp:
                     archived.add((object_type, object_id))
 
     async def verify_clean(self) -> list[str]:
-        """Residue is any live object of a seeded or engagement type: the scratch baseline is an empty portal."""
+        """Residue is any seeded id still live, or any object created since the remembered seed timestamp.
+
+        The scratch portal is shared with HubSpot's own inbox auto-import, so a non-empty portal is not
+        residue by itself; only seed-era records count. Without a remembered manifest nothing is checked.
+        """
         residue: list[str] = []
-        for object_type in OBJECT_TYPES + ENGAGEMENT_TYPES:
-            payload = await self._list_page(
-                object_type, properties=TIMESTAMP_PROPERTIES[object_type], associations=(), after=None
-            )
-            records = _records(payload.get("results"))
-            if records:
-                sample = ", ".join(str(record.get("id", "")) for record in records[:5])
-                more = " (more pages)" if _next_after(payload) else ""
-                residue.append(f"hubspot {object_type}: {len(records)} remaining{more} (ids {sample})")
+        for object_type, ids in self._manifest_ids.items():
+            for object_id in ids:
+                response = await self._request(
+                    "GET", f"/crm/v3/objects/{object_type}/{object_id}", params={"archived": "false"}, expect=(200, 404)
+                )
+                if response.status_code == 200:
+                    residue.append(f"hubspot {object_type}:{object_id} seeded record still present")
+        if self._since is not None:
+            since_ms = int((self._since - RESET_SKEW_SECONDS) * 1000)
+            for object_type in OBJECT_TYPES + ENGAGEMENT_TYPES:
+                ids = await self._created_since(object_type, since_ms)
+                if ids:
+                    residue.append(f"hubspot {object_type}: {len(ids)} created since seed (ids {', '.join(ids[:5])})")
         return residue
 
     async def wipe_samples(self) -> list[str]:
@@ -398,3 +413,10 @@ class HubSpotApp:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+
+
+def from_env(env: Mapping[str, str]) -> HubSpotApp:
+    token = env.get("HUBSPOT_PRIVATE_APP_TOKEN")
+    if not token:
+        raise ValueError("HUBSPOT_PRIVATE_APP_TOKEN is not set (needed to seed/reset the HubSpot scratch portal)")
+    return HubSpotApp(token, base_url=env.get("DEVSIM_HUBSPOT_URL") or BASE_URL)

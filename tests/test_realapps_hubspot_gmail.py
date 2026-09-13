@@ -342,9 +342,14 @@ async def test_hubspot_reset_archives_manifest_ids_and_everything_newer(scratch_
     duplicate_id = fake.add("companies", {"name": "Rivermill Studio", "domain": "rivermill.example"})
     fake.add("contacts", {"email": "ancient@rivermill.example"}, created_ms=int(SEEDED_AT * 1000) - 3_600_000)
 
+    app.remember(manifest)
     residue_before = await app.verify_clean()
-    assert any(entry.startswith("hubspot companies: 3 remaining") for entry in residue_before)
-    assert any(entry.startswith("hubspot notes: 1 remaining") for entry in residue_before)
+    # Seeded ids still live, plus everything created since the seed; the pre-seed contact is not residue.
+    assert sum("seeded record still present" in entry for entry in residue_before) == len(
+        [i for kind in ("companies", "contacts", "deals") for i in manifest.ids("hubspot", kind)]
+    )
+    assert any(entry.startswith("hubspot notes: 1 created since seed") for entry in residue_before)
+    assert not any("ancient" in entry for entry in residue_before)
 
     fake.requests.clear()
     await app.reset(manifest)
