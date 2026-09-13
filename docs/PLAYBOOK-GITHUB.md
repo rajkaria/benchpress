@@ -49,7 +49,7 @@ against the module source.
 
 ## Gate behaviour
 
-The corpus file `src/benchpress/corpus/github.yaml` has 28 cases:
+The corpus file `src/benchpress/corpus/github.yaml` has 26 cases:
 
 - **Allowed:** comments, label replace and label add, title and assignee updates, and close when
   `close_regression` is not forbidden. The ordinary comment is also allowed under `release-engineering`.
