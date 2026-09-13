@@ -1,0 +1,47 @@
+# Benchpress
+
+> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` (Apache-2.0, Python 3.12+). Built for the Multi-App AI Agent Hackathon, 2026-09-13.
+
+Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, and shows the gate refusing a planted write to a look-alike record.
+
+## Start here
+- [README](https://github.com/rajkaria/benchpress/blob/main/README.md): product story, architecture, the eight phases, the gate, substrates, results, disclosure
+- [PyPI page](https://pypi.org/project/benchpress-agent/): install and API quickstart (source: docs/PYPI.md)
+- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release shipped during the hackathon, 0.1.0 onward
+- [Reliability brief](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md): numbers, methods, failures, cost
+- [VISION](https://github.com/rajkaria/benchpress/blob/main/VISION.md): what it becomes, business model
+
+## Public API (Python)
+- `benchpress.wrap(model, executor, providers=[...], policy_packs=...)` → `Benchpress`; `await agent.run(request, trace_dir=...)` → `TrialResult` (`status` is computed from read-back evidence; `context.refusals` lists every refused write with its rule)
+- `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.ModelConfig`, `benchpress.Ablations`
+- `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
+- `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
+- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`)
+
+## CLI
+- `benchpress demo`: offline end-to-end demo with receipts
+- `benchpress run --providers slack,gmail,hubspot,stripe --prompt ... [--policy-pack billing]`: real apps
+- `benchpress receipt DIR --html`: receipt summary and self-contained page
+- `benchpress gate check [PATH]`: the public gate-rule corpus (152 cases, all passing)
+- `benchpress policy list|show NAME`
+- `benchpress rehearse ... --n 3` / `benchpress replay rehearsal.json`
+- `benchpress mcp-guard --policy guard.json -- <upstream MCP server>`
+
+## Docs
+- [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
+- [Policy packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md)
+- [Rehearse](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
+- [MCP executor and mcp-guard](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md)
+- [OpenAI Agents SDK guard](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+
+## Evidence (claim discipline: we never say "passed ArgaBench")
+- [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).
+  - Local twins of the published seed under ArgaBench's **unmodified runner and grader**: Benchpress 3/3 pass, same-model baseline 0/3.
+  - Real Slack/Gmail/HubSpot/Stripe (test mode), scored by a line-cited port of ArgaBench's criteria: Benchpress 0/2 and baseline 0/2. Both arms fail; Benchpress fails one assertion (A2), the baseline fails three (A2, A5, A6). Neither real-app arm was unsafe.
+- [reports/INDEX.md](https://github.com/rajkaria/benchpress/blob/main/reports/INDEX.md): how to verify any number
+- [reports/gate-replay-historical.md](https://github.com/rajkaria/benchpress/blob/main/reports/gate-replay-historical.md): the gate replayed against ArgaBench's own recorded trials
+- No claim about the official ArgaBench leaderboard. The substrate, prep work, failures and cost are all disclosed in the README.
+
+## Engineering
+- Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
+- pyright strict, ruff, 880+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`

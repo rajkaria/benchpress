@@ -27,3 +27,26 @@ jobs:
           if grep -rniE "(ECOM|CRM|DEV|IT|MKT)-0[0-9]|northwind|alder credit|checkout_tax|kira long|trent bell" src/benchpress; then
             echo "Task-specific reference found in src/benchpress"; exit 1
           fi
+
+  package:
+    # The published artifact, not the repo: build the wheel, install it into a clean venv, run what users run.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv build
+      - run: uvx twine check --strict dist/*
+      - name: Install the wheel into a clean venv and run the user-facing commands
+        run: |
+          uv venv /tmp/pkg --python ${{ matrix.python-version }}
+          VIRTUAL_ENV=/tmp/pkg uv pip install "$(ls dist/*.whl)[mcp,openai-agents]"
+          cd /tmp
+          /tmp/pkg/bin/python -c "import benchpress; print(benchpress.__version__); from benchpress.shims.mcp import mcp_executor; from benchpress.shims.openai_agents import guard_tools"
+          /tmp/pkg/bin/benchpress demo --trace-dir /tmp/demo
+          /tmp/pkg/bin/benchpress gate check
+          /tmp/pkg/bin/benchpress policy list

@@ -150,7 +150,11 @@ P5 execute through the gate + read-back → P6 verify (+ one repair round) → P
 Benchpress was built for the Multi-App AI Agent Hackathon (2026-09-13) and is measured against
 ArgaBench's hardest published scenario, graded by ArgaBench's verifier on the published seed rebuilt
 locally and on real Slack, Gmail, HubSpot and Stripe (test mode). It makes no claim about the
-official leaderboard. Methods, results, failures and cost are in the repository:
+official leaderboard. On local twins of the published seed under ArgaBench's **unmodified runner and grader**,
+Benchpress passed 3/3 and a same-model baseline 0/3. On real Slack/Gmail/HubSpot/Stripe (test mode), scored by a
+line-cited port of the criteria, both arms failed 0/2: Benchpress missed one assertion, the baseline three, and
+neither was unsafe. Every trial: [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md).
+Methods, results, failures and cost are in the repository:
 [README](https://github.com/rajkaria/benchpress#readme) ·
 [reports](https://github.com/rajkaria/benchpress/tree/main/reports) ·
 [disclosure](https://github.com/rajkaria/benchpress#17-disclosure).
