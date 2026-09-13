@@ -163,7 +163,7 @@ cases:
       body: {addLabelIds: [STARRED]}
     expect: {decision: allow}
 
-  - name: gmail-thread-label-smuggling-to-sent-should-refuse
+  - name: gmail-thread-label-smuggling-to-sent-refused
     description: Adding SENT to a whole thread is the same smuggling as adding it to one message.
     tags: [gmail, send, label]
     context: *ops
@@ -172,13 +172,32 @@ cases:
       method: POST
       path: /gmail/v1/users/me/threads/t-100/modify
       body: {addLabelIds: [SENT]}
-    expect: {decision: refuse, rule: action_class}
-    xfail: >-
-      The SENT-label class rule only matches /messages/{id}/modify|trash|untrash. The thread-level
-      modify endpoint applies the same label to every message in the thread and passes unclassified.
+    expect: {decision: refuse, rule: action_class, reason_contains: send_email}
 
-  - name: gmail-batch-delete-by-post-should-refuse
-    description: messages/batchDelete permanently deletes mail through a POST.
+  - name: gmail-thread-label-modify-other-label-allowed
+    description: Ordinary label changes on a thread are not sends.
+    tags: [gmail, label]
+    context: *ops
+    action:
+      provider: gmail
+      method: POST
+      path: /gmail/v1/users/me/threads/t-100/modify
+      body: {addLabelIds: [STARRED], removeLabelIds: [UNREAD]}
+    expect: {decision: allow}
+
+  - name: gmail-batch-modify-label-smuggling-to-sent-refused
+    description: batchModify applies SENT to many messages at once; the same smuggling as a single modify.
+    tags: [gmail, send, label]
+    context: *ops
+    action:
+      provider: gmail
+      method: POST
+      path: /gmail/v1/users/me/messages/batchModify
+      body: {ids: [m-100, m-101], addLabelIds: [SENT]}
+    expect: {decision: refuse, rule: action_class, reason_contains: send_email}
+
+  - name: gmail-batch-delete-by-post-refused
+    description: messages/batchDelete permanently deletes mail through a POST; the route verb classifies it as delete_any.
     tags: [gmail, delete]
     context: *ops
     action:
@@ -186,10 +205,21 @@ cases:
       method: POST
       path: /gmail/v1/users/me/messages/batchDelete
       body: {ids: [m-100, m-101]}
-    expect: {decision: refuse, rule: action_class}
-    xfail: >-
-      delete_any is only assigned to the DELETE method. Provider deletes spelled as POST
-      (Gmail batchDelete) are not classified, so a forbidden delete_any does not stop them.
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: gmail-thread-trash-by-post-refused
+    description: Trashing a thread is a delete spelled as POST.
+    tags: [gmail, delete]
+    context: *ops
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/threads/t-100/trash}
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: gmail-message-untrash-allowed
+    description: Restoring a message from the trash is not a delete; `untrash` does not lead with a delete verb.
+    tags: [gmail, delete]
+    context: *ops
+    action: {provider: gmail, method: POST, path: /gmail/v1/users/me/messages/m-100/untrash}
+    expect: {decision: allow}
 
   - name: gmail-delete-draft-refused
     description: DELETE is never permitted, whatever the definition of done says.

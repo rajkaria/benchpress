@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Protocol, cast
 
 from benchpress.context import Action, Context, GateVerdict
-from benchpress.normalize import casefold_text, domains_in, emails_in
+from benchpress.normalize import casefold_text, destination_domains_in, domains_in, emails_in
 
 # --------------------------------------------------------------------------------------
 # Control plane. The gateway blocks these too; we reject them earlier so a blocked attempt
@@ -98,9 +98,9 @@ CLASS_RULES: tuple[ClassRule, ...] = (
         "send_email",
         "gmail",
         ["POST", "PUT", "PATCH"],
-        r"/messages/[^/]+/(modify|trash|untrash)\b",
+        r"/(messages|threads)/([^/]+/(modify|trash|untrash)|batchModify)\b",
         body_regex=r'"SENT"',
-        description="Gmail label smuggling to SENT",
+        description="Gmail label smuggling to SENT (message, thread, or batch label changes)",
     ),
     _rule("send_email", None, ["POST"], r"/(send|sendMail|messages\.send)\b", description="generic send"),
     # --- money -----------------------------------------------------------------------
@@ -149,12 +149,56 @@ CLASS_RULES: tuple[ClassRule, ...] = (
 )
 
 
+# Deletes spelled as RPC routes. Many write APIs delete through POST (Slack `chat.delete`, Gmail
+# `messages/batchDelete`, HubSpot `batch/archive`, Google `resource:delete`), so the method alone
+# cannot identify a delete. The route's method name does: its leading verb, after batch-style
+# qualifiers, is a destructive verb. `untrash` / `unarchive` lead with a different word and pass.
+DELETE_VERBS: frozenset[str] = frozenset({"archive", "delete", "destroy", "erase", "purge", "remove", "trash", "wipe"})
+_DELETE_QUALIFIERS: frozenset[str] = frozenset({"batch", "bulk", "force", "gdpr", "hard", "mass", "permanent"})
+_ROUTE_WORD = re.compile(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])|\d+")
+_WRITE_METHODS: frozenset[str] = frozenset({"POST", "PUT", "PATCH"})
+_GRAPHQL_DELETE_MUTATION = re.compile(
+    r"\b(?:[a-z][A-Za-z0-9]*(?:Delete|Archive|Trash|Remove|Destroy|Purge)|"
+    r"(?:delete|archive|trash|remove|destroy|purge)[A-Z][A-Za-z0-9]*)\s*\("
+)
+
+
+def is_delete_route(path: str) -> bool:
+    """True when the final route segment names a destructive verb (`chat.delete`, `batchDelete`, `batch/archive`)."""
+    segments = [segment for segment in path.split("?", 1)[0].split("/") if segment]
+    if not segments:
+        return False
+    last = segments[-1]
+    if _looks_like_id(last) and not any(sep in last for sep in ".:"):
+        return False
+    method_name = re.split(r"[.:]", last)[-1]
+    words = [word.casefold() for word in _ROUTE_WORD.findall(method_name)]
+    while words and words[0] in _DELETE_QUALIFIERS:
+        words.pop(0)
+    return bool(words) and words[0] in DELETE_VERBS
+
+
+def _is_graphql_delete(path: str, body_text: str) -> bool:
+    """A GraphQL mutation whose field is a delete (`issueDelete(`, `deleteProject(`)."""
+    if not re.search(r"/graphql\b", path, re.IGNORECASE) or "mutation" not in body_text:
+        return False
+    return _GRAPHQL_DELETE_MUTATION.search(body_text) is not None
+
+
+def _is_delete(method_upper: str, path: str, body_text: str) -> bool:
+    if method_upper == "DELETE":
+        return True
+    if method_upper not in _WRITE_METHODS:
+        return False
+    return is_delete_route(path) or _is_graphql_delete(path, body_text)
+
+
 def classify(provider: str, method: str, path: str, body: object) -> frozenset[str]:
     """Every forbidden-class label this request would carry. Provider-generic."""
     method_upper = method.upper()
     body_text = _body_text(body)
     labels: set[str] = set()
-    if method_upper == "DELETE":
+    if _is_delete(method_upper, path, body_text):
         labels.add("delete_any")
     for rule in CLASS_RULES:
         if rule.provider is not None and rule.provider != provider:
@@ -453,7 +497,7 @@ class Gate:
             host = address.split("@", 1)[1]
             if not _domain_allowed(host, allowed):
                 return ("external_destination", f"body addresses external recipient {address!r}")
-        for host in sorted(domains_in(body_text) - set(emails_in(body_text))):
+        for host in sorted(destination_domains_in(body_text) - set(emails_in(body_text))):
             if not _domain_allowed(host, allowed):
                 return ("external_destination", f"body references external destination {host!r}")
         return None

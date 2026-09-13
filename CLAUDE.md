@@ -49,6 +49,6 @@ cd arga-twins-benchmark && uv sync --group dev && uv run pytest -q -x
 | [`docs/context/submission.md`](./docs/context/submission.md) | `README.md`, `VISION.md`, `docs/**` — story, brief, video, form |
 
 ## State
-Session 1 (2026-09-13) ended at the account session limit. **Start with [`docs/HANDOFF.md`](./docs/HANDOFF.md)**
-(where everything is, keys in `.env`, what is missing) and [`docs/AGENT-TASKS.md`](./docs/AGENT-TASKS.md)
-(verbatim agent specs to re-dispatch). Gate is green at HEAD.
+Day 2 (2026-09-14) ended at tag `v0.1.0-hackathon`: Benchpress 3/3 pass vs stock 0/3 under the unmodified
+ArgaBench grader on twins; real apps 0/2 vs 0/2 (A2 substrate limit). **Start with [`docs/HANDOFF.md`](./docs/HANDOFF.md)**
+and [`reports/INDEX.md`](./reports/INDEX.md). Gate green (614 tests). Left: video, form, PDF, ablations.

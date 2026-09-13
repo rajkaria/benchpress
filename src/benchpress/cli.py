@@ -47,6 +47,13 @@ async def _run(args: argparse.Namespace) -> int:
         print("a --prompt or --prompt-file is required", file=sys.stderr)
         return 2
     providers = [name.strip() for name in str(args.providers).split(",") if name.strip()]
+    from benchpress.packs import load_policy_packs
+
+    try:
+        policy_packs = load_policy_packs(list(args.policy_pack or []))
+    except Exception as exc:  # noqa: BLE001 - an unknown or malformed pack is a usage error, before any provider call
+        print(f"policy pack error: {exc}", file=sys.stderr)
+        return 2
     try:
         realapp = importlib.import_module("benchpress.realapp")
     except ImportError as exc:
@@ -64,6 +71,7 @@ async def _run(args: argparse.Namespace) -> int:
         config=config,
         ablations=Ablations.parse(args.ablations),
         trace_dir=trace_dir,
+        policy_packs=policy_packs,
     )
     await gateway.aclose()
     receipt = json.loads((trace_dir / "receipt.json").read_text())
@@ -153,6 +161,12 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--trace-dir")
     run.add_argument("--model", default=os.environ.get("BENCHPRESS_MODEL"))
     run.add_argument("--ablations", default=os.environ.get("BENCHPRESS_ABLATIONS"))
+    run.add_argument(
+        "--policy-pack",
+        action="append",
+        metavar="NAME_OR_PATH",
+        help="enforce a policy pack in the gate (repeatable; see `benchpress policy list`)",
+    )
     demo = sub.add_parser("demo", help="run the whole loop offline on an in-memory workspace (no keys, no network)")
     demo.add_argument("--trace-dir", default="benchpress-demo")
     receipt = sub.add_parser("receipt", help="print a receipt summary")

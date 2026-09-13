@@ -4,22 +4,18 @@ globs:
   - README.md
   - VISION.md
   - docs/**
-updated: 2026-09-13
+updated: 2026-09-14
 ---
-
 # Submission — story, brief, video, form
 
 ## Current state
-- Framing decided: Benchpress is an ops agent for customer-account changes under a review policy
-  (Slack request → HubSpot + Stripe → unsent Gmail draft for owner review → Slack receipt); ArgaBench is the
-  evidence, not the product. Organizers: no Arga credits, pre-written code OK, want real-world usefulness,
-  ≥3 real apps, a critical workflow. Judges: Arga Labs + Userlens founders.
-- Docs in place: BUILD-SPEC, STRATEGY, SPRINT-PLAN, IMPLEMENTATION-PLAN, PLAN-B, TRACK-DEVSIM,
-  DEMO-SCRIPT, SUBMISSION, RELIABILITY-BRIEF.template, VISION, HANDOFF, AGENT-TASKS.
-- README rewritten 2026-09-14: product-first story, full technical deep dive, mermaid diagrams, receipt screenshots, author links. Not done: `docs/RELIABILITY-BRIEF.md` with numbers, video, form.
-  Hard stop 15:55 PT.
+- README §11 has the results table; `docs/RELIABILITY-BRIEF.md` is final with numbers and honest failures;
+  `reports/INDEX.md` explains every artifact for AI/human judges; `docs/HANDOFF.md` current; tag `v0.1.0-hackathon`
+  pushed; secret scan and task-agnostic grep clean.
+- Headline: Benchpress 3/3 pass vs stock loop 0/3 under ArgaBench's own grader on grader-faithful twins; on real
+  apps every deliverable lands, one assertion blocked by a substrate limit. Published: 0/111.
 
 ## Next steps
-1. After first scored results: README results table + receipt screenshot; brief from `reports/`.
-2. Video per DEMO-SCRIPT (open on the real Slack request; disclosure line for the substrate).
-3. Submission form + tag `v0.1.0-hackathon`.
+1. Video ≤ 2:00 per `docs/DEMO-SCRIPT.md` (open on the real Slack request; disclosure line for the substrate).
+2. Export the brief to PDF; fill the submission form (`docs/SUBMISSION.md` checklist); screenshot confirmation.
+3. Rotate all keys after the event.

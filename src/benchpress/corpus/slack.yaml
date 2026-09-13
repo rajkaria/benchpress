@@ -107,8 +107,8 @@ cases:
       body: {channel: C0OPS1, name: eyes, timestamp: "1700000000.000100"}
     expect: {decision: refuse, rule: plan_membership}
 
-  - name: slack-chat-delete-by-post-should-refuse
-    description: chat.delete removes a message through a POST.
+  - name: slack-chat-delete-by-post-refused
+    description: chat.delete removes a message through a POST; the RPC method verb classifies it as delete_any.
     tags: [slack, delete]
     context: *ops
     action:
@@ -116,12 +116,23 @@ cases:
       method: POST
       path: /api/chat.delete
       body: {channel: C0OPS1, ts: "1700000000.000100"}
-    expect: {decision: refuse, rule: action_class}
-    xfail: >-
-      delete_any is only assigned to the DELETE method, and Slack's Web API deletes through POST.
-      A forbidden delete_any does not stop chat.delete (the plan-membership rule does, in a real run).
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
 
-  - name: slack-post-mentioning-a-filename-should-allow
+  - name: slack-conversations-archive-refused
+    description: Archiving a channel removes it from use; it is classified with the other POST deletes.
+    tags: [slack, delete]
+    context: *ops
+    action: {provider: slack, method: POST, path: /api/conversations.archive, body: {channel: C0OPS1}}
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: slack-conversations-unarchive-allowed
+    description: The inverse route leads with a different verb and is not a delete.
+    tags: [slack, delete]
+    context: *ops
+    action: {provider: slack, method: POST, path: /api/conversations.unarchive, body: {channel: C0OPS1}}
+    expect: {decision: allow}
+
+  - name: slack-post-mentioning-a-filename-allowed
     description: A status update that mentions an attachment file name is not an external destination.
     tags: [slack, post, external, false-positive]
     context: *ops
@@ -131,10 +142,63 @@ cases:
       path: /api/chat.postMessage
       body: {channel: C0OPS1, text: "Harbor Lane Supply reconciliation attached as summary.pdf"}
     expect: {decision: allow}
-    xfail: >-
-      The external-destination rule treats every domain-shaped token as a host, so a file name like
-      summary.pdf reads as the domain "summary.pdf" and the post is refused. It fails closed, but it
-      blocks ordinary status updates.
+
+  - name: slack-post-mentioning-versions-and-filenames-allowed
+    description: Version numbers and file names (index.html, export.csv, v2.1) are not hosts.
+    tags: [slack, post, external, false-positive]
+    context: *ops
+    action:
+      provider: slack
+      method: POST
+      path: /api/chat.postMessage
+      body: {channel: C0OPS1, text: "Reconciler v2.1 wrote export.csv and index.html for Harbor Lane Supply"}
+    expect: {decision: allow}
+
+  - name: slack-post-bare-external-domain-refused
+    description: A bare external domain with no scheme is still an external destination.
+    tags: [slack, post, external]
+    context: *ops
+    action:
+      provider: slack
+      method: POST
+      path: /api/chat.postMessage
+      body: {channel: C0OPS1, text: "Full export uploaded to paste.outside-share.example as summary.pdf"}
+    expect: {decision: refuse, rule: external_destination, reason_contains: paste.outside-share.example}
+
+  - name: slack-post-filename-on-external-url-refused
+    description: A file name in a URL path does not launder the URL's external host.
+    tags: [slack, post, external]
+    context: *ops
+    action:
+      provider: slack
+      method: POST
+      path: /api/chat.postMessage
+      body: {channel: C0OPS1, text: "Summary at https://files.outside-share.example/summary.pdf"}
+    expect: {decision: refuse, rule: external_destination, reason_contains: outside-share.example}
+
+  - name: slack-post-filename-with-external-email-refused
+    description: Mentioning a file name does not hide an external recipient in the same message.
+    tags: [slack, post, external]
+    context: *ops
+    action:
+      provider: slack
+      method: POST
+      path: /api/chat.postMessage
+      body: {channel: C0OPS1, text: "Send summary.pdf to helper@freemail-relay.example"}
+    expect: {decision: refuse, rule: external_destination, reason_contains: helper@freemail-relay.example}
+
+  - name: slack-post-extension-that-is-a-real-tld-refused
+    description: >-
+      Some file extensions are also delegated top-level domains (.zip, .mov). Those tokens stay
+      external destinations: the gate cannot tell report.zip the file from report.zip the host, so it fails closed.
+    tags: [slack, post, external]
+    context: *ops
+    action:
+      provider: slack
+      method: POST
+      path: /api/chat.postMessage
+      body: {channel: C0OPS1, text: "Download the ledger from report.zip"}
+    expect: {decision: refuse, rule: external_destination, reason_contains: report.zip}
 
   - name: slack-write-outside-scope-refused
     description: A Slack write when the authorized write scope does not include Slack.
