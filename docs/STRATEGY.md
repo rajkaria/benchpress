@@ -49,7 +49,7 @@ the Userlens and Comma view. Then show the benchmark proof, which is the Arga vi
 shared: model, tool bus, gate, playbooks, phases P0–P7, verification, receipt, real-app executor,
 brief, video. The 09:25 PT decision only picks where graded trials run.
 
-> **Why Plan B is not "devsim + official grader" any more** (verified 08:40 PT, PLAN-B §4). The
+> **Why Plan B is not "devsim + official grader" any more** (verified 08:40 PT, PLAN-B §1). The
 > offline grader works, but it scores realistic twin API bodies plus `/admin/state` snapshots, and
 > it hard-requires a 37-profile matrix and Arga lifecycle artifacts. A grader-faithful local twin
 > fleet costs 12–16 h for ECOM-02 alone, so it can't be the guaranteed path. Real apps
