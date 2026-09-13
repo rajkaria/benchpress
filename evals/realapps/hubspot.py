@@ -160,6 +160,7 @@ class HubSpotApp:
             raise ValueError("a HubSpot private-app token is required")
         self._client = RealAppClient(base_url, {"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
         self._seeded_properties: dict[str, set[str]] = {object_type: set() for object_type in OBJECT_TYPES}
+        self._unseedable_properties: dict[str, set[str]] = {object_type: set() for object_type in OBJECT_TYPES}
         self._since: float | None = None
         self._manifest_ids: dict[str, list[str]] = {}
 
@@ -206,6 +207,12 @@ class HubSpotApp:
             self._seeded_properties[object_type] |= names
             for created_property in await self._ensure_properties(object_type, names):
                 notes.append(f"hubspot {object_type}: created custom property {created_property!r}")
+            for unseedable in sorted(self._unseedable_properties[object_type]):
+                notes.append(
+                    f"hubspot {object_type}: property {unseedable!r} dropped (no crm.schemas.{object_type}.write scope)"
+                )
+                for properties in records:
+                    properties.pop(unseedable, None)
             for properties in records:
                 object_id, note = await self._create(object_type, properties)
                 if note:
@@ -269,7 +276,7 @@ class HubSpotApp:
         for name in custom:
             if name in STOCK_PROPERTIES[object_type] and name in existing:
                 continue
-            await self._request(
+            response = await self._request(
                 "POST",
                 f"/crm/v3/properties/{object_type}",
                 json_body={
@@ -279,15 +286,39 @@ class HubSpotApp:
                     "fieldType": "textarea" if name in TEXTAREA_PROPERTIES else "text",
                     "groupName": PROPERTY_GROUPS[object_type],
                 },
-                expect=(200, 201),
+                expect=(200, 201, 403),
             )
+            if response.status_code == 403:
+                # The private app lacks crm.schemas.<type>.write: seed without the property rather than fail.
+                self._unseedable_properties[object_type].add(name)
+                continue
             created.append(name)
         return created
 
     async def _create(self, object_type: str, properties: Mapping[str, Any]) -> tuple[str, str | None]:
+        body = dict(properties)
         response = await self._request(
-            "POST", f"/crm/v3/objects/{object_type}", json_body={"properties": dict(properties)}, expect=(200, 201, 409)
+            "POST", f"/crm/v3/objects/{object_type}", json_body={"properties": body}, expect=(200, 201, 400, 409)
         )
+        if response.status_code == 400 and "INVALID_EMAIL" in response.text and body.get("email"):
+            # Real HubSpot rejects reserved TLDs (.example); keep the address as text so the fact stays visible.
+            address = str(body.pop("email"))
+            fallback = (
+                "notes"
+                if "notes" in self._seeded_properties[object_type] - self._unseedable_properties[object_type]
+                else None
+            )
+            if fallback:
+                body[fallback] = f"{body.get(fallback, '')}\nEmail: {address}".strip()
+            response = await self._request(
+                "POST", f"/crm/v3/objects/{object_type}", json_body={"properties": body}, expect=(200, 201, 409)
+            )
+            if response.status_code != 409:
+                object_id = str(cast(Mapping[str, Any], response.json()).get("id", ""))
+                where = f"moved into {fallback!r}" if fallback else "dropped"
+                return object_id, f"hubspot {object_type} {object_id}: email {address} rejected by HubSpot, {where}"
+        elif response.status_code == 400:
+            raise HubSpotSeedError("POST", f"/crm/v3/objects/{object_type}", response)
         if response.status_code == 409:
             match = _EXISTING_ID.search(response.text)
             if match is None:
