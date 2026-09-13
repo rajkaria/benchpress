@@ -10,7 +10,7 @@ baseline and Benchpress share one transport and one cost meter and the only diff
 two arms is the scaffold. Everything the harness controls is held identical: the system prompt is
 passed verbatim with no addendum, the user prompt is the suite prompt verbatim, the tool schema is
 the gateway's own `[provider_api, provider_docs]`, and the call / time limits are the harness's.
-Per-tool-call events are recorded in the harness's own event shape (PLAN-B §9) with
+Per-tool-call events are recorded in the harness's own `tool_call` event shape with
 `tool_use_id = "base-<n>"` and the executor's output dict stored verbatim, so the same assertions
 can read either arm's trace.
 """
@@ -37,7 +37,7 @@ DISCLOSURE = (
 
 @dataclass(frozen=True)
 class BaselineResult:
-    """The same field set as the harness's `ModelInvocationResult` (PLAN-B §9)."""
+    """The same field set as the harness's `ModelInvocationResult` (returned by `agents/runner.py::invoke_model`)."""
 
     requested_model: str
     response_model: str | None

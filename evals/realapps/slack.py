@@ -1,7 +1,7 @@
 """Slack seed / snapshot / reset driver: a scratch workspace, or a devsim twin by base-URL swap.
 
 Seeded messages are posted by our bot under the seeded display name (`chat:write.customize`),
-which is the one disclosed departure from the published seed (PLAN-B §2). Reset removes every
+which is Slack's one disclosed departure from the published seed. Reset removes every
 message the bot authored in the seeded channels; channels themselves persist (Slack has no
 delete for channels, only archive) exactly like Stripe products do.
 

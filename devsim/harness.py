@@ -4,7 +4,8 @@ The harness lives outside this package (`<repo>/arga-twins-benchmark`, a gitigno
 symlink; `ARGABENCH_ROOT` overrides it). Its `src/` is put on `sys.path` and its modules are
 imported dynamically, so pyright never has to resolve a package that is not installed in this
 project's environment. Every attribute read off a harness module is therefore `Any`; the
-contract those attributes must satisfy is documented in docs/TRACK-DEVSIM.md §1.
+contract those attributes must satisfy (twin-run lifecycle, state capture, trace pairing) is pinned
+by the tests under `tests/devsim/`.
 """
 
 from __future__ import annotations

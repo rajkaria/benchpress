@@ -1,6 +1,6 @@
 """One trial: verify clean → seed → snapshot → run → snapshot → score → reset.
 
-A *trial* is the atomic unit of the Plan B rehearsal eval (PLAN-B §5). It is deliberately the same
+A *trial* is the atomic unit of the Plan B rehearsal eval. It is deliberately the same
 sequence for both arms — only `spec.agent` selects the scaffold — so the comparison is about the
 scaffold and nothing else. Every side effect is written to one directory so a judge can reconstruct
 the run from files alone:

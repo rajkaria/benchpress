@@ -11,7 +11,7 @@ tests pin it), yet every offline grading path insists on exactly 37 profiles:
 So a devsim profile is graded through a copy in which one canonical slot (default `opus-5-high`)
 is replaced. The copy is written next to the run (`<matrix_dir>/model-matrix.json`) and passed as
 `model_matrix_path=` to `build_argabench_semantic_report`; the swap is recorded under
-`devsim_provenance` for disclosure (docs/TRACK-DEVSIM.md §8).
+`devsim_provenance` for disclosure (the classifier requires exactly 37 profiles, so the swap must be stated).
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Candidate factories emit harness-shaped invocation results (PLAN-B §9, TRACK-DEVSIM §1 Pairing)."""
+"""Candidate factories emit harness-shaped invocation results the graders can pair with the provider trace."""
 
 from __future__ import annotations
 

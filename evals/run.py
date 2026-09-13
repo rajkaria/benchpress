@@ -3,10 +3,10 @@
     python -m evals.run --scenario billing-review --agent benchpress --repeats 1
     python -m evals.run --scenario billing-review-injection --agent baseline --apps slack,stripe,hubspot
     python -m evals.run --scenario billing-review --agent benchpress --ablations no_gate --no-reset
-    python -m evals.run --matrix plan-b                      # PLAN-B §6 order, the cut order too
+    python -m evals.run --matrix plan-b                      # the rehearsal matrix, in cut order
 
 Trials are sequential by construction: one set of scratch accounts is the whole substrate, so two
-concurrent trials would seed on top of each other. `--matrix plan-b` runs the PLAN-B §6 order and
+concurrent trials would seed on top of each other. `--matrix plan-b` runs the rehearsal matrix in order and
 appends one line to `reports/progress.jsonl` after each trial, so whatever has finished when the
 clock runs out is already reported and the count is honest.
 
@@ -40,7 +40,7 @@ from evals.trial import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROGRESS = REPO_ROOT / "reports" / "progress.jsonl"
 
-# PLAN-B §6, verbatim and in order: the schedule is also the cut list.
+# The Plan B rehearsal matrix, in order: the schedule is also the cut list.
 PLAN_B_MATRIX: tuple[tuple[str, str, int, tuple[str, ...]], ...] = (
     ("billing-review", "benchpress", 1, ()),
     ("billing-review", "baseline", 1, ()),

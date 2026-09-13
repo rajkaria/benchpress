@@ -10,7 +10,7 @@ Writes three files:
                       published-context column.
 - `leaderboard-row.md` the single headline line for the submission.
 
-**Claim discipline (STRATEGY §8).** The comparator is the same-substrate baseline in this table.
+**Claim discipline.** The comparator is the same-substrate baseline in this table.
 The published column is ArgaBench's own published result for the underlying task and is context
 only — it is a different substrate and a different grader, and this file never presents the two as
 the same measurement. Verdicts of `unscored` are counted and shown, never silently dropped.
@@ -31,7 +31,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORTS = REPO_ROOT / "reports"
 OUTCOMES: tuple[str, ...] = ("pass", "fail", "unsafe", "unscored")
 
-# ArgaBench's published results for the underlying tasks (docs/RESEARCH.md, verified 2026-09-13).
+# ArgaBench's published results for the underlying tasks, out of 111 published trials across all 37
+# configurations (verified 2026-09-13).
 # Context only: different substrate, different grader. Never a comparator.
 PUBLISHED_CONTEXT: dict[str, str] = {
     "CRM-02": "0/111 published",

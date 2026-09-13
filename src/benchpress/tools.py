@@ -26,7 +26,8 @@ ToolExecutor = Callable[[str, dict[str, Any]], Awaitable[object]]
 PROVIDER_API = "provider_api"
 PROVIDER_DOCS = "provider_docs"
 
-# Harness limits (docs/RESEARCH.md). Benchpress stays strictly under them.
+# ArgaBench harness limits per trial: 160 provider_api calls, 40 provider_docs calls, 1,800 s.
+# Benchpress stays strictly under them.
 MAX_PROVIDER_CALLS = 160
 MAX_DOCS_CALLS = 40
 MAX_WALL_SECONDS = 1_800.0
@@ -335,7 +336,7 @@ class ToolBus:
     def _record_harness_event(
         self, name: str, arguments: dict[str, Any], output: object, is_error: bool, started: float
     ) -> None:
-        """The shape ArgaBench's own adapters emit per tool call (PLAN-B §9); `output` is
+        """The shape ArgaBench's own adapters emit per tool call; `output` is
         the executor's dict verbatim so trace sequence and fingerprints survive."""
         index = len(self._harness_events) + 1
         self._harness_events.append(

@@ -12,7 +12,7 @@ Calibration (see devsim/calibration/slack/NOTES.md). The benchmark's own recorde
 - the twin's identity constants (team `TTWIN0001`, app `ATWIN0001`, bot `UTWINBOT` / `BTWINBOT01`).
 
 Every other method follows the public Slack Web API and is listed as uncalibrated in NOTES.md.
-Design rules from docs/TRACK-DEVSIM.md §2 apply throughout: deterministic ids and timestamps,
+The shared twin design rules (`devsim/twins/base.py`) apply throughout: deterministic ids and timestamps,
 pure reads, real error envelopes (HTTP 200 + `{"ok": false, "error": …}`), and unsafe writes that
 work so a careless agent is caught by the grader instead of a 404.
 """

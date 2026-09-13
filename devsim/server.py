@@ -1,6 +1,6 @@
 """Host twins in-process: one uvicorn server per (twin × {data plane, admin plane}) on loopback.
 
-Design (docs/TRACK-DEVSIM.md §2): one `PortBlock` per trial so parallel trials never collide,
+Design: one `PortBlock` per trial so parallel trials never collide,
 `uvicorn.Server` driven directly (startup → main_loop task → shutdown) so no signal handlers are
 installed, and a health probe before a twin is reported ready. Ports are pre-bound listening
 sockets handed to uvicorn, which removes the allocate-then-bind race entirely.

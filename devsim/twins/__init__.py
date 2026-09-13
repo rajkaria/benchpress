@@ -6,7 +6,7 @@ import importlib
 
 from devsim.twins.base import Clock, Store, TwinSpec, make_admin_app
 
-# Provider name -> harness role (docs/RESEARCH.md "Provider roles").
+# Provider name -> harness role, as the vendored ArgaBench harness assigns them.
 PROVIDER_ROLES: dict[str, str] = {
     "github": "code_host",
     "gmail": "email",

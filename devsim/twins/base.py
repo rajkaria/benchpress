@@ -1,6 +1,6 @@
 """Shared machinery for every local twin.
 
-Design rules (docs/TRACK-DEVSIM.md §2):
+Design rules (shared by every twin):
 
 - Deterministic: ids derive from `sha256(seed_key | collection | ordinal)` in each provider's
   id format; timestamps come from a clock that advances only on writes.

@@ -59,7 +59,7 @@ _DELIVERABLE_CARDS: tuple[tuple[str, str, str | None, str], ...] = (
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 _ONE_LINER_MAX = 160
 
-# Sizes follow docs/DEMO-SCRIPT.md: body 15 px, tables 14 px, headers 20 px/600, nothing under 12 px.
+# Sizes are chosen for screen-recording legibility: body 15 px, tables 14 px, headers 20 px/600, nothing under 12 px.
 _CSS = """
 :root{--ground:#0B0D10;--panel:#12161B;--hairline:#1F2630;--text:#E6EAF0;--muted:#8B96A5;--ok:#3FB950;
 --bad:#F85149;--warn:#D29922;--accent:#58A6FF;--sans:ui-sans-serif,Inter,system-ui,sans-serif;

@@ -1,4 +1,4 @@
-"""Offline proof that the three contract trajectories grade where PLAN-B §3 says they must.
+"""Offline proof that the three contract trajectories grade where the ported ArgaBench criteria say they must.
 
 The substrate here is a tiny in-memory stand-in for the four apps: it answers the same paths the
 real gateway forwards, mutates the same collections the real drivers snapshot, and returns the same

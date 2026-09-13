@@ -11,7 +11,7 @@ The script is loaded with importlib (the pattern in the harness's own
   never run because it requires `ARGA_API_KEY`). Swapped so the module is consistent if anything
   else reaches for it.
 
-NOT swapped, deliberately: `wait_ready` and `wait_cleanup` (docs/TRACK-DEVSIM.md §1 lists them).
+NOT swapped, deliberately: `wait_ready` and `wait_cleanup`, although they are module globals too.
 Both are protocol-driven: `FakeArgaCli.create_twin_run` returns `status == "ready"` so
 `wait_ready` returns without polling (line 662), and `teardown` leaves the run terminal with
 `twins == {}` so `wait_cleanup` returns on its first `status` poll (line 710). Keeping the harness's

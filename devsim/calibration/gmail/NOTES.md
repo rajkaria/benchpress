@@ -153,13 +153,13 @@ accepted and ignored. Unknown `word:` prefixes are plain text. The recording onl
 - Multipart raws are walked into `parts` with `partId` `0`, `1`, `0.0`…; attachment parts get `body.attachmentId` and
   are stored under `_attachments[attachmentId] = {data, filename, size}` (the recording only shows `_attachments: {}`).
 
-## TRACK-DEVSIM.md corrections found while calibrating
+## Corrections to the initial twin contract, found while calibrating
 
-- §1 "Known real shapes": message ids are **`msg_` + 14 hex**, not bare 16-hex; label ids are `Label_` + 14 hex.
-- §1: the recorded Gmail twin has only six system labels (`INBOX SENT DRAFT TRASH UNREAD STARRED`); no IMPORTANT,
+- Message ids are **`msg_` + 14 hex**, not bare 16-hex; label ids are `Label_` + 14 hex.
+- The recorded Gmail twin has only six system labels (`INBOX SENT DRAFT TRASH UNREAD STARRED`); no IMPORTANT,
   SPAM or CATEGORY_* labels exist, and seeded messages carry no UNREAD.
-- §1: seeded messages have **no `Date` header**; `payload.headers` = raw headers + synthetic `Message-ID`; `parts[0]`
+- Seeded messages have **no `Date` header**; `payload.headers` = raw headers + synthetic `Message-ID`; `parts[0]`
   duplicates the single-part body (real Gmail would have no `parts`).
-- §4 lists `GET …/labels` and `GET …/threads/{id}` as the minimum; the recorded agents also called `GET …/threads`
-  (list) and hit the unknown-route 404 (`/me/messages`), both now reproduced. Nothing in §1/§4 was contradicted by the
+- The initial route inventory listed `GET …/labels` and `GET …/threads/{id}` as the minimum; the recorded agents also called `GET …/threads`
+  (list) and hit the unknown-route 404 (`/me/messages`), both now reproduced. Nothing in the initial contract was contradicted by the
   grader code; `_ADMIN_STATE_PATHS["gmail"] = ("/admin/state", "/inspect")` confirmed.

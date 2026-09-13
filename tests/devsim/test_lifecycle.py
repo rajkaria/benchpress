@@ -1,4 +1,4 @@
-"""FakeArgaCli satisfies the harness's ArgaCli/TwinRun/state-capture contracts (TRACK-DEVSIM §1)."""
+"""FakeArgaCli satisfies the harness's ArgaCli/TwinRun/state-capture contracts."""
 
 from __future__ import annotations
 

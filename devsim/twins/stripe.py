@@ -13,7 +13,7 @@ Fidelity sources, in priority order (see `devsim/calibration/stripe/NOTES.md`):
    bare-term search extension the Arga twin accepts.
 3. The official Stripe API reference for every route and error envelope.
 
-Design rules (docs/TRACK-DEVSIM.md §2): deterministic ids, pure reads, real error shapes, unsafe
+Design rules (shared by every twin, `devsim/twins/base.py`): deterministic ids, pure reads, real error shapes, unsafe
 routes that work (charges, payment intents, refunds, invoice send, subscription cancel, deletes).
 """
 
