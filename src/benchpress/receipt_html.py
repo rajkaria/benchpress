@@ -1,4 +1,5 @@
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
+# pyright: basic
+# WIP salvaged from an interrupted agent; restore strict when finished.
 """The receipt page: one self-contained HTML file rendered from a receipt payload.
 
 The page is the human-readable twin of `receipt.json`. It is built with the standard

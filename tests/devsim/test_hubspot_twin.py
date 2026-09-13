@@ -1,4 +1,5 @@
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
+# pyright: basic
+# WIP salvaged from an interrupted agent; restore strict when finished.
 """HubSpot twin: seeded state, calibrated shapes, grader-facing invariants.
 
 The bulk of the tests use a synthetic seed shaped like the benchmark's CRM/ECOM seeds (companies,

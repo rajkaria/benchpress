@@ -1,4 +1,5 @@
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
+# pyright: basic
+# WIP salvaged from an interrupted agent; restore strict when finished.
 """HubSpot CRM twin — provider ``hubspot``, harness role ``hubspot_crm``.
 
 Calibrated against the *real* Arga HubSpot twin's recorded traffic in the ArgaBench CRM fixture

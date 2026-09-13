@@ -1,4 +1,5 @@
-# pyright: basic  # WIP salvaged from an interrupted agent; restore strict when finished
+# pyright: basic
+# WIP salvaged from an interrupted agent; restore strict when finished.
 """Stripe twin: a local, deterministic stand-in for the ArgaBench Stripe twin.
 
 Fidelity sources, in priority order (see `devsim/calibration/stripe/NOTES.md`):
