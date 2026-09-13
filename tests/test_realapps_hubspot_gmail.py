@@ -736,8 +736,9 @@ async def test_gmail_reset_deletes_drafts_then_batch_deletes_everything(scratch_
     all_message_ids = set(fake.messages)
     draft_message_id = fake.drafts["r9"]["message"]["id"]
 
+    app.remember(manifest)
     residue_before = await app.verify_clean()
-    assert residue_before == ["gmail drafts: 1 remaining", "gmail messages: 5 remaining"]
+    assert residue_before == ["gmail drafts: 1 remaining", "gmail messages: 5 seed-era message(s) remaining"]
 
     fake.requests.clear()
     await app.reset(manifest)

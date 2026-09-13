@@ -33,6 +33,7 @@ MESSAGE_SPACING = timedelta(minutes=5)
 BATCH_DELETE_LIMIT = 1000
 LIST_PAGE_SIZE = 500
 MAX_PAGES = 200
+RESET_SKEW_SECONDS = 120.0
 SYSTEM_LABELS = frozenset(
     {
         "INBOX",
@@ -178,6 +179,8 @@ class GmailApp:
             raise ValueError("address must be the scratch account's email address")
         self.address = address
         self._headers_provider = headers_provider
+        self._since: float | None = None
+        self._manifest_ids: list[str] = []
         self._client = RealAppClient(base_url, {})
 
     async def _request(
@@ -324,13 +327,15 @@ class GmailApp:
 
     # -- snapshot
 
-    async def _page_ids(self, collection: str) -> list[str]:
+    async def _page_ids(self, collection: str, query: str | None = None) -> list[str]:
         ids: list[str] = []
         token: str | None = None
         for _ in range(MAX_PAGES):
             params = {"maxResults": str(LIST_PAGE_SIZE)}
             if collection == "messages":
                 params["includeSpamTrash"] = "true"
+            if query:
+                params["q"] = query
             if token:
                 params["pageToken"] = token
             payload = cast(Mapping[str, Any], (await self._request("GET", f"{API}/{collection}", params=params)).json())
@@ -363,23 +368,43 @@ class GmailApp:
 
     # -- reset
 
+    def remember(self, manifest: SeedManifest) -> None:
+        """Learn the seed timestamp and ids from an earlier manifest (for verify without reset)."""
+        self._since = manifest.seeded_at
+        self._manifest_ids = list(manifest.ids("gmail", "messages"))
+
+    async def _seed_era_message_ids(self, seeded_at: float, seeded_ids: Sequence[str]) -> list[str]:
+        """Seeded ids plus anything received since the seed (the agent's sends); older inbox mail is untouched."""
+        since = int(seeded_at - RESET_SKEW_SECONDS)
+        recent = await self._page_ids("messages", query=f"after:{since}")
+        return list(dict.fromkeys([*seeded_ids, *recent]))
+
     async def reset(self, manifest: SeedManifest) -> None:
-        """Wipe the scratch mailbox: every draft, then every message (the manifest is a subset of both)."""
+        """Delete every draft, the seeded messages and anything received since the seed.
+
+        The scratch mailbox also receives ordinary account mail (welcome messages, verification codes); that is
+        never touched, so a reset cannot empty the account.
+        """
         require_scratch_ok()
-        del manifest
         for draft_id in await self._page_ids("drafts"):
             await self._request("DELETE", f"{API}/drafts/{draft_id}", expect=(200, 204, 404))
-        for chunk in _chunks(await self._page_ids("messages"), BATCH_DELETE_LIMIT):
+        ids = await self._seed_era_message_ids(manifest.seeded_at, manifest.ids("gmail", "messages"))
+        for chunk in _chunks(ids, BATCH_DELETE_LIMIT):
             await self._request("POST", f"{API}/messages/batchDelete", json_body={"ids": chunk}, expect=(200, 204))
 
     async def verify_clean(self) -> list[str]:
+        """Residue is any draft, plus seed-era messages when a manifest was remembered; older mail never counts."""
         residue: list[str] = []
         drafts = await self._page_ids("drafts")
         if drafts:
             residue.append(f"gmail drafts: {len(drafts)} remaining")
-        messages = await self._page_ids("messages")
-        if messages:
-            residue.append(f"gmail messages: {len(messages)} remaining")
+        if self._since is not None:
+            live = await self._page_ids("messages")
+            seeded = [message_id for message_id in self._manifest_ids if message_id in set(live)]
+            recent = await self._page_ids("messages", query=f"after:{int(self._since - RESET_SKEW_SECONDS)}")
+            leftover = list(dict.fromkeys([*seeded, *recent]))
+            if leftover:
+                residue.append(f"gmail messages: {len(leftover)} seed-era message(s) remaining")
         return residue
 
     async def aclose(self) -> None:

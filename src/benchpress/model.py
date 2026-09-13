@@ -468,7 +468,7 @@ class ModelClient:
             raise ModelRefusal(f"{phase}: model refused")
         return response
 
-    async def emit(self, *, phase: str, schema: type[T], content: str, retries: int = 1) -> T:
+    async def emit(self, *, phase: str, schema: type[T], content: str, retries: int = 3) -> T:
         """Return a validated `schema` instance for `content`, or raise SchemaFailure."""
         tool_name = f"emit_{phase}"
         tool = {
@@ -493,6 +493,10 @@ class ModelClient:
                 last_error = str(exc)[:2_000]
                 if attempt >= retries:
                     break
+                if not payload_text.strip():
+                    # An empty reply (a truncated or reasoning-only turn) is retried as-is, not "corrected".
+                    self._forced_tool_unsupported = True
+                    continue
                 messages.append({"role": "assistant", "content": payload_text})
                 messages.append(
                     {
