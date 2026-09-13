@@ -107,8 +107,8 @@ cases:
       body: {channel: C0OPS1, name: eyes, timestamp: "1700000000.000100"}
     expect: {decision: refuse, rule: plan_membership}
 
-  - name: slack-chat-delete-by-post-should-refuse
-    description: chat.delete removes a message through a POST.
+  - name: slack-chat-delete-by-post-refused
+    description: chat.delete removes a message through a POST; the RPC method verb classifies it as delete_any.
     tags: [slack, delete]
     context: *ops
     action:
@@ -116,10 +116,21 @@ cases:
       method: POST
       path: /api/chat.delete
       body: {channel: C0OPS1, ts: "1700000000.000100"}
-    expect: {decision: refuse, rule: action_class}
-    xfail: >-
-      delete_any is only assigned to the DELETE method, and Slack's Web API deletes through POST.
-      A forbidden delete_any does not stop chat.delete (the plan-membership rule does, in a real run).
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: slack-conversations-archive-refused
+    description: Archiving a channel removes it from use; it is classified with the other POST deletes.
+    tags: [slack, delete]
+    context: *ops
+    action: {provider: slack, method: POST, path: /api/conversations.archive, body: {channel: C0OPS1}}
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: slack-conversations-unarchive-allowed
+    description: The inverse route leads with a different verb and is not a delete.
+    tags: [slack, delete]
+    context: *ops
+    action: {provider: slack, method: POST, path: /api/conversations.unarchive, body: {channel: C0OPS1}}
+    expect: {decision: allow}
 
   - name: slack-post-mentioning-a-filename-should-allow
     description: A status update that mentions an attachment file name is not an external destination.

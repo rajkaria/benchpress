@@ -125,8 +125,8 @@ cases:
     action: {provider: hubspot, method: DELETE, path: /crm/v3/objects/companies/9002}
     expect: {decision: refuse, rule: method}
 
-  - name: hubspot-batch-archive-should-refuse
-    description: batch/archive deletes CRM records through a POST.
+  - name: hubspot-batch-archive-refused
+    description: batch/archive deletes CRM records through a POST; the route verb classifies it as delete_any.
     tags: [hubspot, delete]
     context: *ops
     action:
@@ -134,10 +134,25 @@ cases:
       method: POST
       path: /crm/v3/objects/contacts/batch/archive
       body: {inputs: [{id: "5501"}]}
-    expect: {decision: refuse, rule: action_class}
-    xfail: >-
-      delete_any is only assigned to the DELETE method. HubSpot's batch archive is a delete spelled
-      as POST and is not classified; the customer-success policy pack refuses it.
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: hubspot-list-membership-remove-refused
+    description: Removing records from a list is a destructive RPC route spelled as PUT.
+    tags: [hubspot, delete]
+    context: *ops
+    action: {provider: hubspot, method: PUT, path: /crm/v3/lists/77/memberships/remove, body: ["5501"]}
+    expect: {decision: refuse, rule: action_class, reason_contains: delete_any}
+
+  - name: hubspot-batch-update-allowed
+    description: The neighbouring batch route that updates, not archives, is not a delete.
+    tags: [hubspot, delete, update]
+    context: *ops
+    action:
+      provider: hubspot
+      method: POST
+      path: /crm/v3/objects/companies/batch/update
+      body: {inputs: [{id: "9001", properties: {description: "Billing contact is ap@harborlane.example"}}]}
+    expect: {decision: allow}
 
   - name: hubspot-unplanned-write-refused
     description: With the plan enforced, a write whose id is not on the approved plan is refused.
