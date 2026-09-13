@@ -72,7 +72,11 @@ Candidates (every plausible record, per provider):
 <<candidates>>
 
 Rules:
-- Choose exactly ONE target per (provider, resource_type) that the requested change must touch.
+- For EVERY provider that has candidates, choose exactly ONE target per resource_type that the
+  requested change must touch (a CRM company AND its contact both count). Leaving a provider
+  unchosen is treated as ambiguity and escalates the whole request, so only do that deliberately.
+  A missing or null lifecycle/status on a record is not disqualifying; judge on name, domain,
+  email and the reporter's wording.
   Prefer records whose lifecycle/status matches the request (customer vs prospect/lead, active
   vs closed), whose domain/email matches identifiers in the request exactly, and which the
   reporter refers to. Never choose Test, Sandbox, Archive, Prospect, Operations, EU/regional or

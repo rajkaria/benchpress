@@ -175,6 +175,15 @@ def customer_contact(ctx: Context) -> str:
     return ""
 
 
+def _clip(text: str, limit: int) -> str:
+    """Shorten to `limit` characters at a word boundary, never mid-token: a cut e-mail address
+    ('ap@example.com' → 'ap@example.co') would read as an unknown external destination."""
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    return head[: head.rfind(" ")].rstrip(" ,;:") if " " in head else head
+
+
 def _protected(ctx: Context, value: str) -> bool:
     return ctx.protected.hit(value) is not None
 
@@ -196,7 +205,7 @@ def change_lines(ctx: Context) -> list[str]:
 def confirmation_text(ctx: Context, recipient: str) -> tuple[str, str]:
     entity = ctx.targets[0].display if ctx.targets else "your account"
     facts = ", ".join(f"{key}: {value}" for key, value in _citable_facts(ctx))
-    subject = f"Confirmation: {ctx.dod.summary or 'account update'} for {entity}"[:120]
+    subject = _clip(f"Confirmation: {ctx.dod.summary or 'account update'} for {entity}", 120)
     body = (
         f"Hello {entity} team,\n\n"
         f"This is a confirmation of the requested change to your account records.\n"
