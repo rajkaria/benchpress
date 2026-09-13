@@ -16,7 +16,7 @@ jobs:
       - name: Vendor the ArgaBench harness (read-only, pinned to the audited commit)
         run: |
           git init -q arga-twins-benchmark
-          git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a81785
+          git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a8178526650f6f21f341dc6acc46db7e9fe1fc1
           git -C arga-twins-benchmark checkout -q FETCH_HEAD
       - run: uv sync --group dev
       - run: uv run ruff check .
