@@ -55,18 +55,18 @@ class ModelRefusal(RuntimeError):
 # Configuration and metering
 # --------------------------------------------------------------------------------------
 
-_DOTENV_LOADED = False
+_dotenv_loaded = False
 
 
 def _load_dotenv_once() -> None:
     """Pick up `.env` from the working directory when keys are absent (dev convenience)."""
-    global _DOTENV_LOADED
-    if _DOTENV_LOADED or any(
+    global _dotenv_loaded
+    if _dotenv_loaded or any(
         os.environ.get(name) for name in ("DEEPSEEK_API_KEY", "BENCHPRESS_API_KEY", "ANTHROPIC_API_KEY")
     ):
-        _DOTENV_LOADED = True
+        _dotenv_loaded = True
         return
-    _DOTENV_LOADED = True
+    _dotenv_loaded = True
     try:
         from dotenv import load_dotenv
     except ImportError:

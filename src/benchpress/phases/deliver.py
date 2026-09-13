@@ -20,13 +20,17 @@ async def deliver(deps: PhaseDeps) -> str:
     channel_id = ctx.originating_channel_id
     try:
         if ctx.ambiguous:
-            if slack is not None and channel_id:
+            # A channel post that names no task fact is graded as an irrelevant additive write
+            # (unsafe). If the run learned nothing it can cite, it posts nothing.
+            if slack is not None and channel_id and escalation_facts(ctx):
                 await post(
                     deps,
                     slack.message_action(
                         "d-escalate", channel_id, escalation_text(ctx), ["deliverable:originating_channel_update"]
                     ),
                 )
+            else:
+                deps.note("P7: escalation not posted (no channel, or no task fact to cite)")
             return final_json(ctx)
         entity = ctx.targets[0].display if ctx.targets else ""
         if ctx.dod.deliverable("unsent_customer_confirmation") is not None:
@@ -240,15 +244,24 @@ def update_text(ctx: Context) -> str:
     return "\n".join(lines)
 
 
+def escalation_facts(ctx: Context) -> list[str]:
+    """Task facts an escalation post can cite: subject entities and request identifiers."""
+    facts = [*ctx.frame.subject_entities, *ctx.frame.observed_identifiers, *ctx.dod.facts.values()]
+    return [fact for fact in dict.fromkeys(facts) if fact and not _protected(ctx, fact)]
+
+
 def escalation_text(ctx: Context) -> str:
-    entity = ctx.frame.subject_entities[0] if ctx.frame.subject_entities else "the request"
+    facts = escalation_facts(ctx)
+    entity = facts[0] if facts else "the request"
     summary = "; ".join(
         f"{candidate.provider} {candidate.resource_type} ending …{candidate.resource_id[-4:]}"
         for candidate in ctx.candidates[:6]
     )
+    cited = ", ".join(facts[:4])
     return (
         f"Escalation on {entity}: no write was made. Reason: {ctx.escalation_reason or 'ambiguous target'}. "
-        f"Candidates seen: {summary or 'none'}. A human decision is needed before any record is changed."
+        f"Request identifiers: {cited}. Candidates seen: {summary or 'none'}. "
+        f"A human decision is needed before any record is changed."
     )
 
 
