@@ -55,7 +55,7 @@ print(result.context.refusals)        # every write the gate refused, with the r
   OpenAI-compatible endpoint, `ANTHROPIC_API_KEY` for `claude-*`), a `benchpress.ModelConfig`, or
   `None` to read `BENCHPRESS_MODEL`.
 - `executor` is an async `execute_tool(tool_name, tool_input)` function or any object exposing one.
-- Built-in playbooks cover **Slack, Gmail, HubSpot and Stripe**; pass `playbooks=` for your own systems.
+- Built-in playbooks cover **Slack, Gmail, HubSpot, Stripe and GitHub**; pass `playbooks=` for your own systems.
 - `transport=` swaps the model wire protocol (bring your own client, or a scripted one in tests).
 - `agent.run_sync(...)` for synchronous callers.
 
@@ -97,12 +97,26 @@ Reads run; `update_invoice` runs only with an allowed status and at most 10 time
 the model is told which rule refused it. The check sits in each tool's invoker, so it holds for every run mode.
 [docs/OPENAI-AGENTS.md](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
 
+## Composio: guard hundreds of SaaS tools
+
+```python
+from composio import Composio
+from benchpress.shims.composio import guard_composio      # pip install "benchpress-agent[composio]"
+
+composio = guard_composio(Composio(), "guard.json", receipts="receipts.jsonl")   # same policy file as mcp-guard
+```
+
+Every `tools.execute` (and the provider execute hook agents use) is classified and checked against the policy before
+Composio runs it; refusals never execute, and every call leaves a receipt. `composio_executor(client, user_id=...)`
+lets `benchpress.wrap(...)` drive Composio tools through the full loop.
+[docs/COMPOSIO.md](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
+
 ## Policy packs and the public gate-rule corpus
 
 ```bash
 benchpress policy list                 # billing, customer-success, it-offboarding, release-engineering
 benchpress policy show billing
-benchpress gate check                  # 150+ bundled cases: what the gate allows and refuses, and why
+benchpress gate check                  # 178 bundled cases: what the gate allows and refuses, and why
 benchpress gate check my-cases/        # add your own YAML cases
 ```
 
@@ -131,6 +145,14 @@ refusals; otherwise you get a divergence report naming the first differing state
 non-converged rehearsal and stops at the first refusal or read-back mismatch. You supply the stage factory (sandbox,
 twin, or seeded copy); forking live production state is not automated yet.
 [docs/REHEARSE.md](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
+
+## Closed loop: regressions and audit export
+
+```bash
+benchpress regress runs/acme/receipt.json --out gate-cases/   # this run's gate decisions become permanent test cases
+benchpress gate check gate-cases/                             # fails the day the gate would decide differently
+benchpress receipts export runs/ --format csv --out audit.csv # who changed which record, why, with what evidence
+```
 
 ## The loop
 
@@ -162,7 +184,7 @@ Methods, results, failures and cost are in the repository:
 ## Status
 
 Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP and OpenAI Agents SDK support ship as the `[mcp]` and `[openai-agents]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
+`ModelConfig`, `Ablations`, `Gate`. MCP, OpenAI Agents SDK and Composio support ship as the `[mcp]`, `[openai-agents]` and `[composio]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
 New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)

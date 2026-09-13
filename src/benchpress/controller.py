@@ -38,6 +38,17 @@ PHASES_TIMEOUT_S = 1_720.0
 DELIVER_TIMEOUT_S = 150.0
 
 
+def _pack_ref(pack: object) -> str:
+    """How a replay finds the pack again: its bundled name, or the file it was loaded from."""
+    from benchpress.packs import POLICY_PACKS_DIR
+
+    name = str(getattr(pack, "name", "") or type(pack).__name__)
+    source = str(getattr(pack, "source", "") or "")
+    if source and Path(source).resolve().parent != POLICY_PACKS_DIR.resolve():
+        return str(Path(source).resolve())
+    return name
+
+
 class AuditingGate(Gate):
     """The `no_gate` ablation: allow every write, but record what the gate would have refused."""
 
@@ -103,6 +114,7 @@ async def run_trial(
         providers=tuple(providers),
     )
     packs = tuple(policy_packs or ())
+    ctx.policy_packs = tuple(_pack_ref(pack) for pack in packs)
     gate = AuditingGate(ctx, policy_packs=packs) if ablations.no_gate else Gate(ctx, policy_packs=packs)
     trace_path: str | None = None
     if trace_dir is not None:

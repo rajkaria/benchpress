@@ -1,8 +1,9 @@
 """The guard policy shared by every Benchpress shim: rules, decisions and JSONL receipts, with no SDK imports.
 
-`benchpress mcp-guard` (MCP) and `benchpress.shims.openai_agents` (OpenAI Agents SDK) both decide tool
-calls with this model, so one policy file governs both. A shim supplies the tool's class
-(`read` / `write` / `destructive`) its own way; the decision itself is pure:
+`benchpress mcp-guard` (MCP), `benchpress.shims.openai_agents` (OpenAI Agents SDK) and
+`benchpress.shims.composio` (Composio) all decide tool calls with this model, so one policy file governs
+them all. A shim supplies the tool's class (`read` / `write` / `destructive`) its own way, falling back
+to the shared name heuristic `classify_tool_name`; the decision itself is pure:
 
 * rules are checked in order, matched by tool-name glob. A matching `deny` rule refuses. A matching
   `allow` rule applies when every constrained argument fully matches its regex, and counts against
@@ -175,6 +176,39 @@ class PolicyGuard:
             with self.receipts_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(line, ensure_ascii=False, sort_keys=True) + "\n")
         return line
+
+
+READ_VERBS: frozenset[str] = frozenset(
+    {
+        "check", "count", "describe", "download", "export", "fetch", "find", "get", "inspect", "list",
+        "load", "lookup", "peek", "preview", "query", "read", "retrieve", "search", "show", "summarize", "view",
+    }
+)  # fmt: skip
+DESTRUCTIVE_VERBS: frozenset[str] = frozenset(
+    {
+        "cancel", "chargeback", "delete", "destroy", "drop", "erase", "kill", "purge", "refund", "remove",
+        "revoke", "terminate", "truncate", "void", "wipe",
+    }
+)  # fmt: skip
+
+
+def _name_tokens(name: str) -> list[str]:
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
+    return [token for token in re.split(r"[^a-z0-9]+", spaced.lower()) if token]
+
+
+def classify_tool_name(name: str) -> ToolClass:
+    """A tool's class from its name: any destructive verb wins, then a leading read verb, else write."""
+    tokens = _name_tokens(name)
+    if any(token in DESTRUCTIVE_VERBS for token in tokens):
+        return "destructive"
+    if tokens and tokens[0] in READ_VERBS:
+        return "read"
+    return "write"
+
+
+def refusal_message(name: str, decision: Decision) -> str:
+    return f"benchpress refused {name!r} [{decision.rule}]: {decision.reason}"
 
 
 def arguments_digest(arguments: Mapping[str, Any]) -> str:

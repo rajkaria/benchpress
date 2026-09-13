@@ -176,6 +176,8 @@ stripe = StripePlaybook()
         ("hubspot_crm", "hubspot"),
         ("stripe", "stripe"),
         ("payments", "stripe"),
+        ("github", "github"),
+        ("code_host", "github"),
         (" Slack ", "slack"),
     ],
 )
@@ -188,7 +190,7 @@ def test_for_provider_accepts_names_and_roles(token: str, provider: str) -> None
 def test_for_provider_unknown_is_none_and_available_providers_lists_names() -> None:
     assert for_provider("salesforce") is None
     assert for_provider("") is None
-    assert available_providers() == ("gmail", "hubspot", "slack", "stripe")
+    assert available_providers() == ("github", "gmail", "hubspot", "slack", "stripe")
     assert set(playbooks.PLAYBOOKS) == {
         "slack",
         "team_chat",
@@ -198,6 +200,8 @@ def test_for_provider_unknown_is_none_and_available_providers_lists_names() -> N
         "hubspot_crm",
         "stripe",
         "payments",
+        "github",
+        "code_host",
     }
 
 

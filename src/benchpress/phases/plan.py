@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from benchpress.context import Action, Plan
+from benchpress.context import Action, GateDecision, GateVerdict, Plan, utc_now
 from benchpress.gate import GateRefusal
 from benchpress.phases.common import PhaseDeps, dump, safe_emit
 from benchpress.phases.schemas import ActionIntent, PlanDraft
@@ -76,6 +76,8 @@ async def plan(deps: PhaseDeps) -> None:
         try:
             deps.bus.gate.check(action)
         except GateRefusal as refusal:
+            verdict = GateVerdict(action_id=action.id, allowed=False, rule=refusal.rule, reason=refusal.reason)
+            ctx.gate_decisions.append(GateDecision(at=utc_now(), phase="P4", action=action, verdict=verdict))
             deps.note(f"P4: dropped {action.id} ({refusal.rule}: {refusal.reason})")
             continue
         kept.append(action)

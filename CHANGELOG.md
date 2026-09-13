@@ -4,6 +4,51 @@ All releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchp
 Every release passed the full gate (pytest, ruff, pyright strict, the task-agnostic grep) and was installed
 back from PyPI into a clean environment before it was announced.
 
+## 0.7.0 (2026-09-13)
+- **Every run becomes a permanent regression test.** `benchpress regress RECEIPT [--out DIR]` turns a run's receipt
+  into gate-corpus YAML cases (every refused write with its rule, every allowed write), replays each case before
+  writing it, and reports `DRIFT` if the current gate would decide differently. `benchpress gate check DIR` then
+  keeps that behavior pinned forever.
+- **Audit export.** `benchpress receipts export PATH... --format jsonl|csv` writes one row per write attempt across
+  runs: when, which record, which fields, gate decision and rule, read-back result, the policy and definition-of-done
+  item it served, final status. The "who changed this customer record, and why" evidence. See
+  [docs/AUDIT-EXPORT.md](docs/AUDIT-EXPORT.md).
+- Receipts gain additive keys: `gate_decisions` (phase, time, action, verdict), `policy_packs`, `generated_at`,
+  `ledger[].at`.
+- Repository: `docs/demo/index.html`, a self-contained step-through replay of a real demo run
+  (`scripts/render_replay_page.py`).
+
+## 0.6.1 (2026-09-13)
+- **The `claude-*` path, proven offline.** Contract tests for the Anthropic Messages transport over
+  `httpx.MockTransport` (headers, top-level `system`, `input_schema` tools, forced `tool_choice`, `tool_use` /
+  `thinking` / `text` blocks, `tool_result` turns, stop reasons, usage, 429/529/400 errors) found and fixed five bugs:
+  529 `overloaded` was not retried; cached prompt tokens were under-counted in cost (Anthropic's `input_tokens`
+  excludes cache reads/writes; cache writes now bill at 1.25x input); thinking blocks were dropped between tool turns
+  in the explore loop; adaptive thinking + effort was sent to models that reject it (Haiku 4.5 and older); pricing
+  entries added for current Claude models. Still not exercised against the live API (no key during the build).
+- Python 3.13 verified: full suite and pyright strict pass.
+
+## 0.6.0 (2026-09-13)
+- **GitHub playbook** (`github`, also registered as the `code_host` role): issue and pull-request search with look-alike
+  evidence, policy sources from CONTRIBUTING / SECURITY / CODEOWNERS and policy-labelled issues, issue updates
+  (including add-only labels) and comments, each with a read-back. The `release-engineering` policy pack now has a
+  real provider behind it. See [docs/PLAYBOOK-GITHUB.md](docs/PLAYBOOK-GITHUB.md).
+- Gate: `owner/repo#N` identifiers are matched against the request path, so a look-alike issue is refused even
+  without a declared target; `merge-upstream`, `update-branch` and issue close are classified (merge, push,
+  close). Corpus: 178 cases, all passing (26 GitHub).
+- Offline end-to-end test: the full loop on an in-memory GitHub picks the right issue among look-alikes, the gate
+  refuses the planted write, and the change is read back.
+
+## 0.5.0 (2026-09-13)
+- **Composio** (optional `[composio]` extra, verified against `composio` 0.21.1):
+  `benchpress.shims.composio.guard_composio(Composio(), policy, receipts=...)` checks every tool execution against
+  the shared guard policy **before** it reaches Composio (declared classes, policy classes, tool metadata hints,
+  then the shared name heuristic), refuses without executing, and writes a JSONL receipt per call. By default it
+  replaces the client's own `execute` and the provider execute hook, so the unguarded path is closed.
+  `composio_executor(client, user_id=...)` lets the full Benchpress loop drive Composio tools through the gate.
+  See [docs/COMPOSIO.md](docs/COMPOSIO.md).
+- The name heuristic and refusal message now live in `benchpress.shims.guard_policy`, shared by all three guards.
+
 ## 0.4.0 (2026-09-13)
 - **OpenAI Agents SDK** (optional `[openai-agents]` extra, verified against `openai-agents` 0.22.2):
   `benchpress.shims.openai_agents.guard_tools(tools, policy, receipts=...)` returns guarded copies of your

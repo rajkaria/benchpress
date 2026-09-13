@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
 
-from benchpress.context import Context
+from benchpress.context import Context, utc_now
 
 
 def receipt_payload(ctx: Context, *, meta: Mapping[str, Any]) -> dict[str, Any]:
@@ -15,6 +15,7 @@ def receipt_payload(ctx: Context, *, meta: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "protocol": "benchpress-receipt/1",
         "trial_id": ctx.trial_id,
+        "generated_at": utc_now(),
         "status": ctx.status(),
         "meta": dict(meta),
         "request": {
@@ -35,6 +36,8 @@ def receipt_payload(ctx: Context, *, meta: Mapping[str, Any]) -> dict[str, Any]:
         "plan": [action.model_dump(mode="json") for action in ctx.plan.actions],
         "ledger": [entry.model_dump(mode="json") for entry in ctx.ledger],
         "refusals": [verdict.model_dump(mode="json") for verdict in ctx.refusals],
+        "gate_decisions": [decision.model_dump(mode="json") for decision in ctx.gate_decisions],
+        "policy_packs": list(ctx.policy_packs),
         "would_refuse": [verdict.model_dump(mode="json") for verdict in ctx.would_refuse],
         "evidence": [item.model_dump(mode="json") for item in latest.values()],
         "evidence_history": [item.model_dump(mode="json") for item in ctx.evidence],

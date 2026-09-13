@@ -298,6 +298,22 @@ class GateVerdict(Frozen):
     reason: str = ""
 
 
+class GateDecision(Frozen):
+    """One gate decision with the exact action it judged, so a run can be replayed as a gate-corpus case."""
+
+    at: str = ""
+    phase: str = ""
+    action: Action
+    verdict: GateVerdict
+
+
+def utc_now() -> str:
+    """An ISO-8601 UTC timestamp with millisecond precision (receipt and ledger clock)."""
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 class LedgerEntry(Mutable):
     sequence: int
     phase: str
@@ -311,6 +327,7 @@ class LedgerEntry(Mutable):
     action_id: str | None = None
     error: str | None = None
     response_digest: str = ""
+    at: str = ""
 
 
 class Context(Mutable):
@@ -333,6 +350,8 @@ class Context(Mutable):
     evidence: list[Evidence] = Field(default_factory=list[Evidence])
     ledger: list[LedgerEntry] = Field(default_factory=list[LedgerEntry])
     refusals: list[GateVerdict] = Field(default_factory=list[GateVerdict])
+    gate_decisions: list[GateDecision] = Field(default_factory=list[GateDecision])
+    policy_packs: tuple[str, ...] = ()  # bundled pack names, or pack file paths, the gate enforced
     deliverable_refs: dict[str, str] = Field(default_factory=dict[str, str])
 
     ambiguous: bool = False

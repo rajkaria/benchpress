@@ -16,16 +16,18 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.ModelConfig`, `benchpress.Ablations`
 - `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
 - `benchpress.rehearse.rehearse(...)` / `replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
-- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`)
+- `benchpress.shims.mcp.mcp_executor(...)` (extra `[mcp]`), `benchpress.shims.openai_agents.guard_tools(...)` (extra `[openai-agents]`), `benchpress.shims.composio.guard_composio(...)` / `composio_executor(...)` (extra `[composio]`)
 
 ## CLI
 - `benchpress demo`: offline end-to-end demo with receipts
 - `benchpress run --providers slack,gmail,hubspot,stripe --prompt ... [--policy-pack billing]`: real apps
 - `benchpress receipt DIR --html`: receipt summary and self-contained page
-- `benchpress gate check [PATH]`: the public gate-rule corpus (152 cases, all passing)
+- `benchpress gate check [PATH]`: the public gate-rule corpus (178 cases, all passing)
 - `benchpress policy list|show NAME`
 - `benchpress rehearse ... --n 3` / `benchpress replay rehearsal.json`
 - `benchpress mcp-guard --policy guard.json -- <upstream MCP server>`
+- `benchpress regress RECEIPT --out DIR`: turn a run into permanent gate-corpus regression cases
+- `benchpress receipts export PATH... --format csv|jsonl`: audit log of every write attempt
 
 ## Docs
 - [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
@@ -33,6 +35,10 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - [Rehearse](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
 - [MCP executor and mcp-guard](https://github.com/rajkaria/benchpress/blob/main/docs/MCP.md)
 - [OpenAI Agents SDK guard](https://github.com/rajkaria/benchpress/blob/main/docs/OPENAI-AGENTS.md)
+- [Composio guard and executor](https://github.com/rajkaria/benchpress/blob/main/docs/COMPOSIO.md)
+- [GitHub playbook](https://github.com/rajkaria/benchpress/blob/main/docs/PLAYBOOK-GITHUB.md)
+- [Audit export](https://github.com/rajkaria/benchpress/blob/main/docs/AUDIT-EXPORT.md)
+- [Step-through replay of a real run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
 
 ## Evidence (claim discipline: we never say "passed ArgaBench")
 - [reports/summary.md](https://github.com/rajkaria/benchpress/blob/main/reports/summary.md): every scored trial. Benchmark: ArgaBench ECOM-02 (0/111 across 37 frontier configurations in Arga's published data).
@@ -44,4 +50,4 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 
 ## Engineering
 - Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
-- pyright strict, ruff, 880+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`
+- pyright strict, ruff, 1,000+ tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, and runs `demo`, `gate check` and `policy list`
