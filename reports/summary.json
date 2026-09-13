@@ -100,6 +100,19 @@
       "docs_tool_calls": 18,
       "estimated_cost_usd": 0.11733603,
       "path": "reports/devsim/baseline/repeat-03/semantic-report.json"
+    },
+    {
+      "substrate": "devsim-harness",
+      "grader": "ArgaBench semantic report (unmodified)",
+      "arm": "benchpress",
+      "repeat": "repeat-01",
+      "profile": "benchpress-deepseek-v4-pro",
+      "outcome": "pass",
+      "failing_assertions": [],
+      "provider_tool_calls": 46,
+      "docs_tool_calls": 0,
+      "estimated_cost_usd": 0.07986299,
+      "path": "reports/devsim/benchpress/repeat-01/semantic-report.json"
     }
   ],
   "tally": {
@@ -124,6 +137,12 @@
     "devsim-harness/baseline": {
       "pass": 0,
       "fail": 3,
+      "unsafe": 0,
+      "unscored": 0
+    },
+    "devsim-harness/benchpress": {
+      "pass": 1,
+      "fail": 0,
       "unsafe": 0,
       "unscored": 0
     }
