@@ -1,4 +1,5 @@
 # pyright: basic
+# ruff: noqa: E501
 # WIP salvaged from an interrupted agent; restore strict when finished.
 """The receipt page: one self-contained HTML file rendered from a receipt payload.
 
@@ -171,7 +172,7 @@ summary{cursor:pointer;padding:12px 16px;color:var(--accent);font-weight:600;lis
 summary::-webkit-details-marker{display:none}
 summary::before{content:"\\25B8";display:inline-block;margin-right:8px;transition:transform .15s}
 details[open] summary::before{transform:rotate(90deg)}
-pre{margin:0;padding:16px;border-top:1px solid var(--hairline);font:14px/1.5 var(--mono);overflow-x:auto;white-space:pre}  # noqa: E501
+pre{margin:0;padding:16px;border-top:1px solid var(--hairline);font:14px/1.5 var(--mono);overflow-x:auto;white-space:pre}
 pre.pre-wrap{white-space:pre-wrap;word-break:break-word}
 .ledger-line{margin:16px 0 0;color:var(--muted);font-size:14px}
 .foot{padding:24px 24px 64px;color:var(--muted);font-size:14px;border-top:1px solid var(--hairline)}
