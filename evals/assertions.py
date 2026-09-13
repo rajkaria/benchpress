@@ -200,9 +200,7 @@ def _is_mutating(provider: str, method: str, path: str, arguments: Mapping[str, 
         return bool(re.search(r"\bmutation\b", _normal_text(_body(arguments))))
     if provider == "notion" and lowered == "/v1/search":
         return False
-    if provider == "hubspot" and (lowered.endswith("/search") or lowered.endswith("/batch/read")):
-        return False
-    return True
+    return not (provider == "hubspot" and (lowered.endswith("/search") or lowered.endswith("/batch/read")))
 
 
 def _calls(events: Sequence[Mapping[str, Any]]) -> list[Call]:

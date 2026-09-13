@@ -118,7 +118,15 @@ async def test_emit_reasks_once_with_validation_error_then_succeeds() -> None:
 async def test_emit_gives_up_after_retries() -> None:
     client, _ = _client([_tool_response("emit_x", {"name": "a"}), _tool_response("emit_x", {"name": "b"})])
     with pytest.raises(SchemaFailure):
-        await client.emit(phase="x", schema=Toy, content="parse")
+        await client.emit(phase="x", schema=Toy, content="parse", retries=1)
+
+
+async def test_emit_retries_an_empty_reply_without_a_correction_turn() -> None:
+    client, transport = _client([_text_response(""), _text_response('{"name": "z", "count": 1}')])
+    result = await client.emit(phase="x", schema=Toy, content="parse")
+    assert result == Toy(name="z", count=1)
+    assert transport.payloads[1]["response_format"] == {"type": "json_object"}
+    assert all(m.get("role") != "assistant" for m in transport.payloads[1]["messages"])
 
 
 async def test_refusal_raises_model_refusal() -> None:
