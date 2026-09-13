@@ -38,6 +38,7 @@ from benchpress.context import (
     ResolvedTarget,
 )
 from benchpress.gate import Gate, fingerprint
+from benchpress.packs import PACK_RULE_PREFIX, PolicyPack, PolicyPackError, load_policy_packs
 
 CORPUS_DIR = Path(__file__).resolve().parent / "corpus"
 
@@ -176,8 +177,10 @@ class CaseExpect(_Model):
         if self.decision == "refuse":
             if not self.rule:
                 raise ValueError("a refuse expectation must name the rule that refuses")
-            if self.rule not in GATE_RULES:
-                raise ValueError(f"unknown gate rule {self.rule!r}; known: {list(GATE_RULES)}")
+            if self.rule not in GATE_RULES and not self.rule.startswith(PACK_RULE_PREFIX):
+                raise ValueError(
+                    f"unknown gate rule {self.rule!r}; known: {list(GATE_RULES)} or '{PACK_RULE_PREFIX}<pack>.<rule>'"
+                )
         elif self.rule or self.reason_contains:
             raise ValueError("an allow expectation takes no rule or reason")
         return self
@@ -191,11 +194,34 @@ class GateCase(_Model):
     name: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     description: str = ""
     tags: tuple[str, ...] = ()
+    packs: tuple[str, ...] = ()
     context: CaseContext = Field(default_factory=CaseContext)
     action: CaseAction
     expect: CaseExpect
     xfail: str | None = Field(default=None, min_length=1)
     source: str = ""
+
+    @model_validator(mode="after")
+    def _pack_rule_needs_its_pack(self) -> GateCase:
+        rule = self.expect.rule or ""
+        if rule.startswith(PACK_RULE_PREFIX):
+            pack_name = rule.removeprefix(PACK_RULE_PREFIX).split(".", 1)[0]
+            if not any(Path(item).stem == pack_name for item in self.packs):
+                raise ValueError(f"expected rule {rule!r} needs pack {pack_name!r} in `packs`")
+        return self
+
+    def policy_packs(self) -> tuple[PolicyPack, ...]:
+        """Bundled packs by name; pack files by path, relative to the case file."""
+        base = Path(self.source).parent if self.source else Path.cwd()
+        resolved: list[str | Path] = []
+        for item in self.packs:
+            path = Path(item)
+            if path.suffix in {".yaml", ".yml"} and not path.is_absolute():
+                path = base / path
+                resolved.append(path)
+            else:
+                resolved.append(item)
+        return load_policy_packs(resolved)
 
 
 class CorpusFile(_Model):
@@ -240,7 +266,8 @@ def load_corpus_file(path: Path) -> tuple[GateCase, ...]:
         try:
             case.action.to_action()
             case.context.build()
-        except (ValidationError, CorpusError) as exc:
+            case.policy_packs()
+        except (ValidationError, CorpusError, PolicyPackError) as exc:
             raise CorpusError(f"{path}: case {case.name!r}: {exc}") from exc
     return cases
 
@@ -281,7 +308,7 @@ class CaseResult:
 
 def build_gate(case: GateCase) -> Gate:
     context = case.context.build()
-    gate = Gate(context=context, allow_unplanned=not case.context.enforce_plan)
+    gate = Gate(context=context, allow_unplanned=not case.context.enforce_plan, policy_packs=case.policy_packs())
     for prior in case.context.succeeded:
         gate.record_success(fingerprint(prior.to_action()))
     return gate

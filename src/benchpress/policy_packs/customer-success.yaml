@@ -1,0 +1,28 @@
+name: customer-success
+title: Customer success
+description: >-
+  For agents that update accounts on behalf of customer-facing teams. Customer mail is drafted,
+  never sent. Chat writes are limited to posting a message. CRM records are never deleted, archived,
+  or merged. Billing is out of scope: no charges, invoices, or subscription changes.
+rules:
+  - id: customer-success.email-draft-only
+    reason: Outbound email is draft-only under the customer-success pack; a person reviews and sends it.
+    match: {action_classes: [send_email]}
+
+  - id: customer-success.chat-post-only
+    reason: >-
+      Chat writes are limited to posting a message. Reactions, edits, deletes, pins, joins, and invites
+      are refused.
+    match: {providers: [slack], path_not: '(^|/)chat\.postMessage/?(\?.*)?$'}
+
+  - id: customer-success.no-crm-delete
+    reason: CRM records are never deleted by the agent.
+    match: {providers: [hubspot], methods: [DELETE]}
+
+  - id: customer-success.no-crm-archive-or-merge
+    reason: Archiving, merging, or GDPR-deleting CRM records destroys history and is refused.
+    match: {providers: [hubspot], path: '/(batch/archive|merge|gdpr-delete)\b'}
+
+  - id: customer-success.no-money-movement
+    reason: Charges, refunds, invoices, and subscription changes are outside customer success; hand them to billing.
+    match: {action_classes: [create_charge, create_invoice, update_subscription, move_subscription]}

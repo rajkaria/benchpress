@@ -64,7 +64,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-benchpress = ["py.typed", "corpus/*.yaml"]
+benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

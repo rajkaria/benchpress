@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from benchpress.context import Action, Context, GateVerdict
-from benchpress.gate import Gate
+from benchpress.gate import Gate, PolicyRuleSet
 from benchpress.model import ModelClient, ModelConfig, UsageTotals
 from benchpress.phases.common import Ablations, PhaseDeps, resolve_playbooks
 from benchpress.phases.deliver import deliver, final_json
@@ -91,6 +91,7 @@ async def run_trial(
     trial_id: str | None = None,
     model_client: ModelClient | None = None,
     playbooks: Mapping[str, Playbook] | None = None,
+    policy_packs: Sequence[PolicyRuleSet] | None = None,
 ) -> TrialResult:
     started = time.monotonic()
     ablations = ablations or Ablations()
@@ -101,7 +102,8 @@ async def run_trial(
         user_prompt=user_prompt,
         providers=tuple(providers),
     )
-    gate = AuditingGate(ctx) if ablations.no_gate else Gate(ctx)
+    packs = tuple(policy_packs or ())
+    gate = AuditingGate(ctx, policy_packs=packs) if ablations.no_gate else Gate(ctx, policy_packs=packs)
     trace_path: str | None = None
     if trace_dir is not None:
         trace_dir.mkdir(parents=True, exist_ok=True)
