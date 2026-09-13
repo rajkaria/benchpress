@@ -456,13 +456,14 @@ def register(playbook: Playbook, registry: dict[str, Playbook]) -> None:
 def _build_registry() -> dict[str, Playbook]:
     # Imported here (not at module top) because each provider module imports the base types
     # defined above; this keeps the package import acyclic.
+    from benchpress.playbooks.github import GitHubPlaybook
     from benchpress.playbooks.gmail import GmailPlaybook
     from benchpress.playbooks.hubspot import HubSpotPlaybook
     from benchpress.playbooks.slack import SlackPlaybook
     from benchpress.playbooks.stripe import StripePlaybook
 
     registry: dict[str, Playbook] = {}
-    for playbook in (SlackPlaybook(), GmailPlaybook(), HubSpotPlaybook(), StripePlaybook()):
+    for playbook in (SlackPlaybook(), GmailPlaybook(), HubSpotPlaybook(), StripePlaybook(), GitHubPlaybook()):
         register(playbook, registry)
     return registry
 

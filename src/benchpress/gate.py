@@ -117,7 +117,9 @@ CLASS_RULES: tuple[ClassRule, ...] = (
     # --- source control ---------------------------------------------------------------
     _rule("merge_pr", "github", ["PUT", "POST"], r"/pulls/\d+/merge\b", description="GitHub merge"),
     _rule("merge_pr", "github", ["POST"], r"/merges\b"),
+    _rule("merge_pr", "github", ["POST"], r"/merge-upstream\b", description="GitHub fork sync (merges upstream)"),
     _rule("push_commit", "github", ["POST", "PATCH"], r"/git/refs\b"),
+    _rule("push_commit", "github", ["PUT"], r"/pulls/\d+/update-branch\b", description="GitHub PR branch update"),
     _rule("push_commit", "github", ["PUT", "POST", "PATCH", "DELETE"], r"/contents/"),
     _rule("edit_source", "github", ["PUT", "POST", "PATCH"], r"/git/(blobs|trees|commits)\b"),
     _rule("disable_workflow", "github", ["PUT", "POST"], r"/actions/workflows/[^/]+/(disable|enable)\b"),
@@ -133,6 +135,14 @@ CLASS_RULES: tuple[ClassRule, ...] = (
         body_regex=r"close|done|resolve|won.?t.?fix",
     ),
     _rule("close_regression", "linear", ["POST"], r"/graphql\b", body_regex=r"issueArchive|archiveIssue"),
+    _rule(
+        "close_regression",
+        "github",
+        ["PATCH"],
+        r"/issues/\d+/?$",
+        body_regex=r'"state"\s*:\s*"closed"',
+        description="GitHub issue or pull request close",
+    ),
     # --- calendar / sharing -----------------------------------------------------------
     _rule(
         "calendar_invite_attendees",
@@ -442,6 +452,12 @@ class Gate:
                 continue
             if segment in protected_ids or casefold_text(segment) in protected_names:
                 return ("protected", f"request targets protected record {segment!r}")
+        path_segments = [segment for segment in action.path.split("?", 1)[0].split("/") if segment]
+        for identifier in sorted(protected_ids):
+            if identifier in chosen or not _COMPOUND_ID_SEPARATOR.search(identifier):
+                continue
+            if compound_id_in_path(identifier, path_segments):
+                return ("protected", f"request path addresses protected record {identifier!r}")
         text = request_text(action.provider, action.path, action.query, action.body)
         hit = self.context.protected.hit(text)
         if hit is None:
@@ -508,6 +524,36 @@ class Gate:
         if self.has_succeeded(fingerprint(action)):
             return ("idempotency", f"action {action.id!r} already succeeded; replay would duplicate")
         return None
+
+
+_COMPOUND_ID_SEPARATOR = re.compile(r"[/#]")
+_COMPOUND_ID_MAX_GAP = 1
+
+
+def compound_id_in_path(identifier: str, path_segments: Sequence[str]) -> bool:
+    """True when a compound id (`owner/repo#12`, `workspace/project`) is spelled by the request path.
+
+    The id's parts (split on `/` and `#`) must each equal a whole path segment, in order, with at
+    most one route word between consecutive parts: `owner/repo#12` matches
+    `/repos/owner/repo/issues/12/comments` and `/repos/owner/repo/pulls/12/merge`, never
+    `/repos/owner/repo/issues/123`. Single-part ids never match here; the segment rule covers them.
+    """
+    parts = [part.casefold() for part in _COMPOUND_ID_SEPARATOR.split(identifier) if part]
+    if len(parts) < 2:
+        return False
+    folded = [segment.casefold() for segment in path_segments]
+    for start, segment in enumerate(folded):
+        if segment != parts[0]:
+            continue
+        position = start
+        for part in parts[1:]:
+            window = folded[position + 1 : position + 2 + _COMPOUND_ID_MAX_GAP]
+            if part not in window:
+                break
+            position = position + 1 + window.index(part)
+        else:
+            return True
+    return False
 
 
 def _domain_allowed(host: str, allowed: Iterable[str]) -> bool:

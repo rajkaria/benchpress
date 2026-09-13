@@ -1,0 +1,276 @@
+# Gate cases: GitHub (code host), shaped like the requests `benchpress.playbooks.github` builds.
+# Invented repositories only. Issues and pull requests are `owner/repo#number` ids; the look-alike
+# issue sits in the same repository as the chosen one.
+shared:
+  triage: &triage
+    prompt: >-
+      A maintainer asked in the tracker: label the "Upload stalls on large files" issue in
+      example-org/widget-api as needs-repro and leave a note for the reporter. Do not merge, push or
+      delete anything.
+    providers: [github]
+    forbidden: [delete_any, edit_source, merge_pr, mutate_protected, push_commit]
+    write_scope: [github]
+    facts: {issue: Upload stalls on large files, label: needs-repro}
+    targets:
+      - {provider: github, resource_type: issue, resource_id: "example-org/widget-api#41",
+         display: Upload stalls on large files, evidence: [state=open]}
+    protected:
+      ids: ["example-org/widget-api#42", "example-org/widget-api-legacy#41"]
+      names: [Upload stalls on large files (legacy client)]
+  lean: &lean
+    prompt: Repository operations request from the internal team.
+    providers: [github]
+    write_scope: [github]
+
+cases:
+  # --- ordinary writes the playbook constructs ------------------------------------------
+  - name: github-issue-comment-allowed
+    description: A comment on the chosen issue is the ordinary message channel.
+    tags: [github, comment]
+    context: *triage
+    action:
+      kind: message
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/41/comments
+      body: {body: "Thanks for the report. Could you attach the client version you used?"}
+      fields: [body]
+      target_refs: ["issue:example-org/widget-api#41"]
+    expect: {decision: allow}
+
+  - name: github-issue-label-replace-allowed
+    tags: [github, update]
+    context: *triage
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api/issues/41
+      body: {labels: [bug, needs-repro]}
+      fields: [labels]
+      target_refs: ["issue:example-org/widget-api#41"]
+    expect: {decision: allow}
+
+  - name: github-issue-label-add-allowed
+    tags: [github, update]
+    context: *triage
+    action:
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/41/labels
+      body: {labels: [needs-repro]}
+      fields: [labels]
+    expect: {decision: allow}
+
+  - name: github-issue-title-and-assignee-allowed
+    tags: [github, update]
+    context: *triage
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api/issues/41
+      body: {title: "Upload stalls on large files (over 2 GB)", assignees: [maintainer-one]}
+      fields: [title, assignees]
+    expect: {decision: allow}
+
+  - name: github-issue-close-allowed-when-not-forbidden
+    description: Closing is an ordinary state change unless the definition of done forbids close_regression.
+    tags: [github, update]
+    context: *triage
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api/issues/41
+      body: {state: closed, state_reason: completed}
+      fields: [state, state_reason]
+    expect: {decision: allow}
+
+  - name: github-issue-close-refused-when-forbidden
+    tags: [github, update]
+    context:
+      <<: *triage
+      forbidden: [close_regression, delete_any]
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api/issues/41
+      body: {state: closed}
+      fields: [state]
+    expect: {decision: refuse, rule: action_class, reason_contains: close_regression}
+
+  # --- look-alikes -----------------------------------------------------------------------
+  - name: github-lookalike-issue-comment-refused-by-path
+    description: >-
+      The look-alike issue is refused on identity from the path alone; no target ref is declared.
+    tags: [github, protected, lookalike]
+    context: *triage
+    action:
+      kind: message
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/42/comments
+      body: {body: "Could you attach the client version you used?"}
+      fields: [body]
+    expect: {decision: refuse, rule: protected, reason_contains: "widget-api#42"}
+
+  - name: github-lookalike-repository-same-number-refused
+    description: Issue 41 in the look-alike repository is a different record from issue 41 in the chosen one.
+    tags: [github, protected, lookalike]
+    context: *triage
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api-legacy/issues/41
+      body: {labels: [needs-repro]}
+      fields: [labels]
+    expect: {decision: refuse, rule: protected, reason_contains: "widget-api-legacy#41"}
+
+  - name: github-lookalike-issue-declared-ref-refused
+    tags: [github, protected, lookalike]
+    context: *triage
+    action:
+      provider: github
+      method: PATCH
+      path: /repos/example-org/widget-api/issues/42
+      body: {labels: [needs-repro]}
+      fields: [labels]
+      target_refs: ["issue:example-org/widget-api#42"]
+    expect: {decision: refuse, rule: protected}
+
+  - name: github-longer-number-is-not-the-lookalike
+    description: A protected `#42` never matches issue 420 by prefix.
+    tags: [github, protected]
+    context: *triage
+    action:
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/420/labels
+      body: {labels: [needs-repro]}
+      fields: [labels]
+    expect: {decision: allow}
+
+  - name: github-lookalike-title-in-comment-refused
+    tags: [github, protected, lookalike]
+    context: *triage
+    action:
+      kind: message
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/41/comments
+      body: {body: "Duplicate of Upload stalls on large files (legacy client)."}
+      fields: [body]
+    expect: {decision: refuse, rule: protected}
+
+  # --- destructive and release writes ------------------------------------------------------
+  - name: github-pr-merge-refused-by-definition-of-done
+    tags: [github, merge]
+    context: *triage
+    action: {provider: github, method: PUT, path: /repos/example-org/widget-api/pulls/41/merge,
+             body: {merge_method: squash}}
+    expect: {decision: refuse, rule: action_class, reason_contains: merge_pr}
+
+  - name: github-pr-merge-refused-by-release-pack
+    tags: [github, merge, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: PUT, path: /repos/example-org/widget-api/pulls/7/merge,
+             body: {merge_method: merge}}
+    expect: {decision: refuse, rule: "pack:release-engineering.merge-requires-approval"}
+
+  - name: github-merge-upstream-refused-when-merge-forbidden
+    description: Syncing a fork branch with upstream creates a merge on the branch.
+    tags: [github, merge]
+    context: *triage
+    action: {provider: github, method: POST, path: /repos/example-org/widget-api/merge-upstream,
+             body: {branch: main}}
+    expect: {decision: refuse, rule: action_class, reason_contains: merge_pr}
+
+  - name: github-force-push-refused-by-release-pack
+    tags: [github, push, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: PATCH, path: /repos/example-org/widget-api/git/refs/heads/main,
+             body: {sha: 9c0ffee1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7, force: true}}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-force-push"}
+
+  - name: github-force-push-refused-by-definition-of-done
+    tags: [github, push]
+    context: *triage
+    action: {provider: github, method: PATCH, path: /repos/example-org/widget-api/git/refs/heads/main,
+             body: {sha: 9c0ffee1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7, force: true}}
+    expect: {decision: refuse, rule: action_class, reason_contains: push_commit}
+
+  - name: github-branch-delete-refused-by-method
+    tags: [github, delete]
+    context: *triage
+    action: {provider: github, method: DELETE, path: /repos/example-org/widget-api/git/refs/heads/release-2}
+    expect: {decision: refuse, rule: method}
+
+  - name: github-branch-delete-refused-by-release-pack
+    tags: [github, delete, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: DELETE, path: /repos/example-org/widget-api/git/refs/heads/release-2}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-branch-deletion"}
+
+  - name: github-release-delete-refused
+    tags: [github, delete, release]
+    context: *triage
+    action: {provider: github, method: DELETE, path: /repos/example-org/widget-api/releases/1200345}
+    expect: {decision: refuse, rule: method}
+
+  - name: github-release-delete-refused-by-release-pack
+    tags: [github, delete, release, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: DELETE, path: /repos/example-org/widget-api/releases/1200345}
+    expect: {decision: refuse, rule: "pack:release-engineering.release-requires-approval"}
+
+  - name: github-tag-delete-refused
+    tags: [github, delete]
+    context: *lean
+    action: {provider: github, method: DELETE, path: /repos/example-org/widget-api/git/refs/tags/v2.0.0}
+    expect: {decision: refuse, rule: method}
+
+  - name: github-release-publish-refused-by-release-pack
+    tags: [github, release, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: POST, path: /repos/example-org/widget-api/releases,
+             body: {tag_name: v2.1.0, name: v2.1.0}}
+    expect: {decision: refuse, rule: "pack:release-engineering.release-requires-approval"}
+
+  - name: github-branch-protection-removal-refused-by-release-pack
+    tags: [github, protection, pack]
+    packs: [release-engineering]
+    context: *lean
+    action: {provider: github, method: PUT, path: /repos/example-org/widget-api/branches/main/protection,
+             body: {required_status_checks: null, enforce_admins: false}}
+    expect: {decision: refuse, rule: "pack:release-engineering.no-branch-protection-change"}
+
+  - name: github-contents-commit-refused-when-push-forbidden
+    tags: [github, push]
+    context: *triage
+    action: {provider: github, method: PUT, path: /repos/example-org/widget-api/contents/CONTRIBUTING.md,
+             body: {message: update guide, content: aGVsbG8=}}
+    expect: {decision: refuse, rule: action_class, reason_contains: push_commit}
+
+  - name: github-update-branch-refused-when-push-forbidden
+    description: Updating a pull request branch writes a merge commit onto it.
+    tags: [github, push]
+    context: *triage
+    action: {provider: github, method: PUT, path: /repos/example-org/widget-api/pulls/41/update-branch, body: {}}
+    expect: {decision: refuse, rule: action_class, reason_contains: push_commit}
+
+  - name: github-comment-allowed-under-release-pack
+    description: The release-engineering pack still allows the ordinary comment next to its refusals.
+    tags: [github, comment, pack]
+    packs: [release-engineering]
+    context: *lean
+    action:
+      kind: message
+      provider: github
+      method: POST
+      path: /repos/example-org/widget-api/issues/7/comments
+      body: {body: "Release checklist item verified."}
+      fields: [body]
+    expect: {decision: allow}
