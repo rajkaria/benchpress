@@ -1321,3 +1321,34 @@ async def test_unmodified_canonicalizer_projects_the_twin_and_diffs_only_the_wri
     touched = " ".join(str(mutation.resource_id) for mutation in mutations)
     assert touched, "the patch must be visible to the canonicalizer"
     assert str(contact["id"]) in touched, f"only the patched contact changed, got {touched}"
+
+
+@pytest.mark.skipif(not ECOM_02.exists(), reason="vendored arga-twins-benchmark not linked")
+async def test_fair_graders_hubspot_snapshot_query_path_is_served_and_canonicalizes() -> None:
+    """`argabench_fair._hubspot_owner_snapshot_queries` reads this exact path through the gateway."""
+    canonicalizer = _harness("arga_twins_benchmark.evaluation.canonicalizers.argabench")
+    state_capture = _harness("arga_twins_benchmark.evaluation.state_capture")
+    properties = "name,domain,description,dealname,dealstage,hubspot_owner_id,amount"
+    store = _ecom02_store()
+    transport = httpx.ASGITransport(app=make_data_app(store))
+    async with httpx.AsyncClient(transport=transport, base_url="http://hubspot-twin") as http:
+        for object_type, expected in (("companies", 4), ("deals", 3)):
+            response = await http.get(f"/crm/v3/objects/{object_type}?limit=100&archived=false&properties={properties}")
+            assert response.status_code == 200
+            payload = body(response)
+            assert len(cast(list[Any], payload["results"])) == expected
+            projected = canonicalizer.argabench_admin_state_v1(
+                state_capture.CapturedQueryState(
+                    query_id=f"ecom_02_hubspot_{object_type}",
+                    provider_name="hubspot",
+                    provider_role="hubspot_crm",
+                    method="GET",
+                    path=f"/crm/v3/objects/{object_type}",
+                    canonicalizer="argabench_admin_state_v1",
+                    status_code=200,
+                    body=payload,
+                )
+            )
+            assert len(projected) == expected, "every row projects to one canonical resource"
+            ids = {str(resource.resource_id) for resource in projected}
+            assert all(any(str(row["id"]) in rid for rid in ids) for row in cast(list[Any], payload["results"]))
