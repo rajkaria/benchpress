@@ -216,6 +216,7 @@ Facts: customer=Rivermill Studio, former_contact=billing@rivermill.example, veri
     var firstNow=document.querySelector('.ticker tr.now');
     if(firstNow){var box=firstNow.closest('.scroll'); if(box){box.scrollTop=firstNow.offsetTop-box.querySelector('thead').offsetHeight;}}
     if(announce!==false){live.textContent='Step '+(i+1)+' of '+N+': '+panels[i].getAttribute('data-title');}
+    if(announce!==false&&!timer){var top=panels[i].getBoundingClientRect().top; if(top<0||top>window.innerHeight){panels[i].scrollIntoView({block:'start'});}}
     try{history.replaceState(null,'','#'+cur.toLowerCase());}catch(err){}
   }
   function stop(){ if(timer){clearInterval(timer);timer=null;} playBtn.textContent='Play'; playBtn.setAttribute('aria-pressed','false'); }
