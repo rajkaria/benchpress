@@ -108,6 +108,47 @@ def domains_in(text: str) -> frozenset[str]:
     return frozenset(found)
 
 
+# File extensions that are NOT delegated top-level domains. A bare `summary.pdf` is a file name,
+# never a host. Extensions that are also real TLDs (.zip, .mov, .md, .py, .sh, ...) are deliberately
+# absent: `report.zip` may be a host, so it stays a destination and the gate fails closed.
+FILE_EXTENSIONS_NOT_TLDS: frozenset[str] = frozenset(
+    {
+        "avi", "bak", "bmp", "cfg", "conf", "crt", "css", "csv", "dmg", "doc", "docx", "eml", "exe",
+        "flac", "gif", "heic", "htm", "html", "ics", "ini", "ipynb", "jpeg", "jpg", "json", "jsx",
+        "log", "mkv", "mpeg", "mpg", "msi", "odp", "ods", "odt", "ogg", "pdf", "pem", "php", "png",
+        "ppt", "pptx", "rar", "rtf", "scss", "sql", "svg", "tar", "tgz", "tif", "tiff", "tmp",
+        "toml", "tsv", "tsx", "txt", "vcf", "wav", "webm", "webp", "xhtml", "xls", "xlsx", "xml",
+        "yaml", "yml",
+    }
+)  # fmt: skip
+
+
+def url_hosts_in(text: str) -> frozenset[str]:
+    """The host of every http(s) URL in `text`, without userinfo or port."""
+    hosts: set[str] = set()
+    for url in urls_in(text):
+        authority = re.split(r"[/?#]", url.split("://", 1)[1], maxsplit=1)[0]
+        host = authority.rsplit("@", 1)[-1].split(":", 1)[0].casefold()
+        if host:
+            hosts.add(host)
+    return frozenset(hosts)
+
+
+def destination_domains_in(text: str) -> frozenset[str]:
+    """Domains that plausibly name a destination: `domains_in` minus bare file names.
+
+    A token is kept when it is an email or URL host, starts with `www.`, or ends in anything
+    other than a file extension that is not a TLD. So `summary.pdf` and `index.html` are dropped,
+    `files.example/summary.pdf` keeps `files.example`, and `ap@summary.pdf` or `report.zip` stay.
+    """
+    hosts = url_hosts_in(text) | {email.split("@", 1)[1] for email in emails_in(text)}
+    kept: set[str] = set()
+    for token in domains_in(text):
+        if token in hosts or token.startswith("www.") or token.rsplit(".", 1)[-1] not in FILE_EXTENSIONS_NOT_TLDS:
+            kept.add(token)
+    return frozenset(kept)
+
+
 def domain_of(value: str) -> str | None:
     if "@" in value:
         return value.split("@", 1)[1].strip().casefold() or None

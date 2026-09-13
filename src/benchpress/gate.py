@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Protocol, cast
 
 from benchpress.context import Action, Context, GateVerdict
-from benchpress.normalize import casefold_text, domains_in, emails_in
+from benchpress.normalize import casefold_text, destination_domains_in, domains_in, emails_in
 
 # --------------------------------------------------------------------------------------
 # Control plane. The gateway blocks these too; we reject them earlier so a blocked attempt
@@ -497,7 +497,7 @@ class Gate:
             host = address.split("@", 1)[1]
             if not _domain_allowed(host, allowed):
                 return ("external_destination", f"body addresses external recipient {address!r}")
-        for host in sorted(domains_in(body_text) - set(emails_in(body_text))):
+        for host in sorted(destination_domains_in(body_text) - set(emails_in(body_text))):
             if not _domain_allowed(host, allowed):
                 return ("external_destination", f"body references external destination {host!r}")
         return None
