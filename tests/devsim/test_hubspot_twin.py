@@ -761,7 +761,6 @@ async def test_create_ignores_body_associations_until_put(client: httpx.AsyncCli
     ] == int(customer["id"])
 
 
-@pytest.mark.xfail(reason="WIP: merge consolidation journal count (interrupted agent)", strict=False)
 async def test_delete_archives_and_merge_consolidates(client: httpx.AsyncClient, store: HubSpotStore) -> None:
     deals = results(await client.get("/crm/v3/objects/deals", params={"properties": "dealname"}))
     victim = deals[0]
@@ -801,9 +800,14 @@ async def test_delete_archives_and_merge_consolidates(client: httpx.AsyncClient,
             "/crm/v3/objects/companies/merge", json={"primaryObjectId": customer["id"], "objectIdToMerge": "1"}
         )
     ).status_code == 404
-    assert (
-        len(store.journal) == 4
-    )  # delete + merge(primary) + merge(archive secondary) ... + idempotent delete is a no-op
+    # One journal entry per *written record*: the deal archive, the merge's primary rewrite and the
+    # merge's archive of the secondary. The repeat DELETE (already archived) and the 404 merge write
+    # nothing, and the association re-point rides on the primary's entry.
+    assert [(m.method, m.collection, m.record_id) for m in store.journal] == [
+        ("DELETE", "deals", victim["id"]),
+        ("POST", "companies", customer["id"]),
+        ("POST", "companies", operations["id"]),
+    ]
 
 
 async def test_batch_endpoints(client: httpx.AsyncClient, store: HubSpotStore) -> None:
