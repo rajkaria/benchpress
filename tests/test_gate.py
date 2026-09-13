@@ -109,6 +109,52 @@ def test_forbidden_action_classes_are_refused(
     assert rule in {"action_class", "method"}
 
 
+@pytest.mark.parametrize(
+    ("provider", "method", "path", "body"),
+    [
+        ("slack", "POST", "/api/chat.delete", {"channel": "C1", "ts": "1.2"}),
+        ("slack", "POST", "/api/chat.deleteScheduledMessage", {"channel": "C1"}),
+        ("slack", "POST", "/api/files.remote.remove", {"file": "F1"}),
+        ("slack", "POST", "/api/conversations.archive", {"channel": "C1"}),
+        ("gmail", "POST", "/gmail/v1/users/me/messages/batchDelete", {"ids": ["m1"]}),
+        ("gmail", "POST", "/gmail/v1/users/me/threads/t1/trash", None),
+        ("gmail", "POST", "/gmail/v1/users/me/messages/m1/trash", None),
+        ("hubspot", "POST", "/crm/v3/objects/contacts/batch/archive", {"inputs": [{"id": "1"}]}),
+        ("hubspot", "POST", "/crm/v3/objects/contacts/gdpr-delete", {"objectId": "1"}),
+        ("hubspot", "PUT", "/crm/v3/lists/7/memberships/remove", ["1"]),
+        ("google", "POST", "/v1/projects/p1/datasets/d1:delete?force=true", None),
+        ("linear", "POST", "/graphql", {"query": 'mutation { issueDelete(id: "i1") { success } }'}),
+        ("linear", "POST", "/graphql", {"query": 'mutation { deleteProject(id: "p1") { success } }'}),
+    ],
+)
+def test_deletes_spelled_as_writes_are_classified(
+    context: Context, provider: str, method: str, path: str, body: object
+) -> None:
+    assert "delete_any" in classify(provider, method, path, body)
+    context.dod = context.dod.model_copy(update={"write_scope": ()})
+    assert _refusal(context, make_action(provider=provider, method=method, path=path, body=body)) == "action_class"
+
+
+@pytest.mark.parametrize(
+    ("provider", "method", "path", "body"),
+    [
+        ("slack", "POST", "/api/chat.postMessage", {"channel": "C1", "text": "please delete the old draft"}),
+        ("slack", "POST", "/api/chat.update", {"channel": "C1", "ts": "1.2", "text": "archive this later"}),
+        ("slack", "POST", "/api/conversations.unarchive", {"channel": "C1"}),
+        ("gmail", "POST", "/gmail/v1/users/me/messages/m1/untrash", None),
+        ("gmail", "POST", "/gmail/v1/users/me/messages/m1/modify", {"removeLabelIds": ["UNREAD"]}),
+        ("hubspot", "POST", "/crm/v3/objects/contacts/batch/update", {"inputs": [{"id": "1"}]}),
+        ("hubspot", "PATCH", "/crm/v3/objects/companies/archived-9001", {"properties": {"name": "x"}}),
+        ("hubspot", "PUT", "/crm/v3/lists/7/memberships/add", ["1"]),
+        ("linear", "POST", "/graphql", {"query": 'mutation { issueUpdate(id: "i1", input: {}) { success } }'}),
+        ("linear", "POST", "/graphql", {"query": "query { issues { nodes { id archivedAt } } }"}),
+        ("gmail", "GET", "/gmail/v1/users/me/messages/batchDelete", None),
+    ],
+)
+def test_non_delete_routes_are_not_classified_as_deletes(provider: str, method: str, path: str, body: object) -> None:
+    assert "delete_any" not in classify(provider, method, path, body)
+
+
 def test_gmail_label_smuggling_to_sent_is_refused(context: Context) -> None:
     action = make_action(
         provider="gmail",

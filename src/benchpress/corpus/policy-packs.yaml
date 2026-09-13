@@ -130,7 +130,7 @@ cases:
     expect: {decision: refuse, rule: "pack:customer-success.chat-post-only"}
 
   - name: customer-success-pack-slack-chat-delete-refused
-    description: Closes the chat.delete gap the default gate has (see slack-chat-delete-by-post-should-refuse).
+    description: Names the pack rule; the default gate also refuses chat.delete (see slack-chat-delete-by-post-refused).
     packs: [customer-success]
     context: *lean
     action: {provider: slack, method: POST, path: /api/chat.delete, body: {channel: C0CS1, ts: "1700000000.000100"}}
@@ -157,7 +157,7 @@ cases:
     expect: {decision: refuse, rule: "pack:customer-success.no-crm-delete"}
 
   - name: customer-success-pack-crm-batch-archive-refused
-    description: Closes the batch/archive gap the default gate has (see hubspot-batch-archive-should-refuse).
+    description: Names the pack rule; the default gate also refuses batch/archive (see hubspot-batch-archive-refused).
     packs: [customer-success]
     context: *lean
     action: {provider: hubspot, method: POST, path: /crm/v3/objects/contacts/batch/archive, body: {inputs: [{id: "5501"}]}}
@@ -220,7 +220,7 @@ cases:
     expect: {decision: allow}
 
   - name: it-offboarding-pack-mailbox-batch-delete-refused
-    description: Closes the batchDelete gap the default gate has (see gmail-batch-delete-by-post-should-refuse).
+    description: Names the pack rule; the default gate also refuses batchDelete (see gmail-batch-delete-by-post-refused).
     packs: [it-offboarding]
     context: *lean
     action: {provider: gmail, method: POST, path: /gmail/v1/users/me/messages/batchDelete, body: {ids: [m-1, m-2]}}
