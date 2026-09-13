@@ -94,7 +94,8 @@ benchpress gate check my-cases/        # add your own YAML cases
 Policy packs are YAML rule sets per business function (draft-only outbound mail, no refunds or deletes on
 money objects without an approval fact, no CRM deletes, no force-push). The gate enforces them **in code**
 and names the rule id in every refusal:
-`benchpress.wrap(model, executor, providers=[...], policy_packs=benchpress.load_policy_packs(["billing"]))`.
+`benchpress.wrap(model, executor, providers=[...], policy_packs=benchpress.load_policy_packs(["billing"]))`. From the CLI:
+`benchpress run --providers stripe,gmail --policy-pack billing --prompt "..."`.
 Packs only ever add refusals; with no pack the gate behaves exactly as before. The corpus documents the gate's
 real behavior, including five known gaps recorded as strict xfails.
 [Packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md) ·
