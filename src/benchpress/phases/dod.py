@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import get_args
+from typing import Any, cast, get_args
 
-from benchpress.context import Context, DefinitionOfDone, Deliverable, EndStateItem, ForbiddenClass
+from benchpress.context import Context, DefinitionOfDone, Deliverable, EndStateItem, ForbiddenClass, ResolvedTarget
 from benchpress.phases.common import PhaseDeps, dump, safe_emit
 from benchpress.phases.schemas import DoDDraft
 from benchpress.prompts import render
@@ -39,7 +39,7 @@ async def define_done(deps: PhaseDeps) -> None:
             "dod",
             frame=ctx.frame,
             policies=[dump(policy) for policy in ctx.policies],
-            targets=[dump(target) for target in ctx.targets],
+            targets=[_target_with_record(ctx, target) for target in ctx.targets],
             protected=list(ctx.protected.all_terms()),
         ),
         DoDDraft(summary="", escalate=True, escalation_reason="model unavailable"),
@@ -127,3 +127,23 @@ def apply_code_rules(ctx: Context, draft: DoDDraft) -> DefinitionOfDone:
         customer_contact=draft.customer_contact_email,
         account_owner=draft.account_owner,
     )
+
+
+def _target_with_record(ctx: Context, target: ResolvedTarget) -> object:
+    """The chosen target plus the record text P2 read (notes, description, current contact fields).
+
+    The verified new value usually lives in that text (a CRM note saying where notices should go),
+    so the definition of done must see it; the ResolvedTarget alone only carries the match evidence.
+    """
+    payload = cast(dict[str, Any], dump(target))
+    for candidate in ctx.candidates:
+        if (candidate.provider, candidate.ref) == (target.provider, target.ref):
+            payload["current_record"] = {
+                "name": candidate.name,
+                "domain": candidate.domain,
+                "email": candidate.email,
+                "lifecycle": candidate.lifecycle,
+                "notes": candidate.notes[:1500],
+            }
+            break
+    return payload
