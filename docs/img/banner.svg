@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-label="Benchpress: the reliability layer for AI agents with write access">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B0D10"/>
+      <stop offset="1" stop-color="#121821"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#1F2630" stroke-width="1" opacity=".55"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="380" rx="16" fill="url(#g)"/>
+  <rect width="1200" height="380" rx="16" fill="url(#grid)"/>
+  <g font-family="ui-sans-serif, -apple-system, 'Segoe UI', Inter, system-ui, sans-serif">
+    <text x="64" y="112" fill="#E6EAF0" font-size="64" font-weight="700" letter-spacing="-1.5">Benchpress</text>
+    <text x="64" y="156" fill="#8B96A5" font-size="24" font-weight="500">The reliability layer for AI agents with write access.</text>
+    <text x="64" y="192" fill="#58A6FF" font-size="20" font-weight="600">Same model. Same tools. Different loop.</text>
+  </g>
+  <g font-family="ui-monospace, 'JetBrains Mono', SFMono-Regular, Menlo, monospace" font-size="15" font-weight="600">
+    <g transform="translate(64 244)">
+      <rect width="112" height="40" rx="8" fill="#12161B" stroke="#1F2630"/><text x="56" y="25" text-anchor="middle" fill="#E6EAF0">P0 orient</text>
+      <rect x="124" width="112" height="40" rx="8" fill="#1d1809" stroke="#D29922"/><text x="180" y="25" text-anchor="middle" fill="#D29922">P1 policy</text>
+      <rect x="248" width="112" height="40" rx="8" fill="#12161B" stroke="#1F2630"/><text x="304" y="25" text-anchor="middle" fill="#E6EAF0">P2 resolve</text>
+      <rect x="372" width="112" height="40" rx="8" fill="#12161B" stroke="#1F2630"/><text x="428" y="25" text-anchor="middle" fill="#E6EAF0">P3 done</text>
+      <rect x="496" width="112" height="40" rx="8" fill="#12161B" stroke="#1F2630"/><text x="552" y="25" text-anchor="middle" fill="#E6EAF0">P4 plan</text>
+      <rect x="620" width="128" height="40" rx="8" fill="#220f0e" stroke="#F85149"/><text x="684" y="25" text-anchor="middle" fill="#F85149">P5 gate+exec</text>
+      <rect x="760" width="120" height="40" rx="8" fill="#0d1d12" stroke="#3FB950"/><text x="820" y="25" text-anchor="middle" fill="#3FB950">P6 read-back</text>
+      <rect x="892" width="180" height="40" rx="8" fill="#0d1726" stroke="#58A6FF"/><text x="982" y="25" text-anchor="middle" fill="#58A6FF">P7 deliver + receipt</text>
+    </g>
+    <text x="64" y="330" fill="#8B96A5" font-size="14" font-weight="500">policy-first · look-alikes locked in code · every write gated and read back · drafts wait for owner review · status from evidence only</text>
+  </g>
+</svg>
