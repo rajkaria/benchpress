@@ -1,0 +1,1001 @@
+{
+  "generated_by": "packages/benchpress-guard/scripts/gen_parity.py (benchpress.shims.guard_policy)",
+  "fixed_ts": "2026-09-13T21:04:05.123000+00:00",
+  "fixed_latency_ms": 1.25,
+  "policies": [
+    {
+      "name": "allow rule with argument regex and max_calls",
+      "policy": {
+        "rules": [
+          {
+            "tool": "update_invoice",
+            "arguments": {
+              "status": "sent|paid"
+            },
+            "max_calls": 2
+          }
+        ]
+      },
+      "calls": [
+        {
+          "tool": "get_invoice",
+          "args": {
+            "invoice_id": "INV-7"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "read",
+            "rule": "read",
+            "reason": "read-only tool; reads are allowed by policy",
+            "policy_rule": null,
+            "refusal": null,
+            "digest": "sha256:b740062944ad98a04909a8576c764e41",
+            "receipt_line": "{\"args_digest\": \"sha256:b740062944ad98a04909a8576c764e41\", \"class\": \"read\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"read-only tool; reads are allowed by policy\", \"rule\": \"read\", \"tool\": \"get_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": {
+            "invoice_id": "INV-7",
+            "status": "paid"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 0",
+            "policy_rule": 0,
+            "refusal": null,
+            "digest": "sha256:1801e1db05fc5350b1cea3c93005706f",
+            "receipt_line": "{\"args_digest\": \"sha256:1801e1db05fc5350b1cea3c93005706f\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"allowed by policy rule 0\", \"rule\": \"allow_rule\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": {
+            "invoice_id": "INV-7",
+            "status": "draft"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'status' does not match 'sent|paid'",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'update_invoice' [arguments_mismatch]: argument 'status' does not match 'sent|paid'",
+            "digest": "sha256:9855b4bb0602c26e9403b54443ca709c",
+            "receipt_line": "{\"args_digest\": \"sha256:9855b4bb0602c26e9403b54443ca709c\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"argument 'status' does not match 'sent|paid'\", \"rule\": \"arguments_mismatch\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": {
+            "invoice_id": "INV-7"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'status' is required by the rule for 'update_invoice'",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'update_invoice' [arguments_mismatch]: argument 'status' is required by the rule for 'update_invoice'",
+            "digest": "sha256:b740062944ad98a04909a8576c764e41",
+            "receipt_line": "{\"args_digest\": \"sha256:b740062944ad98a04909a8576c764e41\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"argument 'status' is required by the rule for 'update_invoice'\", \"rule\": \"arguments_mismatch\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": {
+            "invoice_id": "INV-8",
+            "status": "sent"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 0",
+            "policy_rule": 0,
+            "refusal": null,
+            "digest": "sha256:7017d0ec9238516154fc833ef3cf66ef",
+            "receipt_line": "{\"args_digest\": \"sha256:7017d0ec9238516154fc833ef3cf66ef\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"allowed by policy rule 0\", \"rule\": \"allow_rule\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": {
+            "invoice_id": "INV-9",
+            "status": "sent"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "max_calls",
+            "reason": "policy rule 0 ('update_invoice') allows at most 2 call(s)",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'update_invoice' [max_calls]: policy rule 0 ('update_invoice') allows at most 2 call(s)",
+            "digest": "sha256:c0fa492a70349e8f88a38adb574a63a3",
+            "receipt_line": "{\"args_digest\": \"sha256:c0fa492a70349e8f88a38adb574a63a3\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"policy rule 0 ('update_invoice') allows at most 2 call(s)\", \"rule\": \"max_calls\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "delete_invoice",
+          "args": {
+            "invoice_id": "INV-7"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "destructive",
+            "rule": "no_allow_rule",
+            "reason": "'delete_invoice' is classified destructive and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'delete_invoice' [no_allow_rule]: 'delete_invoice' is classified destructive and no policy rule allows it",
+            "digest": "sha256:b740062944ad98a04909a8576c764e41",
+            "receipt_line": "{\"args_digest\": \"sha256:b740062944ad98a04909a8576c764e41\", \"class\": \"destructive\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'delete_invoice' is classified destructive and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"delete_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": [
+            1,
+            2
+          ],
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "invalid_arguments",
+            "reason": "arguments must be a JSON object",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'update_invoice' [invalid_arguments]: arguments must be a JSON object",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"arguments must be a JSON object\", \"rule\": \"invalid_arguments\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": "not an object",
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "invalid_arguments",
+            "reason": "arguments must be a JSON object",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'update_invoice' [invalid_arguments]: arguments must be a JSON object",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"arguments must be a JSON object\", \"rule\": \"invalid_arguments\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_invoice",
+          "args": null,
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "invalid_arguments",
+            "reason": "arguments must be a JSON object",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'update_invoice' [invalid_arguments]: arguments must be a JSON object",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"arguments must be a JSON object\", \"rule\": \"invalid_arguments\", \"tool\": \"update_invoice\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "send_reminder",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "'send_reminder' is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'send_reminder' [no_allow_rule]: 'send_reminder' is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'send_reminder' is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"send_reminder\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deny glob, catch-all allow, destructive opt-in, custom reasons, declared classes",
+      "policy": {
+        "classes": {
+          "sync_everything": "write",
+          "get_and_email_report": "write"
+        },
+        "rules": [
+          {
+            "tool": "admin_*",
+            "effect": "deny",
+            "reason": "admin tools are off limits for agents"
+          },
+          {
+            "tool": "close_duplicate",
+            "allow_destructive": true,
+            "max_calls": 1,
+            "reason": "dedupe is fine"
+          },
+          {
+            "tool": "*"
+          }
+        ]
+      },
+      "calls": [
+        {
+          "tool": "admin_reset_password",
+          "args": {
+            "user": "u1"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "deny_rule",
+            "reason": "admin tools are off limits for agents",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'admin_reset_password' [deny_rule]: admin tools are off limits for agents",
+            "digest": "sha256:523bae64bd0bf21daba46088cd6665d6",
+            "receipt_line": "{\"args_digest\": \"sha256:523bae64bd0bf21daba46088cd6665d6\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"admin tools are off limits for agents\", \"rule\": \"deny_rule\", \"tool\": \"admin_reset_password\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "close_duplicate",
+          "args": {
+            "ticket_id": "T-1"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "dedupe is fine",
+            "policy_rule": 1,
+            "refusal": null,
+            "digest": "sha256:3e736b1044c4fa102607ccfa1aace4b8",
+            "receipt_line": "{\"args_digest\": \"sha256:3e736b1044c4fa102607ccfa1aace4b8\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 1, \"reason\": \"dedupe is fine\", \"rule\": \"allow_rule\", \"tool\": \"close_duplicate\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "close_duplicate",
+          "args": {
+            "ticket_id": "T-2"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "max_calls",
+            "reason": "policy rule 1 ('close_duplicate') allows at most 1 call(s)",
+            "policy_rule": 1,
+            "refusal": "benchpress refused 'close_duplicate' [max_calls]: policy rule 1 ('close_duplicate') allows at most 1 call(s)",
+            "digest": "sha256:101f58dc686a66f370b5dea2a499b1fb",
+            "receipt_line": "{\"args_digest\": \"sha256:101f58dc686a66f370b5dea2a499b1fb\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 1, \"reason\": \"policy rule 1 ('close_duplicate') allows at most 1 call(s)\", \"rule\": \"max_calls\", \"tool\": \"close_duplicate\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "delete_ticket",
+          "args": {
+            "ticket_id": "T-3"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "destructive",
+            "rule": "destructive_default_deny",
+            "reason": "'delete_ticket' is destructive; destructive tools are refused unless a rule sets allow_destructive",
+            "policy_rule": 2,
+            "refusal": "benchpress refused 'delete_ticket' [destructive_default_deny]: 'delete_ticket' is destructive; destructive tools are refused unless a rule sets allow_destructive",
+            "digest": "sha256:ed54fb447aaab8ec7af67ab53eaae135",
+            "receipt_line": "{\"args_digest\": \"sha256:ed54fb447aaab8ec7af67ab53eaae135\", \"class\": \"destructive\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"'delete_ticket' is destructive; destructive tools are refused unless a rule sets allow_destructive\", \"rule\": \"destructive_default_deny\", \"tool\": \"delete_ticket\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "sync_everything",
+          "args": {},
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"sync_everything\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "get_and_email_report",
+          "args": {
+            "to": "ops"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:a1656353a6f57f548548583a223b1daa",
+            "receipt_line": "{\"args_digest\": \"sha256:a1656353a6f57f548548583a223b1daa\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"get_and_email_report\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "getReport",
+          "args": {
+            "id": 3
+          },
+          "expected": {
+            "allowed": true,
+            "class": "read",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:e7e47cffe2c803349c298b11ac2b371d",
+            "receipt_line": "{\"args_digest\": \"sha256:e7e47cffe2c803349c298b11ac2b371d\", \"class\": \"read\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"getReport\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "removeUser",
+          "args": {
+            "id": 4
+          },
+          "expected": {
+            "allowed": false,
+            "class": "destructive",
+            "rule": "destructive_default_deny",
+            "reason": "'removeUser' is destructive; destructive tools are refused unless a rule sets allow_destructive",
+            "policy_rule": 2,
+            "refusal": "benchpress refused 'removeUser' [destructive_default_deny]: 'removeUser' is destructive; destructive tools are refused unless a rule sets allow_destructive",
+            "digest": "sha256:4edbed4a6bd38c628d6369d2d5ba040f",
+            "receipt_line": "{\"args_digest\": \"sha256:4edbed4a6bd38c628d6369d2d5ba040f\", \"class\": \"destructive\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"'removeUser' is destructive; destructive tools are refused unless a rule sets allow_destructive\", \"rule\": \"destructive_default_deny\", \"tool\": \"removeUser\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "reads denied, numeric and structured argument rendering, quotes in names",
+      "policy": {
+        "reads": "deny",
+        "rules": [
+          {
+            "tool": "list_*",
+            "arguments": {
+              "limit": "\\d{1,3}"
+            }
+          },
+          {
+            "tool": "tag_record",
+            "arguments": {
+              "meta": "\\{\"a\": 1, \"b\": \\[true, null\\]\\}",
+              "flag": "true"
+            }
+          },
+          {
+            "tool": "set_ratio",
+            "arguments": {
+              "ratio": "0\\.\\d+|1e-05"
+            }
+          }
+        ]
+      },
+      "calls": [
+        {
+          "tool": "list_items",
+          "args": {
+            "limit": 50
+          },
+          "expected": {
+            "allowed": true,
+            "class": "read",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 0",
+            "policy_rule": 0,
+            "refusal": null,
+            "digest": "sha256:59676b023081bf7f8c99c6255d3efc0f",
+            "receipt_line": "{\"args_digest\": \"sha256:59676b023081bf7f8c99c6255d3efc0f\", \"class\": \"read\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"allowed by policy rule 0\", \"rule\": \"allow_rule\", \"tool\": \"list_items\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "list_items",
+          "args": {
+            "limit": "7"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "read",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 0",
+            "policy_rule": 0,
+            "refusal": null,
+            "digest": "sha256:1985ada3f49c934bda17e94e87fe9604",
+            "receipt_line": "{\"args_digest\": \"sha256:1985ada3f49c934bda17e94e87fe9604\", \"class\": \"read\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"allowed by policy rule 0\", \"rule\": \"allow_rule\", \"tool\": \"list_items\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "list_items",
+          "args": {
+            "limit": 5000
+          },
+          "expected": {
+            "allowed": false,
+            "class": "read",
+            "rule": "reads_denied",
+            "reason": "the policy denies reads without an allow rule",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'list_items' [reads_denied]: the policy denies reads without an allow rule",
+            "digest": "sha256:6cf53ffecec733bef900dca7e32b3287",
+            "receipt_line": "{\"args_digest\": \"sha256:6cf53ffecec733bef900dca7e32b3287\", \"class\": \"read\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"the policy denies reads without an allow rule\", \"rule\": \"reads_denied\", \"tool\": \"list_items\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "get_item",
+          "args": {
+            "id": "x"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "read",
+            "rule": "reads_denied",
+            "reason": "the policy denies reads without an allow rule",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'get_item' [reads_denied]: the policy denies reads without an allow rule",
+            "digest": "sha256:a941d1fcc59e0a394928304c131960e3",
+            "receipt_line": "{\"args_digest\": \"sha256:a941d1fcc59e0a394928304c131960e3\", \"class\": \"read\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"the policy denies reads without an allow rule\", \"rule\": \"reads_denied\", \"tool\": \"get_item\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "tag_record",
+          "args": {
+            "meta": {
+              "b": [
+                true,
+                null
+              ],
+              "a": 1
+            },
+            "flag": true
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 1",
+            "policy_rule": 1,
+            "refusal": null,
+            "digest": "sha256:3289f17dcf9794a77797400a47a12e64",
+            "receipt_line": "{\"args_digest\": \"sha256:3289f17dcf9794a77797400a47a12e64\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 1, \"reason\": \"allowed by policy rule 1\", \"rule\": \"allow_rule\", \"tool\": \"tag_record\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "tag_record",
+          "args": {
+            "meta": {
+              "a": 1
+            },
+            "flag": true
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'meta' does not match '\\\\{\"a\": 1, \"b\": \\\\[true, null\\\\]\\\\}'",
+            "policy_rule": 1,
+            "refusal": "benchpress refused 'tag_record' [arguments_mismatch]: argument 'meta' does not match '\\\\{\"a\": 1, \"b\": \\\\[true, null\\\\]\\\\}'",
+            "digest": "sha256:2852c308e2319bcffd6ec5ec4e9b0ce6",
+            "receipt_line": "{\"args_digest\": \"sha256:2852c308e2319bcffd6ec5ec4e9b0ce6\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 1, \"reason\": \"argument 'meta' does not match '\\\\\\\\{\\\"a\\\": 1, \\\"b\\\": \\\\\\\\[true, null\\\\\\\\]\\\\\\\\}'\", \"rule\": \"arguments_mismatch\", \"tool\": \"tag_record\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "set_ratio",
+          "args": {
+            "ratio": 0.25
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:d8013a24683fb03dfb2c51b3ba8dd636",
+            "receipt_line": "{\"args_digest\": \"sha256:d8013a24683fb03dfb2c51b3ba8dd636\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"set_ratio\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "set_ratio",
+          "args": {
+            "ratio": 1e-05
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:9f7cb07969d780bb570bca16e255fbe6",
+            "receipt_line": "{\"args_digest\": \"sha256:9f7cb07969d780bb570bca16e255fbe6\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"set_ratio\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "set_ratio",
+          "args": {
+            "ratio": 2.5
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'ratio' does not match '0\\\\.\\\\d+|1e-05'",
+            "policy_rule": 2,
+            "refusal": "benchpress refused 'set_ratio' [arguments_mismatch]: argument 'ratio' does not match '0\\\\.\\\\d+|1e-05'",
+            "digest": "sha256:a6630ca2bb2ccb8bca8bf07c72560a29",
+            "receipt_line": "{\"args_digest\": \"sha256:a6630ca2bb2ccb8bca8bf07c72560a29\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"argument 'ratio' does not match '0\\\\\\\\.\\\\\\\\d+|1e-05'\", \"rule\": \"arguments_mismatch\", \"tool\": \"set_ratio\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "don't_panic",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "\"don't_panic\" is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused \"don't_panic\" [no_allow_rule]: \"don't_panic\" is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"\\\"don't_panic\\\" is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"don't_panic\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "say_\"hi\"_don't",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "'say_\"hi\"_don\\'t' is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'say_\"hi\"_don\\'t' [no_allow_rule]: 'say_\"hi\"_don\\'t' is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'say_\\\"hi\\\"_don\\\\'t' is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"say_\\\"hi\\\"_don't\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "back\\slash_tool",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "'back\\\\slash_tool' is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'back\\\\slash_tool' [no_allow_rule]: 'back\\\\slash_tool' is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'back\\\\\\\\slash_tool' is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"back\\\\slash_tool\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "python regex syntax, glob sets, max_calls zero, first mismatch wins",
+      "policy": {
+        "rules": [
+          {
+            "tool": "update_ticket",
+            "arguments": {
+              "ticket_id": "T-\\d+",
+              "status": "pending|resolved"
+            }
+          },
+          {
+            "tool": "update_ticket",
+            "arguments": {
+              "status": "(?P<s>open)-(?P=s)"
+            }
+          },
+          {
+            "tool": "[!x]end_?mail",
+            "max_calls": 3
+          },
+          {
+            "tool": "notify_[abc]",
+            "max_calls": 0
+          },
+          {
+            "tool": "rename_*",
+            "arguments": {
+              "name": "\\A[A-Z][a-z]+\\Z"
+            }
+          }
+        ]
+      },
+      "calls": [
+        {
+          "tool": "update_ticket",
+          "args": {
+            "ticket_id": "T-12",
+            "status": "resolved"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 0",
+            "policy_rule": 0,
+            "refusal": null,
+            "digest": "sha256:62a8dc3210dcb38e606542e3a71bb7b4",
+            "receipt_line": "{\"args_digest\": \"sha256:62a8dc3210dcb38e606542e3a71bb7b4\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"allowed by policy rule 0\", \"rule\": \"allow_rule\", \"tool\": \"update_ticket\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "update_ticket",
+          "args": {
+            "ticket_id": "X-12",
+            "status": "resolved"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'ticket_id' does not match 'T-\\\\d+'",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'update_ticket' [arguments_mismatch]: argument 'ticket_id' does not match 'T-\\\\d+'",
+            "digest": "sha256:f9c29eb4ff8d88d409e023ed1912eb45",
+            "receipt_line": "{\"args_digest\": \"sha256:f9c29eb4ff8d88d409e023ed1912eb45\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"argument 'ticket_id' does not match 'T-\\\\\\\\d+'\", \"rule\": \"arguments_mismatch\", \"tool\": \"update_ticket\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "update_ticket",
+          "args": {
+            "ticket_id": "X-12",
+            "status": "open-open"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 1",
+            "policy_rule": 1,
+            "refusal": null,
+            "digest": "sha256:862ebe5db605f9f8c41565da8d823bc5",
+            "receipt_line": "{\"args_digest\": \"sha256:862ebe5db605f9f8c41565da8d823bc5\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 1, \"reason\": \"allowed by policy rule 1\", \"rule\": \"allow_rule\", \"tool\": \"update_ticket\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "update_ticket",
+          "args": {
+            "ticket_id": "T-1",
+            "status": "closed"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'status' does not match 'pending|resolved'",
+            "policy_rule": 0,
+            "refusal": "benchpress refused 'update_ticket' [arguments_mismatch]: argument 'status' does not match 'pending|resolved'",
+            "digest": "sha256:8490d71427386446f9ec77594e435fd8",
+            "receipt_line": "{\"args_digest\": \"sha256:8490d71427386446f9ec77594e435fd8\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 0, \"reason\": \"argument 'status' does not match 'pending|resolved'\", \"rule\": \"arguments_mismatch\", \"tool\": \"update_ticket\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "send_email",
+          "args": {},
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 2",
+            "policy_rule": 2,
+            "refusal": null,
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 2, \"reason\": \"allowed by policy rule 2\", \"rule\": \"allow_rule\", \"tool\": \"send_email\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "xend_email",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "'xend_email' is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'xend_email' [no_allow_rule]: 'xend_email' is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'xend_email' is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"xend_email\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "notify_a",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "max_calls",
+            "reason": "policy rule 3 ('notify_[abc]') allows at most 0 call(s)",
+            "policy_rule": 3,
+            "refusal": "benchpress refused 'notify_a' [max_calls]: policy rule 3 ('notify_[abc]') allows at most 0 call(s)",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 3, \"reason\": \"policy rule 3 ('notify_[abc]') allows at most 0 call(s)\", \"rule\": \"max_calls\", \"tool\": \"notify_a\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "notify_d",
+          "args": {},
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "no_allow_rule",
+            "reason": "'notify_d' is classified write and no policy rule allows it",
+            "policy_rule": null,
+            "refusal": "benchpress refused 'notify_d' [no_allow_rule]: 'notify_d' is classified write and no policy rule allows it",
+            "digest": "sha256:44136fa355b3678a1146ad16f7e8649e",
+            "receipt_line": "{\"args_digest\": \"sha256:44136fa355b3678a1146ad16f7e8649e\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": null, \"reason\": \"'notify_d' is classified write and no policy rule allows it\", \"rule\": \"no_allow_rule\", \"tool\": \"notify_d\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "rename_user",
+          "args": {
+            "name": "Ada"
+          },
+          "expected": {
+            "allowed": true,
+            "class": "write",
+            "rule": "allow_rule",
+            "reason": "allowed by policy rule 4",
+            "policy_rule": 4,
+            "refusal": null,
+            "digest": "sha256:e99fdd92b2cc9bc41b4009077c78b6e6",
+            "receipt_line": "{\"args_digest\": \"sha256:e99fdd92b2cc9bc41b4009077c78b6e6\", \"class\": \"write\", \"decision\": \"allow\", \"latency_ms\": 1.25, \"policy_rule\": 4, \"reason\": \"allowed by policy rule 4\", \"rule\": \"allow_rule\", \"tool\": \"rename_user\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": false}"
+          }
+        },
+        {
+          "tool": "rename_user",
+          "args": {
+            "name": "ada"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'name' does not match '\\\\A[A-Z][a-z]+\\\\Z'",
+            "policy_rule": 4,
+            "refusal": "benchpress refused 'rename_user' [arguments_mismatch]: argument 'name' does not match '\\\\A[A-Z][a-z]+\\\\Z'",
+            "digest": "sha256:e089097e248f75adfcf25d6d17b58521",
+            "receipt_line": "{\"args_digest\": \"sha256:e089097e248f75adfcf25d6d17b58521\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 4, \"reason\": \"argument 'name' does not match '\\\\\\\\A[A-Z][a-z]+\\\\\\\\Z'\", \"rule\": \"arguments_mismatch\", \"tool\": \"rename_user\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        },
+        {
+          "tool": "rename_user",
+          "args": {
+            "name": "Ada\n"
+          },
+          "expected": {
+            "allowed": false,
+            "class": "write",
+            "rule": "arguments_mismatch",
+            "reason": "argument 'name' does not match '\\\\A[A-Z][a-z]+\\\\Z'",
+            "policy_rule": 4,
+            "refusal": "benchpress refused 'rename_user' [arguments_mismatch]: argument 'name' does not match '\\\\A[A-Z][a-z]+\\\\Z'",
+            "digest": "sha256:9302c695daf7e5fdfaa8240432f71c53",
+            "receipt_line": "{\"args_digest\": \"sha256:9302c695daf7e5fdfaa8240432f71c53\", \"class\": \"write\", \"decision\": \"refuse\", \"latency_ms\": 1.25, \"policy_rule\": 4, \"reason\": \"argument 'name' does not match '\\\\\\\\A[A-Z][a-z]+\\\\\\\\Z'\", \"rule\": \"arguments_mismatch\", \"tool\": \"rename_user\", \"ts\": \"2026-09-13T21:04:05.123000+00:00\", \"upstream_error\": null}"
+          }
+        }
+      ]
+    }
+  ],
+  "invalid_policies": [
+    {
+      "rules": [
+        {
+          "tool": ""
+        }
+      ]
+    },
+    {
+      "rules": [
+        {
+          "tool": "x",
+          "effect": "block"
+        }
+      ]
+    },
+    {
+      "rules": [
+        {
+          "tool": "x",
+          "arguments": {
+            "a": "("
+          }
+        }
+      ]
+    },
+    {
+      "rules": [
+        {
+          "tool": "x",
+          "max_calls": -1
+        }
+      ]
+    },
+    {
+      "rules": [
+        {
+          "tool": "x",
+          "unknown": 1
+        }
+      ]
+    },
+    {
+      "reads": "maybe"
+    },
+    {
+      "classes": {
+        "a": "dangerous"
+      }
+    },
+    {
+      "rulez": []
+    },
+    {
+      "rules": {
+        "tool": "x"
+      }
+    }
+  ],
+  "classify": [
+    {
+      "name": "get_invoice",
+      "class": "read"
+    },
+    {
+      "name": "getInvoice",
+      "class": "read"
+    },
+    {
+      "name": "get_and_remove_item",
+      "class": "destructive"
+    },
+    {
+      "name": "HTTPGet",
+      "class": "write"
+    },
+    {
+      "name": "getHTTPResponse",
+      "class": "read"
+    },
+    {
+      "name": "refundCharge",
+      "class": "destructive"
+    },
+    {
+      "name": "list-items",
+      "class": "read"
+    },
+    {
+      "name": "sync_everything",
+      "class": "write"
+    },
+    {
+      "name": "",
+      "class": "write"
+    },
+    {
+      "name": "123",
+      "class": "write"
+    },
+    {
+      "name": "voidInvoice",
+      "class": "destructive"
+    },
+    {
+      "name": "avoid_thing",
+      "class": "write"
+    },
+    {
+      "name": "fetch",
+      "class": "read"
+    },
+    {
+      "name": "Search_Docs",
+      "class": "read"
+    },
+    {
+      "name": "download_export",
+      "class": "read"
+    },
+    {
+      "name": "update__record",
+      "class": "write"
+    },
+    {
+      "name": "create-ticket",
+      "class": "write"
+    },
+    {
+      "name": "kill9",
+      "class": "write"
+    },
+    {
+      "name": "view2Details",
+      "class": "write"
+    },
+    {
+      "name": "Delete",
+      "class": "destructive"
+    },
+    {
+      "name": "peekABoo",
+      "class": "read"
+    }
+  ],
+  "digests": [
+    {
+      "args": {},
+      "digest": "sha256:44136fa355b3678a1146ad16f7e8649e"
+    },
+    {
+      "args": {
+        "b": 1,
+        "a": 2
+      },
+      "digest": "sha256:21501dbaf73f5223934d22283f01caff"
+    },
+    {
+      "args": {
+        "name": "Zoë 🚀",
+        "city": "München"
+      },
+      "digest": "sha256:0096d3cc075cc4aa14d91f1b0bef72a8"
+    },
+    {
+      "args": {
+        "s": "a\nb\tc\u0001d\"e\\f "
+      },
+      "digest": "sha256:a989f6580c0148871f3cbfae307482fd"
+    },
+    {
+      "args": {
+        "x": 1.5,
+        "y": 1e-07,
+        "z": 1e+16,
+        "w": -2.5,
+        "v": 1e-05,
+        "u": 123456789.125,
+        "t": 0.1
+      },
+      "digest": "sha256:20df82e937bdcf9c40514a00d06f89dd"
+    },
+    {
+      "args": {
+        "big": 9007199254740991,
+        "neg": -42,
+        "zero": 0
+      },
+      "digest": "sha256:5b11cc02ba3d8851d6f7a0f31b80cd42"
+    },
+    {
+      "args": {
+        "😀": 1,
+        "￿": 2,
+        "a": 3,
+        "B": 4
+      },
+      "digest": "sha256:e872cdb1ac3ce59b5d6c231296cec673"
+    },
+    {
+      "args": {
+        "nested": {
+          "z": [
+            1,
+            {
+              "y": null,
+              "x": true
+            }
+          ],
+          "a": false
+        },
+        "list": [],
+        "obj": {}
+      },
+      "digest": "sha256:45cf849d47811e38272295755d525621"
+    }
+  ]
+}
