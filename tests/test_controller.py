@@ -144,7 +144,10 @@ class Workspace:
             if "/drafts/" in path:
                 did = path.rsplit("/", 1)[-1]
                 draft = next(d for d in self.drafts if d["id"] == did)
-                return {"id": did, "message": {"snippet": draft["raw"][:80], "labelIds": ["DRAFT"]}}
+                return {
+                    "id": did,
+                    "message": {"snippet": draft["raw"][:80], "raw": draft["raw"], "labelIds": ["DRAFT"]},
+                }
         raise AssertionError(f"unrouted {provider} {method} {path}")
 
 
@@ -445,9 +448,7 @@ class GmailBook(FakeBook):
             detail = (
                 await bus.read("gmail", f"/gmail/v1/users/me/drafts/{item['id']}", query={"format": "full"})
             ).json()
-            out.append(
-                {"id": item["id"], "body": detail["message"]["snippet"], "labels": detail["message"]["labelIds"]}
-            )
+            out.append({"id": item["id"], "body": detail["message"]["raw"], "labels": detail["message"]["labelIds"]})
         return out
 
 
