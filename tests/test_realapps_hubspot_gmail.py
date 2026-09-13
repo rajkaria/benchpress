@@ -378,7 +378,7 @@ async def test_hubspot_reset_archives_manifest_ids_and_everything_newer(scratch_
     assert fake.objects["notes"] == {} and fake.objects["companies"] == {} and fake.objects["deals"] == {}
     assert list(fake.objects["contacts"]) == [max(fake.objects["contacts"])], "the pre-seed contact survives reset"
     residue_after = await app.verify_clean()
-    assert residue_after == [f"hubspot contacts: 1 remaining (ids {list(fake.objects['contacts'])[0]})"]
+    assert residue_after == [], "the pre-seed contact is not residue: the portal is shared"
 
     fake.objects["contacts"].clear()
     assert await app.verify_clean() == []
