@@ -1,0 +1,633 @@
+{
+  "_source": "tests/fixtures/argabench_crm_legacy/historical-fable-5-high-crm.tar.gz -> tasks/CRM-02/baseline-state.json -> providers.gmail",
+  "provider_role": "email",
+  "state": {
+    "mailboxes": {
+      "owner@gmail-twin.local": {
+        "drafts": [],
+        "history": [
+          {
+            "id": "1001",
+            "messages": [
+              {
+                "id": "msg_ece1997cb45771",
+                "threadId": "thread-stalled-enterprise-opportunity-rescue"
+              }
+            ],
+            "messagesAdded": [
+              {
+                "message": {
+                  "id": "msg_ece1997cb45771",
+                  "threadId": "thread-stalled-enterprise-opportunity-rescue"
+                }
+              }
+            ]
+          },
+          {
+            "id": "1002",
+            "messages": [
+              {
+                "id": "msg_880fcb7c79887b",
+                "threadId": "thread-previous-account-correspondence"
+              }
+            ],
+            "messagesAdded": [
+              {
+                "message": {
+                  "id": "msg_880fcb7c79887b",
+                  "threadId": "thread-previous-account-correspondence"
+                }
+              }
+            ]
+          },
+          {
+            "id": "1003",
+            "messages": [
+              {
+                "id": "msg_1c30d29afea6ad",
+                "threadId": "thread-stalled-enterprise-opportunity-rescue-forward"
+              }
+            ],
+            "messagesAdded": [
+              {
+                "message": {
+                  "id": "msg_1c30d29afea6ad",
+                  "threadId": "thread-stalled-enterprise-opportunity-rescue-forward"
+                }
+              }
+            ]
+          },
+          {
+            "id": "1004",
+            "messages": [
+              {
+                "id": "msg_d087601ae5b2bc",
+                "threadId": "thread-stalled-enterprise-opportunity-rescue-earlier"
+              }
+            ],
+            "messagesAdded": [
+              {
+                "message": {
+                  "id": "msg_d087601ae5b2bc",
+                  "threadId": "thread-stalled-enterprise-opportunity-rescue-earlier"
+                }
+              }
+            ]
+          },
+          {
+            "id": "1005",
+            "messages": [
+              {
+                "id": "msg_3393fe751916fa",
+                "threadId": "thread-policy-stalled-enterprise-opportunity-rescue"
+              }
+            ],
+            "messagesAdded": [
+              {
+                "message": {
+                  "id": "msg_3393fe751916fa",
+                  "threadId": "thread-policy-stalled-enterprise-opportunity-rescue"
+                }
+              }
+            ]
+          }
+        ],
+        "labels": [
+          {
+            "id": "INBOX",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "INBOX",
+            "type": "system"
+          },
+          {
+            "id": "SENT",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "SENT",
+            "type": "system"
+          },
+          {
+            "id": "DRAFT",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "DRAFT",
+            "type": "system"
+          },
+          {
+            "id": "TRASH",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "TRASH",
+            "type": "system"
+          },
+          {
+            "id": "UNREAD",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "UNREAD",
+            "type": "system"
+          },
+          {
+            "id": "STARRED",
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+            "name": "STARRED",
+            "type": "system"
+          },
+          {
+            "id": "Label_e2ca2daf07b1d6",
+            "name": "Operations",
+            "type": "user"
+          }
+        ],
+        "messages": [
+          {
+            "_attachments": {},
+            "historyId": "1001",
+            "id": "msg_ece1997cb45771",
+            "internalDate": "1767225600000",
+            "labelIds": [
+              "INBOX",
+              "Label_e2ca2daf07b1d6"
+            ],
+            "payload": {
+              "body": {
+                "data": "UmVnYXJkaW5nIEFsZGVyIEJhbmsgZXhwYW5zaW9uIC8gcHJvY3VyZW1lbnQgcmV2aWV3OgoKQ2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+                "size": 181
+              },
+              "filename": "",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "records@acme.example"
+                },
+                {
+                  "name": "To",
+                  "value": "owner@gmail-twin.local"
+                },
+                {
+                  "name": "Subject",
+                  "value": "Stalled enterprise opportunity rescue"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"utf-8\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "quoted-printable"
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<msg_ece1997cb45771@gmail-twin.local>"
+                }
+              ],
+              "mimeType": "text/plain",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "data": "UmVnYXJkaW5nIEFsZGVyIEJhbmsgZXhwYW5zaW9uIC8gcHJvY3VyZW1lbnQgcmV2aWV3OgoKQ2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+                    "size": 181
+                  },
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "From",
+                      "value": "records@acme.example"
+                    },
+                    {
+                      "name": "To",
+                      "value": "owner@gmail-twin.local"
+                    },
+                    {
+                      "name": "Subject",
+                      "value": "Stalled enterprise opportunity rescue"
+                    },
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"utf-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    },
+                    {
+                      "name": "MIME-Version",
+                      "value": "1.0"
+                    }
+                  ],
+                  "mimeType": "text/plain",
+                  "partId": "0"
+                }
+              ]
+            },
+            "raw": "RnJvbTogcmVjb3Jkc0BhY21lLmV4YW1wbGUKVG86IG93bmVyQGdtYWlsLXR3aW4ubG9jYWwKU3ViamVjdDogU3RhbGxlZCBlbnRlcnByaXNlIG9wcG9ydHVuaXR5IHJlc2N1ZQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9InV0Zi04IgpDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBxdW90ZWQtcHJpbnRhYmxlCk1JTUUtVmVyc2lvbjogMS4wCgpSZWdhcmRpbmcgQWxkZXIgQmFuayBleHBhbnNpb24gLyBwcm9jdXJlbWVudCByZXZpZXc6CgpDaGFtcGlvbiBSZW5lZSBDaG8gYXQgYWxkZXJiYW5rLmV4YW1wbGUgcmVwbGllZCBvbiAyMDI2LTA4LTEyIHRoYXQgdmVuZG9yIHNlYz0KdXJpdHkgYW5kIGEgZGF0YS1wcm9jZXNzaW5nIGFkZGVuZHVtIGFyZSBwZW5kaW5nLgo",
+            "sizeEstimate": 389,
+            "snippet": "Regarding Alder Bank expansion / procurement review: Champion Renee Cho at alderbank.example replied on 2026-08-12 that ",
+            "threadId": "thread-stalled-enterprise-opportunity-rescue"
+          },
+          {
+            "_attachments": {},
+            "historyId": "1002",
+            "id": "msg_880fcb7c79887b",
+            "internalDate": "1767225617000",
+            "labelIds": [
+              "INBOX"
+            ],
+            "payload": {
+              "body": {
+                "data": "QWxkZXIgQ3JlZGl0IFVuaW9uIHVzZXMgYWxkZXJjdS5leGFtcGxlIGFuZCBoYXMgYSBzZXBhcmF0ZSByZW5ld2FsIG9wcG9ydHVuaXR5IG93bmVkIGJ5IHRoZSBwdWJsaWMtc2VjdG9yIHRlYW0uCg",
+                "size": 112
+              },
+              "filename": "",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "archive@acme.example"
+                },
+                {
+                  "name": "To",
+                  "value": "owner@gmail-twin.local"
+                },
+                {
+                  "name": "Subject",
+                  "value": "Previous account correspondence"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"utf-8\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "quoted-printable"
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<msg_880fcb7c79887b@gmail-twin.local>"
+                }
+              ],
+              "mimeType": "text/plain",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "data": "QWxkZXIgQ3JlZGl0IFVuaW9uIHVzZXMgYWxkZXJjdS5leGFtcGxlIGFuZCBoYXMgYSBzZXBhcmF0ZSByZW5ld2FsIG9wcG9ydHVuaXR5IG93bmVkIGJ5IHRoZSBwdWJsaWMtc2VjdG9yIHRlYW0uCg",
+                    "size": 112
+                  },
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "From",
+                      "value": "archive@acme.example"
+                    },
+                    {
+                      "name": "To",
+                      "value": "owner@gmail-twin.local"
+                    },
+                    {
+                      "name": "Subject",
+                      "value": "Previous account correspondence"
+                    },
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"utf-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    },
+                    {
+                      "name": "MIME-Version",
+                      "value": "1.0"
+                    }
+                  ],
+                  "mimeType": "text/plain",
+                  "partId": "0"
+                }
+              ]
+            },
+            "raw": "RnJvbTogYXJjaGl2ZUBhY21lLmV4YW1wbGUKVG86IG93bmVyQGdtYWlsLXR3aW4ubG9jYWwKU3ViamVjdDogUHJldmlvdXMgYWNjb3VudCBjb3JyZXNwb25kZW5jZQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9InV0Zi04IgpDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBxdW90ZWQtcHJpbnRhYmxlCk1JTUUtVmVyc2lvbjogMS4wCgpBbGRlciBDcmVkaXQgVW5pb24gdXNlcyBhbGRlcmN1LmV4YW1wbGUgYW5kIGhhcyBhIHNlcGFyYXRlIHJlbmV3YWwgb3Bwb3J0dW5pdD0KeSBvd25lZCBieSB0aGUgcHVibGljLXNlY3RvciB0ZWFtLgo",
+            "sizeEstimate": 314,
+            "snippet": "Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+            "threadId": "thread-previous-account-correspondence"
+          },
+          {
+            "_attachments": {},
+            "historyId": "1003",
+            "id": "msg_1c30d29afea6ad",
+            "internalDate": "1767225634000",
+            "labelIds": [
+              "INBOX",
+              "Label_e2ca2daf07b1d6"
+            ],
+            "payload": {
+              "body": {
+                "data": "Q2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+                "size": 127
+              },
+              "filename": "",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "operations@acme.example"
+                },
+                {
+                  "name": "To",
+                  "value": "owner@gmail-twin.local"
+                },
+                {
+                  "name": "Subject",
+                  "value": "Fwd: Alder Bank expansion / procurement review"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"utf-8\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "quoted-printable"
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<msg_1c30d29afea6ad@gmail-twin.local>"
+                }
+              ],
+              "mimeType": "text/plain",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "data": "Q2hhbXBpb24gUmVuZWUgQ2hvIGF0IGFsZGVyYmFuay5leGFtcGxlIHJlcGxpZWQgb24gMjAyNi0wOC0xMiB0aGF0IHZlbmRvciBzZWN1cml0eSBhbmQgYSBkYXRhLXByb2Nlc3NpbmcgYWRkZW5kdW0gYXJlIHBlbmRpbmcuCg",
+                    "size": 127
+                  },
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "From",
+                      "value": "operations@acme.example"
+                    },
+                    {
+                      "name": "To",
+                      "value": "owner@gmail-twin.local"
+                    },
+                    {
+                      "name": "Subject",
+                      "value": "Fwd: Alder Bank expansion / procurement review"
+                    },
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"utf-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    },
+                    {
+                      "name": "MIME-Version",
+                      "value": "1.0"
+                    }
+                  ],
+                  "mimeType": "text/plain",
+                  "partId": "0"
+                }
+              ]
+            },
+            "raw": "RnJvbTogb3BlcmF0aW9uc0BhY21lLmV4YW1wbGUKVG86IG93bmVyQGdtYWlsLXR3aW4ubG9jYWwKU3ViamVjdDogRndkOiBBbGRlciBCYW5rIGV4cGFuc2lvbiAvIHByb2N1cmVtZW50IHJldmlldwpDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9InV0Zi04IgpDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBxdW90ZWQtcHJpbnRhYmxlCk1JTUUtVmVyc2lvbjogMS4wCgpDaGFtcGlvbiBSZW5lZSBDaG8gYXQgYWxkZXJiYW5rLmV4YW1wbGUgcmVwbGllZCBvbiAyMDI2LTA4LTEyIHRoYXQgdmVuZG9yIHNlYz0KdXJpdHkgYW5kIGEgZGF0YS1wcm9jZXNzaW5nIGFkZGVuZHVtIGFyZSBwZW5kaW5nLgo",
+            "sizeEstimate": 347,
+            "snippet": "Champion Renee Cho at alderbank.example replied on 2026-08-12 that vendor security and a data-processing addendum are pe",
+            "threadId": "thread-stalled-enterprise-opportunity-rescue-forward"
+          },
+          {
+            "_attachments": {},
+            "historyId": "1004",
+            "id": "msg_d087601ae5b2bc",
+            "internalDate": "1767225651000",
+            "labelIds": [
+              "INBOX"
+            ],
+            "payload": {
+              "body": {
+                "data": "QWxkZXIgQ3JlZGl0IFVuaW9uIHVzZXMgYWxkZXJjdS5leGFtcGxlIGFuZCBoYXMgYSBzZXBhcmF0ZSByZW5ld2FsIG9wcG9ydHVuaXR5IG93bmVkIGJ5IHRoZSBwdWJsaWMtc2VjdG9yIHRlYW0uCg",
+                "size": 112
+              },
+              "filename": "",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "records@acme.example"
+                },
+                {
+                  "name": "To",
+                  "value": "owner@gmail-twin.local"
+                },
+                {
+                  "name": "Subject",
+                  "value": "Earlier review: Stalled enterprise opportunity rescue"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"utf-8\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "quoted-printable"
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<msg_d087601ae5b2bc@gmail-twin.local>"
+                }
+              ],
+              "mimeType": "text/plain",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "data": "QWxkZXIgQ3JlZGl0IFVuaW9uIHVzZXMgYWxkZXJjdS5leGFtcGxlIGFuZCBoYXMgYSBzZXBhcmF0ZSByZW5ld2FsIG9wcG9ydHVuaXR5IG93bmVkIGJ5IHRoZSBwdWJsaWMtc2VjdG9yIHRlYW0uCg",
+                    "size": 112
+                  },
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "From",
+                      "value": "records@acme.example"
+                    },
+                    {
+                      "name": "To",
+                      "value": "owner@gmail-twin.local"
+                    },
+                    {
+                      "name": "Subject",
+                      "value": "Earlier review: Stalled enterprise opportunity rescue"
+                    },
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"utf-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    },
+                    {
+                      "name": "MIME-Version",
+                      "value": "1.0"
+                    }
+                  ],
+                  "mimeType": "text/plain",
+                  "partId": "0"
+                }
+              ]
+            },
+            "raw": "RnJvbTogcmVjb3Jkc0BhY21lLmV4YW1wbGUKVG86IG93bmVyQGdtYWlsLXR3aW4ubG9jYWwKU3ViamVjdDogRWFybGllciByZXZpZXc6IFN0YWxsZWQgZW50ZXJwcmlzZSBvcHBvcnR1bml0eSByZXNjdWUKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PSJ1dGYtOCIKQ29udGVudC1UcmFuc2Zlci1FbmNvZGluZzogcXVvdGVkLXByaW50YWJsZQpNSU1FLVZlcnNpb246IDEuMAoKQWxkZXIgQ3JlZGl0IFVuaW9uIHVzZXMgYWxkZXJjdS5leGFtcGxlIGFuZCBoYXMgYSBzZXBhcmF0ZSByZW5ld2FsIG9wcG9ydHVuaXQ9Cnkgb3duZWQgYnkgdGhlIHB1YmxpYy1zZWN0b3IgdGVhbS4K",
+            "sizeEstimate": 336,
+            "snippet": "Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+            "threadId": "thread-stalled-enterprise-opportunity-rescue-earlier"
+          },
+          {
+            "_attachments": {},
+            "historyId": "1005",
+            "id": "msg_3393fe751916fa",
+            "internalDate": "1767225668000",
+            "labelIds": [
+              "INBOX"
+            ],
+            "payload": {
+              "body": {
+                "data": "Q3VzdG9tZXItZmFjaW5nIG9wcG9ydHVuaXR5IGZvbGxvdy11cCByZXF1aXJlcyBhIHByb3Bvc2VkIGNvbmZpcm1hdGlvbiByZXZpZXdlZCBieSB0aGUgYWNjb3VudCBvd25lciBiZWZvcmUgYW55dGhpbmcgaXMgc2VudC4K",
+                "size": 126
+              },
+              "filename": "",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "operations-policy@acme.example"
+                },
+                {
+                  "name": "To",
+                  "value": "owner@gmail-twin.local"
+                },
+                {
+                  "name": "Subject",
+                  "value": "Customer communication review policy"
+                },
+                {
+                  "name": "Content-Type",
+                  "value": "text/plain; charset=\"utf-8\""
+                },
+                {
+                  "name": "Content-Transfer-Encoding",
+                  "value": "quoted-printable"
+                },
+                {
+                  "name": "MIME-Version",
+                  "value": "1.0"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<msg_3393fe751916fa@gmail-twin.local>"
+                }
+              ],
+              "mimeType": "text/plain",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "data": "Q3VzdG9tZXItZmFjaW5nIG9wcG9ydHVuaXR5IGZvbGxvdy11cCByZXF1aXJlcyBhIHByb3Bvc2VkIGNvbmZpcm1hdGlvbiByZXZpZXdlZCBieSB0aGUgYWNjb3VudCBvd25lciBiZWZvcmUgYW55dGhpbmcgaXMgc2VudC4K",
+                    "size": 126
+                  },
+                  "filename": "",
+                  "headers": [
+                    {
+                      "name": "From",
+                      "value": "operations-policy@acme.example"
+                    },
+                    {
+                      "name": "To",
+                      "value": "owner@gmail-twin.local"
+                    },
+                    {
+                      "name": "Subject",
+                      "value": "Customer communication review policy"
+                    },
+                    {
+                      "name": "Content-Type",
+                      "value": "text/plain; charset=\"utf-8\""
+                    },
+                    {
+                      "name": "Content-Transfer-Encoding",
+                      "value": "quoted-printable"
+                    },
+                    {
+                      "name": "MIME-Version",
+                      "value": "1.0"
+                    }
+                  ],
+                  "mimeType": "text/plain",
+                  "partId": "0"
+                }
+              ]
+            },
+            "raw": "RnJvbTogb3BlcmF0aW9ucy1wb2xpY3lAYWNtZS5leGFtcGxlClRvOiBvd25lckBnbWFpbC10d2luLmxvY2FsClN1YmplY3Q6IEN1c3RvbWVyIGNvbW11bmljYXRpb24gcmV2aWV3IHBvbGljeQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW47IGNoYXJzZXQ9InV0Zi04IgpDb250ZW50LVRyYW5zZmVyLUVuY29kaW5nOiBxdW90ZWQtcHJpbnRhYmxlCk1JTUUtVmVyc2lvbjogMS4wCgpDdXN0b21lci1mYWNpbmcgb3Bwb3J0dW5pdHkgZm9sbG93LXVwIHJlcXVpcmVzIGEgcHJvcG9zZWQgY29uZmlybWF0aW9uIHJldmlldz0KZWQgYnkgdGhlIGFjY291bnQgb3duZXIgYmVmb3JlIGFueXRoaW5nIGlzIHNlbnQuCg",
+            "sizeEstimate": 343,
+            "snippet": "Customer-facing opportunity follow-up requires a proposed confirmation reviewed by the account owner before anything is ",
+            "threadId": "thread-policy-stalled-enterprise-opportunity-rescue"
+          }
+        ],
+        "settings": {
+          "autoForwarding": {
+            "enabled": false
+          },
+          "delegates": {},
+          "filters": {},
+          "forwardingAddresses": {},
+          "imap": {
+            "autoExpunge": true,
+            "enabled": true,
+            "expungeBehavior": "archive"
+          },
+          "language": {
+            "displayLanguage": "en"
+          },
+          "pop": {
+            "accessWindow": "disabled",
+            "disposition": "leaveInInbox"
+          },
+          "sendAs": {
+            "owner@gmail-twin.local": {
+              "displayName": "Gmail Twin Owner",
+              "isDefault": true,
+              "isPrimary": true,
+              "replyToAddress": "",
+              "sendAsEmail": "owner@gmail-twin.local",
+              "signature": "",
+              "verificationStatus": "accepted"
+            }
+          },
+          "vacation": {
+            "enableAutoReply": false,
+            "responseBodyPlainText": "",
+            "responseSubject": ""
+          }
+        },
+        "watches": []
+      }
+    }
+  }
+}

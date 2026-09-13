@@ -1,0 +1,73 @@
+{
+  "_source": "benchmark/argabench_40/scenarios/crm-02.json -> seed_config.gmail",
+  "drafts": [],
+  "labels": [
+    {
+      "name": "Operations"
+    }
+  ],
+  "messages": [
+    {
+      "body": "Regarding Alder Bank expansion / procurement review:\n\nChampion Renee Cho at alderbank.example replied on 2026-08-12 that vendor security and a data-processing addendum are pending.",
+      "from": "records@acme.example",
+      "labels": [
+        "INBOX",
+        "Operations"
+      ],
+      "subject": "Stalled enterprise opportunity rescue",
+      "thread_id": "thread-stalled-enterprise-opportunity-rescue",
+      "to": [
+        "owner@gmail-twin.local"
+      ]
+    },
+    {
+      "body": "Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+      "from": "archive@acme.example",
+      "labels": [
+        "INBOX"
+      ],
+      "subject": "Previous account correspondence",
+      "thread_id": "thread-previous-account-correspondence",
+      "to": [
+        "owner@gmail-twin.local"
+      ]
+    },
+    {
+      "body": "Champion Renee Cho at alderbank.example replied on 2026-08-12 that vendor security and a data-processing addendum are pending.",
+      "from": "operations@acme.example",
+      "labels": [
+        "INBOX",
+        "Operations"
+      ],
+      "subject": "Fwd: Alder Bank expansion / procurement review",
+      "thread_id": "thread-stalled-enterprise-opportunity-rescue-forward",
+      "to": [
+        "owner@gmail-twin.local"
+      ]
+    },
+    {
+      "body": "Alder Credit Union uses aldercu.example and has a separate renewal opportunity owned by the public-sector team.",
+      "from": "records@acme.example",
+      "labels": [
+        "INBOX"
+      ],
+      "subject": "Earlier review: Stalled enterprise opportunity rescue",
+      "thread_id": "thread-stalled-enterprise-opportunity-rescue-earlier",
+      "to": [
+        "owner@gmail-twin.local"
+      ]
+    },
+    {
+      "body": "Customer-facing opportunity follow-up requires a proposed confirmation reviewed by the account owner before anything is sent.",
+      "from": "operations-policy@acme.example",
+      "labels": [
+        "INBOX"
+      ],
+      "subject": "Customer communication review policy",
+      "thread_id": "thread-policy-stalled-enterprise-opportunity-rescue",
+      "to": [
+        "owner@gmail-twin.local"
+      ]
+    }
+  ]
+}
