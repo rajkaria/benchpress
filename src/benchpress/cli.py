@@ -84,6 +84,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--trace-dir")
     run.add_argument("--model", default=os.environ.get("BENCHPRESS_MODEL"))
     run.add_argument("--ablations", default=os.environ.get("BENCHPRESS_ABLATIONS"))
+    demo = sub.add_parser("demo", help="run the whole loop offline on an in-memory workspace (no keys, no network)")
+    demo.add_argument("--trace-dir", default="benchpress-demo")
     receipt = sub.add_parser("receipt", help="print a receipt summary")
     receipt.add_argument("path")
     receipt.add_argument(
@@ -96,6 +98,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.command == "run":
         return asyncio.run(_run(args))
+    if args.command == "demo":
+        from benchpress.demo import main as demo_main
+
+        return demo_main(Path(args.trace_dir))
     if args.command == "receipt":
         path = Path(args.path)
         if path.is_dir():
