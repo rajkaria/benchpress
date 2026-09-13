@@ -71,24 +71,45 @@ class ModelConfig:
     max_tokens: int = 64_000
     fallbacks: bool = True
 
+
 @dataclass
 class UsageTotals:
-    input_tokens: int = 0; output_tokens: int = 0; cache_read_input_tokens: int = 0
-    cache_creation_input_tokens: int = 0; calls: int = 0; latency_ms: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
+    calls: int = 0
+    latency_ms: int = 0
+
     def add(self, usage: object, latency_ms: int) -> None: ...
-    def cost_usd(self, in_m: float = 5.0, out_m: float = 25.0, cache_read_m: float = 0.5, cache_write_m: float = 6.25) -> float: ...
+    def cost_usd(
+        self, in_m: float = 5.0, out_m: float = 25.0, cache_read_m: float = 0.5, cache_write_m: float = 6.25
+    ) -> float: ...
     def harness_usage(self) -> dict[str, object]: ...  # keys per PLAN-B §9
 
+
 class SchemaFailure(RuntimeError): ...
+
+
 class ModelRefusal(RuntimeError): ...
+
 
 class ModelClient:
     def __init__(self, config: ModelConfig, system_text: str, client: AsyncAnthropic | None = None) -> None: ...
+
     usage: UsageTotals
-    events: list[dict[str, Any]]      # {phase, model, stop_reason, usage, latency_ms}
+    events: list[dict[str, Any]]  # {phase, model, stop_reason, usage, latency_ms}
+
     async def emit(self, *, phase: str, schema: type[T], content: str, retries: int = 1) -> T: ...
-    async def explore(self, *, phase: str, content: str, tools: list[dict[str, Any]],
-                      on_tool: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]], max_calls: int) -> str: ...
+    async def explore(
+        self,
+        *,
+        phase: str,
+        content: str,
+        tools: list[dict[str, Any]],
+        on_tool: Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]],
+        max_calls: int,
+    ) -> str: ...
 ```
 
 - `explore` is a manual loop. All `tool_result`s from one assistant turn go back in **one** user message; failures carry `is_error: true`; the history is append-only.
@@ -106,19 +127,36 @@ class ModelClient:
 ```python
 @dataclass(frozen=True)
 class Ablations:
-    no_policy_sweep: bool = False; no_gate: bool = False; no_readback: bool = False
+    no_policy_sweep: bool = False
+    no_gate: bool = False
+    no_readback: bool = False
+
     @classmethod
-    def from_env(cls) -> Ablations: ...   # BENCHPRESS_ABLATIONS=no_gate,no_readback
+    def from_env(cls) -> Ablations: ...  # BENCHPRESS_ABLATIONS=no_gate,no_readback
+
 
 @dataclass(frozen=True)
 class TrialResult:
-    final_text: str; status: Literal["completed", "partial", "escalated"]; context: Context
-    tool_events: tuple[dict[str, Any], ...]   # harness tool_call event shape (PLAN-B §9)
-    model_events: tuple[dict[str, Any], ...]; usage: UsageTotals; provider_calls: int; latency_ms: int
+    final_text: str
+    status: Literal["completed", "partial", "escalated"]
+    context: Context
+    tool_events: tuple[dict[str, Any], ...]  # harness tool_call event shape (PLAN-B §9)
+    model_events: tuple[dict[str, Any], ...]
+    usage: UsageTotals
+    provider_calls: int
+    latency_ms: int
 
-async def run_trial(*, system_prompt: str, user_prompt: str, providers: Sequence[str],
-                    execute_tool: ToolExecutor, config: ModelConfig, ablations: Ablations = Ablations(),
-                    trace_dir: Path | None = None) -> TrialResult: ...
+
+async def run_trial(
+    *,
+    system_prompt: str,
+    user_prompt: str,
+    providers: Sequence[str],
+    execute_tool: ToolExecutor,
+    config: ModelConfig,
+    ablations: Ablations = Ablations(),
+    trace_dir: Path | None = None,
+) -> TrialResult: ...
 ```
 
 - Phases run in order. `BudgetExhausted`, `SchemaFailure`, `ModelRefusal` and per-phase timeouts are caught; **P7 always runs** with whatever evidence exists. Overall `asyncio.timeout(1_750)`.
@@ -152,13 +190,22 @@ async def run_trial(*, system_prompt: str, user_prompt: str, providers: Sequence
 
 ```python
 class Playbook(Protocol):
-    provider: str; role: str; identity_fields: tuple[str, ...]
+    provider: str
+    role: str
+    identity_fields: tuple[str, ...]
+
     async def list_policy_sources(self, bus: ToolBus, frame: TaskFrame) -> list[PolicySource]: ...
     async def find_candidates(self, bus: ToolBus, entity: str, hints: Sequence[str]) -> list[Candidate]: ...
     async def read_field(self, bus: ToolBus, ref: str, field: str) -> str | None: ...
-    def update_action(self, action_id: str, ref: str, fields: Mapping[str, str], satisfies: Sequence[str]) -> Action | None: ...
-    def message_action(self, action_id: str, channel_id: str, text: str, satisfies: Sequence[str], thread_ts: str | None = None) -> Action | None: ...
-    def draft_action(self, action_id: str, to: str, subject: str, body: str, satisfies: Sequence[str]) -> Action | None: ...
+    def update_action(
+        self, action_id: str, ref: str, fields: Mapping[str, str], satisfies: Sequence[str]
+    ) -> Action | None: ...
+    def message_action(
+        self, action_id: str, channel_id: str, text: str, satisfies: Sequence[str], thread_ts: str | None = None
+    ) -> Action | None: ...
+    def draft_action(
+        self, action_id: str, to: str, subject: str, body: str, satisfies: Sequence[str]
+    ) -> Action | None: ...
 ```
 
 - Slack: `GET /api/conversations.list`, `GET /api/conversations.history`, `GET /api/users.list`, `POST /api/chat.postMessage` (JSON).
