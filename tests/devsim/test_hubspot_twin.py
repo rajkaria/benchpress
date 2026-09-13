@@ -1,5 +1,3 @@
-# pyright: basic
-# WIP salvaged from an interrupted agent; restore strict when finished.
 """HubSpot twin: seeded state, calibrated shapes, grader-facing invariants.
 
 The bulk of the tests use a synthetic seed shaped like the benchmark's CRM/ECOM seeds (companies,
@@ -844,12 +842,13 @@ async def test_batch_endpoints(client: httpx.AsyncClient, store: HubSpotStore) -
         "object_type_id": "0-5",
         "records": {ticket["id"]: store.admin_state()["objects"]["tickets"]["records"][ticket["id"]]},
     }
-    updated = await client.post(
-        "/crm/v3/objects/tickets/batch/update",
-        json={
-            "inputs": [{"id": ticket["id"], "properties": {"hs_pipeline_stage": "4"}}, {"id": "2", "properties": {}}]
-        },
-    )
+    update_body: dict[str, Any] = {
+        "inputs": [
+            {"id": str(ticket["id"]), "properties": {"hs_pipeline_stage": "4"}},
+            {"id": "2", "properties": {}},
+        ]
+    }
+    updated = await client.post("/crm/v3/objects/tickets/batch/update", json=update_body)
     assert updated.status_code == 207 and body(updated)["results"][0]["properties"]["hs_pipeline_stage"] == "4"
     assert (
         await client.post("/crm/v3/objects/tickets/batch/archive", json={"inputs": [{"id": ticket["id"]}]})
