@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -86,7 +86,7 @@ class RealAppClient:
         method: str,
         path: str,
         *,
-        params: Mapping[str, str] | None = None,
+        params: Mapping[str, str] | Sequence[tuple[str, str]] | None = None,
         json_body: object | None = None,
         data: Mapping[str, Any] | None = None,
         retries: int = 3,
