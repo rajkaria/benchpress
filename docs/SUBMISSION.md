@@ -3,6 +3,7 @@
 ## Checklist (B7, 15:45–15:55 PT; hard stop 15:55)
 
 - [ ] Repo public: `github.com/rajkaria/benchpress`. README opens with one-liner, receipt screenshot, results table, reproduce commands.
+- [x] Landing page live at `https://benchpress-ten.vercel.app` (`site/`, static on Vercel; `/receipt` serves the sample receipt, `/llms.txt` for AI readers). After any `reports/` change: `uv run python scripts/build_site.py && vercel deploy --prod --cwd site`.
 - [ ] `docs/RELIABILITY-BRIEF.md` ≤ 2 pages, exported to `docs/RELIABILITY-BRIEF.pdf`.
 - [ ] Video ≤ 2:00, YouTube unlisted, link in README and form.
 - [ ] Brief requirement check: *one useful multi-step agent* ✓ · *≥ 3 external apps* (real Slack + Stripe + HubSpot [+ Gmail]) ✓ · *show how you know it works* (graded trials, baseline, ablations) ✓.

@@ -16,6 +16,7 @@
   <b>Built by Raj Karia</b> ·
   <a href="https://x.com/rajkaria_">X @rajkaria_</a> ·
   <a href="https://github.com/rajkaria">GitHub @rajkaria</a> ·
+  <a href="https://benchpress-ten.vercel.app">benchpress-ten.vercel.app</a> ·
   <a href="https://multiappagenthackathon.com/">Multi-App AI Agent Hackathon 2026</a>
 </p>
 
@@ -42,7 +43,7 @@ under ArgaBench's unmodified runner**, and behind ArgaBench's `invoke_model` can
 
 <p align="center">
   <img src="docs/img/receipt-hero.png" alt="A Benchpress receipt: request, policies found (including a flagged prompt injection), candidates with the chosen target and the protected look-alike" width="88%">
-  <br><sub>A Benchpress receipt (<a href="docs/img/receipt-sample.html">full sample page</a>). The policy sweep found an operating rule and flagged an injection attempt as <i>suspicious</i>. Candidate resolution picked one account with cited evidence and locked the look-alike.</sub>
+  <br><sub>A Benchpress receipt (<a href="https://benchpress-ten.vercel.app/receipt">full sample page</a>, source in <a href="docs/img/receipt-sample.html"><code>docs/img</code></a>). The policy sweep found an operating rule and flagged an injection attempt as <i>suspicious</i>. Candidate resolution picked one account with cited evidence and locked the look-alike.</sub>
 </p>
 
 ---
@@ -675,6 +676,7 @@ devsim/                    grader-faithful local twins under ArgaBench's unmodif
   calibration/             per-provider notes, line by line against the graders
 scripts/                   bp_gate_replay.py · gmail_oauth.py
 reports/                   committed reports (gate replay, compare tables)
+site/                      landing page (static, Vercel); scripts/build_site.py fills its numbers from reports/
 tests/                     470+ tests across gate, playbooks, gateway, assertions, twins, run loop
 docs/                      build spec, strategy, research, plans, demo script, submission kit
 ```
