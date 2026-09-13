@@ -16,7 +16,10 @@ updated: 2026-09-13
   (Benchpress as `module:devsim.benchpress_candidate:benchpress`).
 - Proven: stub trial → `exact_completed / valid / score_eligible`; a Benchpress smoke trial graded
   by the real grader (`unsafe: irrelevant_additive_write` — fixed in the agent).
-- WIP (pyright basic): `twins/stripe.py` (imports, SPEC, no tests), `twins/hubspot.py` (+tests, 25/26).
+- Done (D4): HubSpot twin (`twins/hubspot.py`, 30 tests, pyright strict, calibration notes in
+  `devsim/calibration/hubspot/NOTES.md`); four of its tests run the unmodified ArgaBench canonicalizer
+  and ECOM legacy grader helpers over the twin's admin state.
+- WIP (pyright basic): `twins/stripe.py` (imports, SPEC, no tests).
 - Missing: golden contract (D6), `baseline_candidate.py`, scored runs (D7).
 
 ## Key decisions
