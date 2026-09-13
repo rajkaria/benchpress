@@ -48,7 +48,10 @@ NPM_MANIFEST = REPO_ROOT / "packages" / "benchpress-guard" / "package.json"
 # One entry per CHANGELOG release heading (the heading text before the date). build() fails on a heading with no
 # entry, so a release can't land without the page saying what shipped.
 SHIPPED: dict[str, tuple[str, str]] = {
-    "0.7.1": ("Docs and hygiene", "Every doc re-verified against the code; internal planning docs out of the public tree."),
+    "0.7.1": (
+        "Docs and hygiene",
+        "Every doc re-verified against the code; internal planning docs out of the public tree.",
+    ),
     "benchpress-guard 0.1.0 on npm": (
         "Vercel AI SDK guard",
         "guardTools(tools, policy) refuses a call before execute runs. Same policy file and receipts as the Python "
