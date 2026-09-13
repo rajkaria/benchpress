@@ -1,0 +1,80 @@
+{
+  "name": "benchpress-guard",
+  "version": "0.1.0",
+  "description": "Code-enforced tool policy for Vercel AI SDK agents: classify every tool call, refuse what the policy does not allow before execute runs, and keep JSONL receipts. The Benchpress guard, byte-compatible with the Python shims.",
+  "license": "Apache-2.0",
+  "author": "Raj Karia",
+  "homepage": "https://github.com/rajkaria/benchpress/tree/main/packages/benchpress-guard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajkaria/benchpress.git",
+    "directory": "packages/benchpress-guard"
+  },
+  "bugs": {
+    "url": "https://github.com/rajkaria/benchpress/issues"
+  },
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "vercel-ai-sdk",
+    "agents",
+    "ai-agents",
+    "tools",
+    "tool-calling",
+    "guardrails",
+    "policy",
+    "safety",
+    "reliability",
+    "receipts",
+    "benchpress"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run && tsc -p tsconfig.json",
+    "parity:generate": "cd ../.. && uv run python packages/benchpress-guard/scripts/gen_parity.py",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "peerDependencies": {
+    "ai": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "ai": "^7.0.99",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0",
+    "zod": "^4.6.4"
+  }
+}
