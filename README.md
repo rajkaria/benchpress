@@ -630,6 +630,10 @@ Vendor the ArgaBench harness at the audited commit (read-only, needed for harnes
 git init -q arga-twins-benchmark && git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a8178526650f6f21f341dc6acc46db7e9fe1fc1 && git -C arga-twins-benchmark checkout -q FETCH_HEAD
 ```
 
+The harness repository is published without a license. Benchpress never redistributes it: it is not in the
+wheel, not in the image, and CI fetches it only when the repository variable `BENCHPRESS_ARGA_TESTS` is `1`.
+Without it, the harness-backed tests skip.
+
 Run the gates (the same checks CI runs):
 
 ```bash
@@ -855,6 +859,8 @@ their provenance.
   window opened. Everything that runs a task (phases, playbooks, substrates, evals, twins) and every
   release was built on 2026-09-13.
 - **Failures are reported, not hidden.** Over-refusal, partial runs and cost are part of every report.
+- **Upstream license.** `ArgaLabs/arga-twins-benchmark` carries no license file at the pinned commit. We use
+  it read-only for local grading and publish only our own code and our own reports.
 
 ---
 

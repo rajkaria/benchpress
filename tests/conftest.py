@@ -7,6 +7,9 @@ verifier — the names are invented so the gate tests prove generic behaviour.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import pytest
 
 from benchpress.context import (
@@ -131,3 +134,37 @@ def context() -> Context:
         )
     )
     return ctx
+
+
+ARGA_FORCE_ENV = "BENCHPRESS_ARGA_TESTS"
+ARGA_DEPENDENT = (
+    "tests/devsim/test_candidates.py",
+    "tests/devsim/test_lifecycle.py",
+    "tests/devsim/test_scaffold.py",
+    "tests/test_harness_bridge.py",
+    "tests/test_scenarios.py",
+)
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _harness_present() -> bool:
+    from evals.harness_bridge import DEFAULT_HARNESS_DIRNAME, HARNESS_ROOT_ENV
+
+    override = os.environ.get(HARNESS_ROOT_ENV)
+    root = Path(override).expanduser() if override else _REPO_ROOT / DEFAULT_HARNESS_DIRNAME
+    return (root / "src").exists()
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Tests that import the vendored ArgaBench harness skip unless it is present (or forced)."""
+    if _harness_present():
+        return
+    forced = os.environ.get(ARGA_FORCE_ENV) == "1"
+    skip = pytest.mark.skip(reason="vendored ArgaBench harness not present; set BENCHPRESS_ARGA_TESTS=1 to require it")
+    for item in items:
+        try:
+            rel = Path(str(item.fspath)).resolve().relative_to(_REPO_ROOT)
+        except ValueError:
+            continue
+        if rel.as_posix().startswith(ARGA_DEPENDENT) and not forced:
+            item.add_marker(skip)

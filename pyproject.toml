@@ -80,6 +80,7 @@ benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = ["arga: needs the vendored ArgaBench harness"]
 
 [tool.ruff]
 line-length = 120

@@ -16,11 +16,15 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Vendor the ArgaBench harness (read-only, pinned to the audited commit)
+      - name: Vendor the ArgaBench harness (opt-in; the upstream repo carries no license, so it is never shipped)
+        if: ${{ vars.BENCHPRESS_ARGA_TESTS == '1' }}
         run: |
           git init -q arga-twins-benchmark
           git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a8178526650f6f21f341dc6acc46db7e9fe1fc1
           git -C arga-twins-benchmark checkout -q FETCH_HEAD
+      - name: Require the harness tests when the variable is set
+        if: ${{ vars.BENCHPRESS_ARGA_TESTS == '1' }}
+        run: echo "BENCHPRESS_ARGA_TESTS=1" >> "$GITHUB_ENV"
       - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run pyright src tests
