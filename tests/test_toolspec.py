@@ -36,3 +36,21 @@ def test_readback_spec_maps_arguments() -> None:
     rb = ReadBackSpec(tool="get_contact", args={"contact_id": "$.contact_id"}, field_path="properties.email")
     spec = ToolSpec(name="update_contact", readback=rb)
     assert spec.readback is not None and spec.readback.args["contact_id"] == "$.contact_id"
+
+
+def test_spec_from_schema_ignores_words_that_merely_end_in_id_or_key() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "contactId": {"type": "string"},
+            "valid": {"type": "boolean"},
+            "paid": {"type": "boolean"},
+            "monkey": {"type": "string"},
+            "external_ref": {"type": "string"},
+            "idempotency_key": {"type": "string"},
+        },
+        "required": ["id"],
+    }
+    spec = spec_from_schema("update_contact", schema)
+    assert spec.target_fields == ("id", "contactId", "external_ref", "idempotency_key")
