@@ -77,3 +77,14 @@ def test_invalid_config_names_the_problem(tmp_path: Path, text: str, env: dict[s
 def test_is_loopback() -> None:
     assert is_loopback("127.0.0.1") and is_loopback("localhost") and is_loopback("::1")
     assert not is_loopback("0.0.0.0") and not is_loopback("10.0.0.5")
+
+
+def test_inline_secret_value_never_appears_in_the_error(tmp_path: Path) -> None:
+    text = (
+        '[[upstreams]]\nprovider = "hubspot"\nbase_url = "https://h"\ntoken = "pat-inline-secret-value"\n'
+    )
+    with pytest.raises(ConfigError) as exc_info:
+        load_settings(_write(tmp_path, text), env={})
+    message = str(exc_info.value)
+    assert "env:" in message and "token" in message
+    assert "pat-inline-secret-value" not in message

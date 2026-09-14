@@ -75,7 +75,7 @@ class Settings:
 def resolve_secret(ref: str, env: Mapping[str, str], *, what: str) -> str:
     """Resolve an `env:NAME` reference to its value. Never accepts a secret written out inline."""
     if not ref.startswith("env:"):
-        raise ConfigError(f"{what} must be an 'env:NAME' reference, got {ref!r}")
+        raise ConfigError(f"{what} must be an 'env:NAME' reference")
     name = ref.removeprefix("env:")
     value = env.get(name)
     if value is None:
