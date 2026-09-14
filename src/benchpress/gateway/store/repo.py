@@ -389,11 +389,34 @@ class Store:
     def complete_write(self, scope: str, fingerprint: str, *, holder: str, succeeded: bool, now: float) -> None:
         with OrmSession(self.engine) as db, db.begin():
             if succeeded:
-                # The write happened: go done unconditionally, whoever holds the lease now.
-                db.execute(
-                    sa_update(Write).where(Write.scope == scope, Write.fingerprint == fingerprint)
-                    .values(state="done", completed_at=now)
+                # The write happened: go done unconditionally, whoever holds the lease now. The row may
+                # already be gone — a lease takeover's original (stale) holder can complete(succeeded=True)
+                # after its own successor already completed(succeeded=False) and deleted the row (Ruling
+                # R4's release path). An UPDATE alone would then silently lose the success, so upsert: if
+                # the UPDATE matches nothing, insert a fresh `done` row, falling back to a retry of the
+                # UPDATE if a concurrent writer's insert lands first (Postgres row-level concurrency; SQLite
+                # never actually takes this branch since the whole transaction is serialized).
+                result = cast(
+                    CursorResult[Any],
+                    db.execute(
+                        sa_update(Write).where(Write.scope == scope, Write.fingerprint == fingerprint)
+                        .values(state="done", completed_at=now)
+                    ),
                 )
+                if result.rowcount == 0:
+                    try:
+                        with db.begin_nested():
+                            db.execute(
+                                insert(Write).values(
+                                    scope=scope, fingerprint=fingerprint, state="done", holder=holder,
+                                    claimed_at=now, completed_at=now,
+                                )
+                            )
+                    except IntegrityError:
+                        db.execute(
+                            sa_update(Write).where(Write.scope == scope, Write.fingerprint == fingerprint)
+                            .values(state="done", completed_at=now)
+                        )
             else:
                 # A release only clears the entry this holder itself owns (Ruling R4): a stale holder
                 # must never clobber a newer holder's claim after a lease takeover.

@@ -101,6 +101,17 @@ def test_write_claims_follow_the_idempotency_contract(store: Store) -> None:
     assert store.claim_write("acme:s1", "fp", holder="d", now=9999.0, lease_seconds=30) == "done"
 
 
+def test_a_success_is_recorded_even_after_a_lease_takeover_released_the_claim(store: Store) -> None:
+    """Ruling R4: succeeded=True marks a key done unconditionally, whoever holds the lease now — even if
+    a stale holder's release already deleted the row (a takeover raced with the original holder's slow
+    write actually succeeding). A later claim must see "done", never a fresh "claimed"."""
+    assert store.claim_write("acme:s1", "fp", holder="a", now=100.0, lease_seconds=30) == "claimed"
+    assert store.claim_write("acme:s1", "fp", holder="b", now=131.0, lease_seconds=30) == "claimed"
+    store.complete_write("acme:s1", "fp", holder="b", succeeded=False, now=132.0)
+    store.complete_write("acme:s1", "fp", holder="a", succeeded=True, now=133.0)
+    assert store.claim_write("acme:s1", "fp", holder="d", now=9999.0, lease_seconds=30) == "done"
+
+
 async def test_sql_idempotency_store_is_shared_by_two_store_handles(store: Store) -> None:
     other = Store(store.engine)  # a second replica on the same database
     a = SqlIdempotencyStore(store)
