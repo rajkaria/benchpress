@@ -215,7 +215,8 @@ Methods, results, failures and cost are in the repository:
 
 ## Status
 
-Alpha (`0.x`). The public API is `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
+Pre-release (`1.0.0a1`) on the road to 1.0; APIs may still change before 1.0.0. The public API is
+`benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
 `ModelConfig`, `Ablations`, `Gate`. MCP, OpenAI Agents SDK and Composio support ship as the `[mcp]`, `[openai-agents]` and `[composio]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
 New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
 

@@ -1,6 +1,6 @@
 # Benchpress
 
-> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` 0.7.0 (Apache-2.0, Python 3.12+) and on npm as `benchpress-guard` 0.1.0. Built for the Multi-App AI Agent Hackathon, 2026-09-13.
+> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` 0.7.0 (Apache-2.0, Python 3.11+) and on npm as `benchpress-guard` 0.1.0. Built for the Multi-App AI Agent Hackathon, 2026-09-13.
 
 Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, shows the gate refusing a planted write to a look-alike record, verifies 12 of 12 checks, and writes `receipt.json` + `receipt.html` (with `--trace-dir`).
 
@@ -63,4 +63,4 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 
 ## Engineering
 - Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
-- pyright strict, ruff, 1,034 Python tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, runs `demo`, `gate check` and `policy list`, and builds and tests the npm guard
+- pyright strict, ruff, 1,058 Python tests (harness-backed tests skip unless the optional ArgaBench harness is vendored); CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, runs `demo`, `gate check` and `policy list`, and builds and tests the npm guard

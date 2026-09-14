@@ -5,11 +5,11 @@
 <p align="center">
   <a href="https://github.com/rajkaria/benchpress/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/rajkaria/benchpress/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://pypi.org/project/benchpress-agent/"><img alt="PyPI" src="https://img.shields.io/pypi/v/benchpress-agent?label=pypi%20benchpress-agent&color=3775A9&logo=pypi&logoColor=white"></a>
-  <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white">
   <img alt="pyright strict" src="https://img.shields.io/badge/pyright-strict-2F74C0">
   <img alt="ruff" src="https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black">
   <a href="https://www.npmjs.com/package/benchpress-guard"><img alt="npm" src="https://img.shields.io/npm/v/benchpress-guard?label=npm%20benchpress-guard&color=CB3837&logo=npm&logoColor=white"></a>
-  <img alt="tests" src="https://img.shields.io/badge/tests-939-3FB950">
+  <img alt="tests" src="https://img.shields.io/badge/tests-1%2C058-3FB950">
   <img alt="gate corpus" src="https://img.shields.io/badge/gate%20corpus-178%2F178-3FB950">
   <img alt="task-agnostic" src="https://img.shields.io/badge/task--specific%20code-0%20lines-58A6FF">
 </p>
@@ -129,7 +129,7 @@ the right customer among look-alikes, changes exactly what was asked in every sy
 change, leaves customer messages as drafts for the account owner, tells the channel what happened,
 and hands you a receipt that shows **why** each decision was made.
 
-**For the engineer:** Benchpress is a Python 3.12 package (`benchpress-agent`) that wraps any
+**For the engineer:** Benchpress is a Python 3.11+ package (`benchpress-agent`) that wraps any
 tool-using model in a fixed, typed control loop:
 
 - **The model fills typed slots.** Every model call is a forced tool call validated against a
@@ -491,7 +491,7 @@ Showing how we know it works is the core of the product, not an afterthought. Th
 
 | Rung | What | Where |
 |---|---|---|
-| **1. Unit truth** | 1,034 tests: gate rules (protected hits, DELETE, sends, charges, merges, smuggling, external destinations, plan membership, replay, base64 raw bodies), playbook request shapes against recorded fixtures, real-app gateway, assertion units. Plus the public gate-rule corpus: 178 YAML cases, 178 passing (`benchpress gate check`) | [`tests/`](tests), [`src/benchpress/corpus/`](src/benchpress/corpus), [docs/GATE-CORPUS.md](docs/GATE-CORPUS.md) |
+| **1. Unit truth** | 1,058 tests: gate rules (protected hits, DELETE, sends, charges, merges, smuggling, external destinations, plan membership, replay, base64 raw bodies), playbook request shapes against recorded fixtures, real-app gateway, assertion units. Plus the public gate-rule corpus: 178 YAML cases, 178 passing (`benchpress gate check`) | [`tests/`](tests), [`src/benchpress/corpus/`](src/benchpress/corpus), [docs/GATE-CORPUS.md](docs/GATE-CORPUS.md) |
 | **2. Assertion contract** | Scripted trajectories with **no model** through the real gateway: oracle → **PASS**, oracle + prospect edit → **UNSAFE**, oracle minus draft → **FAIL**. Proves the scoring isn't generous | [`evals/contract.py`](evals/contract.py), [`tests/test_contract_trajectories.py`](tests/test_contract_trajectories.py) |
 | **3. Grader-faithful twins** | The same oracle / prospect / no-draft / sent trajectories graded by ArgaBench's **unmodified** semantic grader on devsim | [`devsim/`](devsim) |
 | **4. Graded trials** | ArgaBench's published ECOM-02 seed loaded into real Slack, Gmail, HubSpot and Stripe test mode. Seed → run → snapshot → score → reset, repeated | [`evals/run.py`](evals/run.py), [`evals/trial.py`](evals/trial.py) |
@@ -794,7 +794,7 @@ devsim/                    grader-faithful local twins under ArgaBench's unmodif
 scripts/                   bp_gate_replay · gmail_oauth · build_site · summarize_reports · render_replay_page · render_terminal_svg
 reports/                   committed results: summary, compare tables, ArgaBench semantic reports, gate replay
 site/                      landing page (static, Vercel); scripts/build_site.py fills its numbers from reports/
-tests/                     1,034 Python tests across gate, corpus, playbooks, gateway, shims, assertions, twins, run loop
+tests/                     1,058 Python tests across gate, corpus, playbooks, gateway, shims, assertions, twins, run loop
 docs/                      reliability brief (md + pdf), gate corpus, policy packs, rehearse, MCP, OpenAI Agents,
                            Composio, GitHub playbook, audit export, PyPI readme
   demo/index.html          self-contained step-through replay of a real demo run
@@ -805,8 +805,9 @@ docs/                      reliability brief (md + pdf), gate corpus, policy pac
 
 ## 15. Engineering standards
 
-- **~34,800 lines** of typed Python across the agent, eval harness, twins and scripts. **1,034
-  Python tests**, plus the TypeScript guard's own suite.
+- **~34,800 lines** of typed Python across the agent, eval harness, twins and scripts. **1,058
+  Python tests** (harness-backed tests skip unless the optional ArgaBench harness is vendored), plus
+  the TypeScript guard's own suite.
 - **pyright strict** configured for `src`, `tests`, `devsim`, `evals` and `scripts`. **ruff** (E, F, I,
   UP, B, SIM) at line length 120.
 - **CI** ([`ci.yml`](.github/workflows/ci.yml)) on every push to `main` and every pull request, three jobs:
