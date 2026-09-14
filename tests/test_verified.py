@@ -6,7 +6,8 @@ import asyncio
 from typing import Any
 
 from benchpress.context import Candidate, Context, ReadBack
-from benchpress.tools import MAX_PROVIDER_CALLS
+from benchpress.phases.execute import readback_evidence
+from benchpress.tools import MAX_PROVIDER_CALLS, ToolResult
 from benchpress.verified import VerifiedWrite
 from tests.conftest import make_action
 
@@ -211,3 +212,88 @@ async def test_a_mismatched_write_is_still_recorded_as_done() -> None:
     replay = await writer.run(_write())
     assert replay.status == "refused" and replay.verdict.rule == "idempotency"
     assert calls == ["PATCH", "GET"]
+
+
+async def test_a_declared_field_missing_from_the_readback_is_a_mismatch() -> None:
+    """A 2xx read-back that never shows the written field must not count as verified."""
+
+    async def forgetful(tool_name: str, tool_input: dict[str, Any]) -> object:
+        if tool_input["method"] == "GET":
+            return {"status_code": 200, "body": {"id": "701"}}
+        return {"status_code": 200, "body": {"id": "701"}}
+
+    outcome = await VerifiedWrite(forgetful, context=Context(user_prompt=_PROMPT)).run(_write())
+    assert outcome.status == "mismatch"
+    assert [(e.check, e.expected, e.observed, e.match) for e in outcome.evidence] == [
+        ("readback:w1:email", "ap@rivermill.example", "missing", False)
+    ]
+    assert "email" in outcome.evidence[0].detail
+
+
+def test_readback_evidence_reports_each_missing_declared_field() -> None:
+    action = make_action(
+        "w2",
+        body={"properties": {"email": "ap@rivermill.example", "name": "Rivermill Studio"}},
+        fields=("email", "name"),
+        readback=ReadBack(path="/crm/v3/objects/companies/701", field_path="properties.email"),
+    )
+    read = ToolResult(ok=True, status_code=200, body={"properties": {"email": "ap@rivermill.example", "name": None}})
+    evidence = readback_evidence(action, read)
+    assert [(e.check, e.observed, e.match) for e in evidence] == [
+        ("readback:w2:email", "ap@rivermill.example", True),
+        ("readback:w2:name", "missing", False),
+    ]
+
+
+def test_a_field_the_readback_declares_unobserved_is_not_required() -> None:
+    action = make_action(
+        "m1",
+        provider="slack",
+        method="POST",
+        path="/api/chat.postMessage",
+        body={"channel": "C1", "text": "Renewal notices now go to AP."},
+        fields=("channel", "text"),
+        readback=ReadBack(
+            path="/api/conversations.replies",
+            query={"channel": "C1"},
+            field_path="messages.0.text",
+            unobserved=("channel",),
+        ),
+    )
+    read = ToolResult(ok=True, status_code=200, body={"messages": [{"text": "Renewal notices now go to AP."}]})
+    assert [(e.check, e.match) for e in readback_evidence(action, read)] == [("readback:m1:text", True)]
+
+
+def test_a_sibling_of_the_readback_field_path_is_observed() -> None:
+    action = make_action(
+        "m2",
+        provider="slack",
+        method="POST",
+        path="/api/chat.postMessage",
+        body={"channel": "C1", "text": "Done.", "thread_ts": "1700000000.000100"},
+        fields=("text", "thread_ts"),
+        readback=ReadBack(path="/api/conversations.replies", field_path="messages.0.text"),
+    )
+    read = ToolResult(
+        ok=True, status_code=200, body={"messages": [{"text": "Done.", "thread_ts": "1700000000.000100"}]}
+    )
+    assert [(e.check, e.match) for e in readback_evidence(action, read)] == [
+        ("readback:m2:text", True),
+        ("readback:m2:thread_ts", True),
+    ]
+
+
+def test_a_bracketed_form_field_is_observed_at_its_dotted_path() -> None:
+    action = make_action(
+        "s1",
+        provider="stripe",
+        method="POST",
+        path="/v1/customers/cus_1",
+        body={"metadata[lifecycle]": "customer"},
+        fields=("metadata[lifecycle]",),
+        readback=ReadBack(path="/v1/customers/cus_1", field_path="metadata.lifecycle"),
+    )
+    read = ToolResult(ok=True, status_code=200, body={"id": "cus_1", "metadata": {"lifecycle": "customer"}})
+    assert [(e.check, e.observed, e.match) for e in readback_evidence(action, read)] == [
+        ("readback:s1:metadata[lifecycle]", "customer", True)
+    ]

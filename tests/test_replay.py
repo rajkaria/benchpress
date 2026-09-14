@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
+from typing import Any, cast
 
 from benchpress.context import Action
 from benchpress.demo import SCRIPT
@@ -119,3 +121,26 @@ async def test_the_gate_still_refuses_a_tampered_plan() -> None:
     assert receipt.steps[1].allowed is False and receipt.steps[1].rule == "protected"
     assert receipt.executed == 1
     assert target.workspace.companies["702"]["description"] == "never purchased"
+
+
+class ForgetfulWorkspace(OffsetWorkspace):
+    """Accepts company writes, but its read API never returns `description`."""
+
+    def _route(self, provider: str, method: str, path: str, body: dict[str, Any], query: dict[str, str]) -> object:
+        result = super()._route(provider, method, path, body, query)
+        if provider != "hubspot" or method != "GET" or not isinstance(result, dict):
+            return result
+        shown = copy.deepcopy(cast(dict[str, Any], result))
+        properties = shown.get("properties")
+        if isinstance(properties, dict):
+            cast(dict[str, Any], properties).pop("description", None)
+        return shown
+
+
+async def test_replay_flags_a_written_field_the_readback_does_not_show() -> None:
+    rehearsal = await converged()
+    target = WorkspaceStage(ForgetfulWorkspace())
+    receipt = await replay(rehearsal, target.execute_tool, snapshot=target.snapshot)
+    missing = [m for step in receipt.steps for m in step.mismatches if m.startswith("description: wrote")]
+    assert missing and missing[0].endswith("read-back does not show it"), receipt.summary()
+    assert receipt.status == "stopped"

@@ -242,11 +242,18 @@ class DefinitionOfDone(Frozen):
 
 
 class ReadBack(Frozen):
+    """How to read a write back. Every field in `Action.fields` must show up in the response, except `unobserved`.
+
+    `unobserved` names written fields this read-back cannot show by design, for example the channel a message was
+    posted to (it addresses the read instead of appearing in it) or a raw payload the provider never echoes.
+    """
+
     method: Literal["GET", "POST"] = "GET"
     path: str
     query: dict[str, str] = Field(default_factory=dict[str, str])
     body: object | None = None
     field_path: str | None = None
+    unobserved: tuple[str, ...] = ()
 
 
 class Action(Frozen):

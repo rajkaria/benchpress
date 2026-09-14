@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import cast
 
 from benchpress.context import Action, Evidence
@@ -12,6 +14,7 @@ from benchpress.playbooks import extract_field
 from benchpress.tools import BudgetExhausted, ToolBus, ToolResult
 
 _WRAPPERS = frozenset({"properties", "message", "fields", "data", "input"})
+_BRACKET_KEY = re.compile(r"\[([^\]]*)\]")
 
 
 async def execute(deps: PhaseDeps, actions: Sequence[Action] | None = None, *, phase: str = "P5") -> None:
@@ -87,7 +90,8 @@ def readback_evidence(action: Action, read: ToolResult) -> list[Evidence]:
 
     Pure: no I/O, no context mutation. Shared by `readback()` (the run-loop's P5 phase) and
     `VerifiedWrite` (the model-free, controller-free primitive) so the field-matching logic
-    that decides `verified` vs `mismatch` lives in exactly one place.
+    that decides `verified` vs `mismatch` lives in exactly one place. A declared field the
+    successful read-back does not show is non-matching evidence with `observed="missing"`.
     """
     resource = resource_of(action)
     if not read.ok:
@@ -101,42 +105,90 @@ def readback_evidence(action: Action, read: ToolResult) -> list[Evidence]:
                 match=False,
             )
         ]
-    field_path = action.readback.field_path if action.readback else None
-    items: list[Evidence] = []
+    return [
+        Evidence(
+            check=f"readback:{action.id}:{check.field}",
+            provider=action.provider,
+            resource=resource,
+            expected=check.expected,
+            observed=MISSING if check.observed is None else check.observed,
+            match=check.match,
+            detail="" if check.observed is not None else f"{check.field} not found at {', '.join(check.tried)}",
+        )
+        for check in field_checks(action, read.body)
+    ]
+
+
+MISSING = "missing"
+
+
+@dataclass(frozen=True)
+class FieldCheck:
+    """One written field compared against a read-back body. `observed is None` means the body does not show it."""
+
+    field: str
+    expected: str
+    observed: str | None
+    tried: tuple[str, ...]
+
+    @property
+    def match(self) -> bool:
+        return self.observed is not None and values_match(self.expected, self.observed)
+
+
+def field_checks(action: Action, read_body: object) -> list[FieldCheck]:
+    """Every field the read-back must show: `action.fields` minus wrapper keys, non-scalar values and `unobserved`."""
+    spec = action.readback
+    field_path = spec.field_path if spec else None
+    unobserved = frozenset(spec.unobserved) if spec else frozenset[str]()
+    checks: list[FieldCheck] = []
     for field_name in action.fields:
-        if field_name in _WRAPPERS:
+        if field_name in _WRAPPERS or field_name in unobserved:
             continue
         expected = leaf_value(action.body, field_name)
         if expected is None:
             continue
-        observed = observe(read.body, field_name, field_path)
-        if observed is None:
-            continue
-        items.append(
-            Evidence(
-                check=f"readback:{action.id}:{field_name}",
-                provider=action.provider,
-                resource=resource,
-                expected=expected,
-                observed=observed,
-                match=values_match(expected, observed),
-            )
-        )
-    return items
+        tried = candidate_paths(field_name, field_path)
+        checks.append(FieldCheck(field_name, expected, first_value(read_body, tried), tried))
+    return checks
 
 
 def observe(payload: object, field_name: str, field_path: str | None) -> str | None:
+    return first_value(payload, candidate_paths(field_name, field_path))
+
+
+def candidate_paths(field_name: str, field_path: str | None) -> tuple[str, ...]:
+    """Where a written field may sit in a read-back body, most specific first.
+
+    Form-style names are read as dotted paths (`metadata[lifecycle]` -> `metadata.lifecycle`). With a `field_path`,
+    the field is looked for at the path itself, beneath it, and beside it (`messages.0.text` -> `messages.0.thread_ts`).
+    """
+    dotted = _dotted(field_name)
     candidates: list[str] = []
     if field_path:
-        if field_path.endswith(field_name):
+        if field_path == dotted or field_path.endswith(f".{dotted}"):
             candidates.append(field_path)
-        candidates.append(f"{field_path}.{field_name}")
-    candidates.extend([field_name, f"properties.{field_name}"])
-    for candidate in candidates:
-        value = extract_field(payload, candidate)
+        candidates.append(f"{field_path}.{dotted}")
+        parent = field_path.rpartition(".")[0]
+        if parent:
+            candidates.append(f"{parent}.{dotted}")
+    candidates.extend([dotted, f"properties.{dotted}"])
+    return tuple(dict.fromkeys(candidates))
+
+
+def first_value(payload: object, paths: Sequence[str]) -> str | None:
+    for path in paths:
+        value = extract_field(payload, path)
         if value is not None:
             return value
     return None
+
+
+def _dotted(field_name: str) -> str:
+    head, _, rest = field_name.partition("[")
+    if not rest:
+        return field_name
+    return ".".join([head, *_BRACKET_KEY.findall(f"[{rest}")])
 
 
 def values_match(expected: str, observed: str) -> bool:

@@ -27,7 +27,7 @@ from benchpress.context import Action, Context, GateVerdict, LedgerEntry, Plan
 from benchpress.controller import run_trial
 from benchpress.gate import Gate, fingerprint
 from benchpress.model import ModelClient, ModelConfig
-from benchpress.phases.execute import fill_placeholders, leaf_value, observe, values_match
+from benchpress.phases.execute import field_checks, fill_placeholders
 from benchpress.playbooks import Playbook, extract_field
 from benchpress.tools import PROVIDER_API, BudgetExhausted, ToolBus, ToolExecutor
 
@@ -703,9 +703,6 @@ def _describe_write(write: PlannedWrite) -> str:
 ReplayStatus = Literal["completed", "stopped", "refused"]
 Snapshot = Callable[[], Awaitable[JsonState]]
 
-# Wrapper keys whose leaves are compared individually (same convention as P5 read-back).
-_READBACK_WRAPPERS = frozenset({"properties", "message", "fields", "data", "input"})
-
 
 class ReplayStep(_Model):
     index: int
@@ -987,15 +984,11 @@ async def _read_back(
     if not result.ok:
         return True, [f"read-back {path} failed: {result.status_code}"]
     mismatches: list[str] = []
-    for field_name in action.fields:
-        if field_name in _READBACK_WRAPPERS:
-            continue
-        expected = leaf_value(action.body, field_name)
-        observed = observe(result.body, field_name, spec.field_path)
-        if expected is None or observed is None:
-            continue
-        if not values_match(expected, observed):
-            mismatches.append(f"{field_name}: wrote {expected!r}, read back {observed!r}")
+    for check in field_checks(action, result.body):
+        if check.observed is None:
+            mismatches.append(f"{check.field}: wrote {check.expected!r}, read-back does not show it")
+        elif not check.match:
+            mismatches.append(f"{check.field}: wrote {check.expected!r}, read back {check.observed!r}")
     if write.readback is not None:
         replay_generated = {
             replay_id: rehearsal_ids[rehearsed_id]

@@ -30,7 +30,8 @@ class WriteOutcome:
     def status(self) -> WriteStatus:
         """Computed from evidence only.
 
-        `mismatch` means a field was read back and contradicted the write. A read-back that could not be performed
+        `mismatch` means a declared field was read back and contradicted the write, or the read-back succeeded
+        without showing it (`observed="missing"`). A read-back that could not be performed
         or read (skipped, non-2xx, transport error) proves nothing either way, so it is `unverified`; its evidence
         is kept on the outcome so the reason is visible.
         """

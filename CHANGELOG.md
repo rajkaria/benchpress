@@ -7,6 +7,9 @@ pyright strict, the task-agnostic grep). Stable releases were, after upload, ins
 virtualenv and imported before their GitHub release was cut; pre-releases are listed here when they are tagged. CI also
 builds the wheel and runs the user-facing commands from a clean venv.
 
+## Unreleased
+- **Read-back no longer passes on silence.** A field an action declares in `fields` that a successful read-back does not show is now non-matching evidence (`observed="missing"`, with the paths tried in `detail`), so `VerifiedWrite` reports `mismatch` and the run loop reports `partial` instead of `verified`/`completed`. `rehearse` replay applies the same check through the same helper (`benchpress.phases.execute.field_checks`). `ReadBack.unobserved` names written fields a read-back cannot show by design (the Slack channel that addresses the read, the Gmail raw payload); form-style names such as `metadata[lifecycle]` are read at their dotted path, and siblings of `field_path` are found (`messages.0.thread_ts`).
+
 ## 1.0.0a1 (2026-09-14)
 First pre-release on the road to 1.0, where Benchpress becomes the open-source execution layer for agents that act on real systems (see [docs/ROADMAP.md](docs/ROADMAP.md)).
 - **`VerifiedWrite`**: the gate → execute → read-back → evidence primitive, usable without the controller or a model. `outcome.status` is `refused | failed | unverified | verified | mismatch`, computed from evidence only: `mismatch` means a field was read back and contradicted the write, while a read-back that could not be performed or read is `unverified`. It is not a benchmark trial (no per-phase or lifetime call caps), and identical concurrent writes on one instance send one request.

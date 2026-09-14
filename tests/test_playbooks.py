@@ -20,6 +20,7 @@ import pytest
 from benchpress import playbooks
 from benchpress.context import Action, Context, DefinitionOfDone, ReadBack, TaskFrame
 from benchpress.gate import Gate
+from benchpress.phases.execute import readback_evidence
 from benchpress.playbooks import (
     CREATED_ID_PLACEHOLDER,
     CREATED_TS_PLACEHOLDER,
@@ -47,7 +48,7 @@ from benchpress.playbooks.gmail import (
 from benchpress.playbooks.hubspot import HubSpotPlaybook, company_filter_groups, contact_filter_groups
 from benchpress.playbooks.slack import SlackPlaybook, select_policy_channels, user_directory
 from benchpress.playbooks.stripe import StripePlaybook, idempotency_key, quote, search_clauses
-from benchpress.tools import ToolBus
+from benchpress.tools import ToolBus, ToolResult
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "playbooks"
 
@@ -1079,3 +1080,43 @@ def test_constructed_actions_pass_the_gate() -> None:
         assert action.is_write and action.satisfies and action.readback is not None and action.fields
         verdict = gate.evaluate(action)
         assert verdict.allowed, f"{action.id} refused by {verdict.rule}: {verdict.reason}"
+
+
+# --------------------------------------------------------------------------------------
+# Read-back declarations hold against recorded provider responses
+# --------------------------------------------------------------------------------------
+
+
+def _read(name: str) -> ToolResult:
+    return ToolResult(ok=True, status_code=200, body=fixture(name))
+
+
+def test_slack_message_readback_verifies_the_text_and_does_not_require_the_channel() -> None:
+    action = SlackPlaybook().message_action(
+        "a7",
+        "C01BILL0001",
+        "Verified: Harlow Bakery renewal notices now go to ap@harlowbakery.example.",
+        ("deliverable[originating_channel_update]",),
+    )
+    assert action is not None and action.readback is not None
+    assert action.readback.unobserved == ("channel",)
+    evidence = readback_evidence(action, _read("slack_conversations_replies"))
+    assert [(e.check, e.match) for e in evidence] == [("readback:a7:text", True)]
+
+
+def test_gmail_draft_readback_does_not_require_the_raw_payload_the_api_never_echoes() -> None:
+    action = gmail_module.GmailPlaybook().draft_action(
+        "a5", "ap@harlowbakery.example", "Confirmation", "Renewal notices now go to AP.", ("d[1]",)
+    )
+    assert action is not None and action.readback is not None
+    assert action.readback.unobserved == ("raw",)
+    assert readback_evidence(action, _read("gmail_draft_full")) == []
+
+
+def test_stripe_metadata_readback_is_observed_not_skipped() -> None:
+    action = StripePlaybook().update_action(
+        "a3", "customers:cus_HB001a2b3c4d5", {"metadata.lifecycle": "customer"}, ("e",)
+    )
+    assert action is not None
+    evidence = readback_evidence(action, _read("stripe_customer_get"))
+    assert [(e.check, e.observed, e.match) for e in evidence] == [("readback:a3:metadata[lifecycle]", "customer", True)]

@@ -370,6 +370,7 @@ class GmailPlaybook(BasePlaybook):
                 path=f"{DRAFTS_PATH}/{CREATED_ID_PLACEHOLDER}",
                 query={"format": "full"},
                 field_path="message.snippet",
+                unobserved=("raw",),
             ),
             rationale=f"save an unsent draft addressed to {recipients}",
         )
