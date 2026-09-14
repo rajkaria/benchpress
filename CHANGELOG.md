@@ -3,14 +3,15 @@
 Python releases are on PyPI as [`benchpress-agent`](https://pypi.org/project/benchpress-agent/) and tagged `v*` in git.
 The TypeScript guard is on npm as [`benchpress-guard`](https://www.npmjs.com/package/benchpress-guard), tagged
 `benchpress-guard-v*`. All dates are America/Los_Angeles. Every release passed the local gate (pytest, ruff,
-pyright strict, the task-agnostic grep) and, after upload, was installed back from PyPI into a clean virtualenv and
-imported before its GitHub release was cut; CI also builds the wheel and runs the user-facing commands from a clean venv.
+pyright strict, the task-agnostic grep). Stable releases were, after upload, installed back from PyPI into a clean
+virtualenv and imported before their GitHub release was cut; pre-releases are listed here when they are tagged. CI also
+builds the wheel and runs the user-facing commands from a clean venv.
 
 ## 1.0.0a1 (2026-09-14)
 First pre-release on the road to 1.0, where Benchpress becomes the open-source execution layer for agents that act on real systems (see [docs/ROADMAP.md](docs/ROADMAP.md)).
-- **`VerifiedWrite`**: the gate → execute → read-back → evidence primitive, usable without the controller or a model. `outcome.status` is `refused | failed | unverified | verified | mismatch`, computed from evidence only.
-- **`ToolSpec`**: one tool-metadata contract (declared class, target fields, read-back mapping) shared by every adapter; a declared class always beats the name heuristic.
-- **Receipt schema v1** ships in the package (`benchpress.schemas.validate_receipt`); the demo receipt validates in CI.
+- **`VerifiedWrite`**: the gate → execute → read-back → evidence primitive, usable without the controller or a model. `outcome.status` is `refused | failed | unverified | verified | mismatch`, computed from evidence only: `mismatch` means a field was read back and contradicted the write, while a read-back that could not be performed or read is `unverified`. It is not a benchmark trial (no per-phase or lifetime call caps), and identical concurrent writes on one instance send one request.
+- **`ToolSpec`**: the tool-metadata contract (declared class, target fields, read-back mapping) that adapters will fill from framework metadata; a declared class always beats the name heuristic. The gate and `VerifiedWrite` do not read it yet; the bridge is planned for Sprint 2.
+- **Receipt schema v1** ships in the package (`benchpress.schemas.receipt_schema()`, additive-only within v1). `benchpress.schemas.validate_receipt` needs the new optional `[schema]` extra (`pip install "benchpress-agent[schema]"`); CI validates the demo receipt from the installed wheel.
 - **Python 3.11** is now the floor; CI runs 3.11, 3.12 and 3.13.
 - The ArgaBench harness is opt-in for tests and CI and is never redistributed (the upstream repository carries no license).
 - Contributing guide, security policy, code of conduct, issue and PR templates, public roadmap.

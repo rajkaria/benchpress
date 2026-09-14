@@ -8,7 +8,7 @@ deliverables. It runs on real Slack, Stripe, HubSpot and Gmail, and on local twi
 published seed graded by ArgaBench's unmodified grader.
 
 It ships as an open-core package on PyPI, [`benchpress-agent`](https://pypi.org/project/benchpress-agent/)
-(0.1.0 to 0.7.0, all built on 2026-09-13):
+(0.1.0 to 0.7.1, all built on 2026-09-13; 1.0.0a1 is tagged in git as a pre-release):
 
 - `wrap(model, executor)` over any `execute_tool`-shaped tool layer, and `benchpress demo`, which runs
   the whole loop offline with no keys.

@@ -25,11 +25,13 @@ The ArgaBench harness is optional. Without it, harness-backed tests skip cleanly
 ## Pull requests
 - One change per PR. Keep the CHANGELOG entry in the PR.
 - Sign off your commits (`git commit -s`). By signing off you agree to the [Developer Certificate of Origin](https://developercertificate.org/).
-- Breaking changes go through an RFC in `docs/rfcs/` first.
+- Breaking changes to a public contract go through an RFC first: see [docs/rfcs/](docs/rfcs/README.md).
 
 ## Security and conduct
 Found a vulnerability? Do not open a public issue — see [SECURITY.md](SECURITY.md) for how to report it privately.
 This project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Releases
-Tags `v*` publish to PyPI, npm and GHCR. Versions are shared across every artifact.
+Python releases are tagged `v*` and published to PyPI as `benchpress-agent` by the maintainer. The TypeScript guard
+is tagged `benchpress-guard-v*` and published to npm as `benchpress-guard`. There is no container image or Helm chart
+yet. Each artifact is versioned on its own today; one shared version across every artifact is the goal for 1.0.

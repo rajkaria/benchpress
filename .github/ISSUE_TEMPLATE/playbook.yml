@@ -1,6 +1,6 @@
 name: New playbook
 description: Propose a provider playbook
-labels: [playbook, good first issue]
+labels: [playbook]
 body:
   - type: input
     id: provider

@@ -15,7 +15,7 @@ auditable **receipt**.
 pip install benchpress-agent        # or: uv add benchpress-agent
 ```
 
-Python 3.11+. Runtime dependencies: `httpx`, `pydantic`.
+Python 3.11+. Runtime dependencies: `httpx`, `pydantic`, `pyyaml`.
 
 **See it work in one command, no keys needed:**
 
@@ -68,7 +68,11 @@ benchpress run --providers hubspot,stripe --prompt "..." --trace-dir runs/demo
 benchpress receipt runs/demo --html
 ```
 
-**Gate one write, no controller, no model** (the primitive every adapter and the gateway compose):
+**Gate one write, no controller, no model** (the primitive the planned gateway and adapters will compose):
+
+```bash
+pip install --pre benchpress-agent   # VerifiedWrite is new in the 1.0.0a1 pre-release
+```
 
 ```python
 from benchpress import VerifiedWrite
@@ -89,7 +93,8 @@ print(outcome.verdict.rule)      # why the gate said yes or no
 print(outcome.evidence)          # what the provider showed after the write
 ```
 
-Python 3.11+. Roadmap: gateway, console, adapters for every major framework, Helm chart. See docs/ROADMAP.md in the repository.
+Roadmap (gateway, console, adapters for every major framework, Helm chart):
+[docs/ROADMAP.md](https://github.com/rajkaria/benchpress/blob/main/docs/ROADMAP.md).
 
 ## MCP: put the gate in front of any MCP server
 
@@ -217,7 +222,7 @@ Methods, results, failures and cost are in the repository:
 
 Pre-release (`1.0.0a1`) on the road to 1.0; APIs may still change before 1.0.0. The public API is
 `benchpress.wrap`, `Benchpress.run`, `run_trial`, `TrialResult`,
-`ModelConfig`, `Ablations`, `Gate`. MCP, OpenAI Agents SDK and Composio support ship as the `[mcp]`, `[openai-agents]` and `[composio]` extras; policy packs, the gate-rule corpus and Rehearse ship in the core package.
-New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress#16-what-benchpress-becomes).
+`ModelConfig`, `Ablations`, `Gate`, `VerifiedWrite`, `WriteOutcome`. MCP, OpenAI Agents SDK and Composio support ship as the `[mcp]`, `[openai-agents]` and `[composio]` extras; `benchpress.schemas.validate_receipt` needs the `[schema]` extra (`receipt_schema()` does not); policy packs, the gate-rule corpus and Rehearse ship in the core package.
+New capabilities land in minor releases; see the [roadmap](https://github.com/rajkaria/benchpress/blob/main/docs/ROADMAP.md).
 
 Apache-2.0 · Built by [Raj Karia](https://github.com/rajkaria)

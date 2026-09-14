@@ -1,7 +1,8 @@
-"""What a tool *is*, declared once and shared by every adapter.
+"""What a tool *is*, declared once: the contract adapters will use.
 
-Adapters fill a `ToolSpec` from framework metadata (JSON schema, decorators, MCP tool descriptions).
-The gate and `VerifiedWrite` read it. A declared class always beats the name heuristic.
+Adapters will fill a `ToolSpec` from framework metadata (JSON schema, decorators, MCP tool descriptions).
+Today it classifies a tool, and a declared class always beats the name heuristic. The gate and `VerifiedWrite`
+do not read it yet: they work on HTTP-shaped `Action`s. A `ToolSpec` -> `VerifiedWrite` bridge is on the roadmap.
 """
 
 from __future__ import annotations

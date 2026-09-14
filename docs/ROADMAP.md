@@ -29,11 +29,13 @@ Goal: `benchpress serve` and `docker run` both exist, and a LangChain agent and 
 - [ ] Local console: a receipts list and a receipt detail view, served by the gateway or standalone
 - [ ] Container image published to a public registry; `docker run` serves the console and the API together
 - [ ] Parity fixture proving library mode and gateway mode produce byte-identical receipt lines for the same calls
+- [ ] Standalone, importable phase functions (`policy_sweep`, `resolve_targets`, `definition_of_done`, `verify`), with the controller as their composition
 
 ## Sprint 2: Adapters wave 1 (weeks 3-4)
 
 Goal: one line of integration in any mainstream agent framework routes tool calls through Benchpress, in library or gateway mode.
 
+- [ ] `ToolSpec` → `VerifiedWrite` bridge, so a plain Python function can be gated and read back in about five lines (`ReadBackSpec` and the HTTP `ReadBack` get one converter)
 - [ ] LangChain / Deep Agents middleware
 - [ ] Claude Agent SDK (Python) hooks
 - [ ] Pydantic AI guard

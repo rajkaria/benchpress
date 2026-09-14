@@ -9,7 +9,7 @@
   <img alt="pyright strict" src="https://img.shields.io/badge/pyright-strict-2F74C0">
   <img alt="ruff" src="https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black">
   <a href="https://www.npmjs.com/package/benchpress-guard"><img alt="npm" src="https://img.shields.io/npm/v/benchpress-guard?label=npm%20benchpress-guard&color=CB3837&logo=npm&logoColor=white"></a>
-  <img alt="tests" src="https://img.shields.io/badge/tests-1%2C058-3FB950">
+  <img alt="tests" src="https://img.shields.io/badge/tests-1%2C076-3FB950">
   <img alt="gate corpus" src="https://img.shields.io/badge/gate%20corpus-178%2F178-3FB950">
   <img alt="task-agnostic" src="https://img.shields.io/badge/task--specific%20code-0%20lines-58A6FF">
 </p>
@@ -35,18 +35,23 @@
 > It touches a billing system, a CRM, an inbox and a chat channel. A policy email says customer
 > confirmations need owner review. A look-alike prospect account must not be touched.
 >
-> **Arga Labs gave this exact job to 37 frontier model configurations. None passed, not once in 111 tries.**
-> The same model passes it 3 times out of 3 when the loop reads the rules, locks the look-alike, gates every
-> write in code and reads every write back. **The loop is the problem. Benchpress is the loop.**
+> **Context, from Arga Labs' published ArgaBench data:** 37 frontier model configurations attempted this job
+> 111 times. None passed.
+>
+> **Our result, on a different substrate:** on grader-faithful local twins of the task, under ArgaBench's
+> unmodified runner and grader, the same model (`deepseek-v4-pro` on both arms) goes **0/3 in a plain loop and
+> 3/3 in Benchpress**. Ablations attribute the lift to the policy sweep (switched off: 0/3); the gate and
+> read-back are safety backstops (either switched off: still 3/3). Numbers, substrates and limits:
+> [§11](#11-how-we-know-it-works). **The loop is the problem. Benchpress is the loop.**
 
-Benchpress is the open-source execution layer for AI agents that act on real systems. It works three ways,
-from the same code:
+Benchpress is the open-source execution layer for AI agents that act on real systems. It is being built to
+work three ways from the same code. The developer door ships today; the team and enterprise doors are planned:
 
 | You are | Install | You get |
 |---|---|---|
-| **One developer** | `pip install benchpress-agent` | a gate, read-back and a receipt around any tool call, in-process, no server, no account |
-| **A team** | `docker run ghcr.io/rajkaria/benchpress` *(Sprint 1)* | a gateway (HTTP + MCP) every agent points at, an approval inbox, searchable receipts |
-| **An enterprise** | `helm install benchpress …` *(Sprint 6)* | SSO, RBAC, hash-chained receipts, SIEM export, OPA/Cedar policies, compliance mapping |
+| **One developer** *(available)* | `pip install benchpress-agent` | in-process, no server, no account: the code gate and read-back around HTTP-shaped writes (`VerifiedWrite`, in the 1.0.0a1 pre-release), receipts from the full loop (`benchpress.wrap`), and policy guards for MCP, OpenAI Agents SDK, Composio and Vercel AI SDK tools |
+| **A team** *(planned, Sprint 1; not released)* | `docker run ghcr.io/rajkaria/benchpress` | a gateway (HTTP + MCP) every agent points at, an approval inbox, searchable receipts |
+| **An enterprise** *(planned, Sprint 6; not released)* | `helm install benchpress …` | SSO, RBAC, hash-chained receipts, SIEM export, OPA/Cedar policies, compliance mapping |
 
 Everything is Apache-2.0. The roadmap is public: [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -491,7 +496,7 @@ Showing how we know it works is the core of the product, not an afterthought. Th
 
 | Rung | What | Where |
 |---|---|---|
-| **1. Unit truth** | 1,058 tests: gate rules (protected hits, DELETE, sends, charges, merges, smuggling, external destinations, plan membership, replay, base64 raw bodies), playbook request shapes against recorded fixtures, real-app gateway, assertion units. Plus the public gate-rule corpus: 178 YAML cases, 178 passing (`benchpress gate check`) | [`tests/`](tests), [`src/benchpress/corpus/`](src/benchpress/corpus), [docs/GATE-CORPUS.md](docs/GATE-CORPUS.md) |
+| **1. Unit truth** | 1,076 tests: gate rules (protected hits, DELETE, sends, charges, merges, smuggling, external destinations, plan membership, replay, base64 raw bodies), playbook request shapes against recorded fixtures, real-app gateway, assertion units. Plus the public gate-rule corpus: 178 YAML cases, 178 passing (`benchpress gate check`) | [`tests/`](tests), [`src/benchpress/corpus/`](src/benchpress/corpus), [docs/GATE-CORPUS.md](docs/GATE-CORPUS.md) |
 | **2. Assertion contract** | Scripted trajectories with **no model** through the real gateway: oracle → **PASS**, oracle + prospect edit → **UNSAFE**, oracle minus draft → **FAIL**. Proves the scoring isn't generous | [`evals/contract.py`](evals/contract.py), [`tests/test_contract_trajectories.py`](tests/test_contract_trajectories.py) |
 | **3. Grader-faithful twins** | The same oracle / prospect / no-draft / sent trajectories graded by ArgaBench's **unmodified** semantic grader on devsim | [`devsim/`](devsim) |
 | **4. Graded trials** | ArgaBench's published ECOM-02 seed loaded into real Slack, Gmail, HubSpot and Stripe test mode. Seed → run → snapshot → score → reset, repeated | [`evals/run.py`](evals/run.py), [`evals/trial.py`](evals/trial.py) |
@@ -600,7 +605,11 @@ result = await agent.run("Acme asked for renewal notices to go to ap@acme.exampl
 print(result.status, result.context.refusals)   # status from read-back evidence; every refused write with its rule
 ```
 
-**Gate one write, no controller, no model** (the primitive every adapter and the gateway compose):
+**Gate one write, no controller, no model** (the primitive the planned gateway and adapters will compose):
+
+```bash
+pip install --pre benchpress-agent   # VerifiedWrite is new in the 1.0.0a1 pre-release
+```
 
 ```python
 from benchpress import VerifiedWrite
@@ -794,7 +803,7 @@ devsim/                    grader-faithful local twins under ArgaBench's unmodif
 scripts/                   bp_gate_replay · gmail_oauth · build_site · summarize_reports · render_replay_page · render_terminal_svg
 reports/                   committed results: summary, compare tables, ArgaBench semantic reports, gate replay
 site/                      landing page (static, Vercel); scripts/build_site.py fills its numbers from reports/
-tests/                     1,058 Python tests across gate, corpus, playbooks, gateway, shims, assertions, twins, run loop
+tests/                     1,076 Python tests across gate, corpus, playbooks, gateway, shims, assertions, twins, run loop
 docs/                      reliability brief (md + pdf), gate corpus, policy packs, rehearse, MCP, OpenAI Agents,
                            Composio, GitHub playbook, audit export, PyPI readme
   demo/index.html          self-contained step-through replay of a real demo run
@@ -805,18 +814,19 @@ docs/                      reliability brief (md + pdf), gate corpus, policy pac
 
 ## 15. Engineering standards
 
-- **~34,800 lines** of typed Python across the agent, eval harness, twins and scripts. **1,058
-  Python tests** (harness-backed tests skip unless the optional ArgaBench harness is vendored), plus
-  the TypeScript guard's own suite.
+- **~34,800 lines** of typed Python across the agent, eval harness, twins and scripts. **1,076
+  Python tests** collected (the 31 marked `arga` skip unless the optional ArgaBench harness is vendored,
+  so a run without it reports them as skipped, not passed), plus the TypeScript guard's own suite.
 - **pyright strict** configured for `src`, `tests`, `devsim`, `evals` and `scripts`. **ruff** (E, F, I,
   UP, B, SIM) at line length 120.
 - **CI** ([`ci.yml`](.github/workflows/ci.yml)) on every push to `main` and every pull request, three jobs:
-  - `check`: vendors ArgaBench at the audited commit `4a81785`, then runs ruff, `pyright src tests`,
-    pytest and the **task-agnostic guard** (a grep of `src/benchpress` for benchmark task ids and seeded
-    entities).
-  - `package`: builds the wheel, runs `twine check --strict`, installs it with the `[mcp,openai-agents]`
-    extras into a clean venv on Python 3.12 and 3.13, and runs `benchpress demo`, `gate check` and
-    `policy list`.
+  - `check` (Python 3.11, 3.12 and 3.13): vendors ArgaBench at the audited commit `4a81785` only when the
+    repository variable `BENCHPRESS_ARGA_TESTS` is `1` (otherwise the harness-backed tests skip), then runs
+    ruff, `pyright src tests`, pytest and the **task-agnostic guard** (a grep of `src/benchpress` for
+    benchmark task ids and seeded entities).
+  - `package` (Python 3.11, 3.12 and 3.13): builds the wheel, runs `twine check --strict`, installs it with
+    the `[mcp,openai-agents,schema]` extras into a clean venv, runs `benchpress demo`, `gate check` and
+    `policy list`, and validates the demo's `receipt.json` against the shipped receipt schema.
   - `guard-npm`: builds `benchpress-guard` (ESM + CJS + types), runs its tests against the Python parity
     fixture, and checks the npm tarball ships only `dist/`, `README.md`, `LICENSE` and `package.json`.
 - **Never edits the benchmark.** Graders, gateway, snapshot capture and seeds are untouched. devsim
@@ -831,7 +841,7 @@ docs/                      reliability brief (md + pdf), gate corpus, policy pac
 ## 16. What Benchpress becomes
 
 **Shipped today.** On PyPI as [`benchpress-agent`](https://pypi.org/project/benchpress-agent/), every
-release tagged in git with notes in [CHANGELOG.md](CHANGELOG.md):
+release tagged in git with notes in [CHANGELOG.md](CHANGELOG.md). Pre-releases are listed once tagged:
 
 | Version | What shipped |
 |---|---|
@@ -844,7 +854,7 @@ release tagged in git with notes in [CHANGELOG.md](CHANGELOG.md):
 | 0.6.0–0.6.1 | GitHub playbook; Anthropic transport contract tests and fixes |
 | 0.7.0 | `benchpress regress` (runs become corpus cases) and `benchpress receipts export` (local audit log) |
 | npm `benchpress-guard` 0.1.0 | The same guard for Vercel AI SDK tools, byte-compatible policy and receipts |
-| 1.0.0a1 | `VerifiedWrite` (gate → execute → read-back → evidence, no controller needed), `ToolSpec` metadata contract, receipt schema v1 shipped as package data, Python 3.11 floor, public roadmap and community files |
+| 1.0.0a1 (pre-release) | `VerifiedWrite` (gate → execute → read-back → evidence, no controller needed), `ToolSpec` metadata contract, receipt schema v1 shipped as package data, Python 3.11 floor, public roadmap and community files |
 
 **Still roadmap.** The full plan, with dated goals and checkboxes updated every sprint, lives in
 [docs/ROADMAP.md](docs/ROADMAP.md). One line per sprint:
