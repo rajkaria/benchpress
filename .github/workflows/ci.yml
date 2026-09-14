@@ -9,6 +9,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
@@ -22,9 +23,6 @@ jobs:
           git init -q arga-twins-benchmark
           git -C arga-twins-benchmark fetch -q --depth 1 https://github.com/ArgaLabs/arga-twins-benchmark 4a8178526650f6f21f341dc6acc46db7e9fe1fc1
           git -C arga-twins-benchmark checkout -q FETCH_HEAD
-      - name: Require the harness tests when the variable is set
-        if: ${{ vars.BENCHPRESS_ARGA_TESTS == '1' }}
-        run: echo "BENCHPRESS_ARGA_TESTS=1" >> "$GITHUB_ENV"
       - run: uv sync --group dev
       - run: uv run ruff check .
       - run: uv run pyright src tests
@@ -65,6 +63,7 @@ jobs:
     # The published artifact, not the repo: build the wheel, install it into a clean venv, run what users run.
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
@@ -77,9 +76,10 @@ jobs:
       - name: Install the wheel into a clean venv and run the user-facing commands
         run: |
           uv venv /tmp/pkg --python ${{ matrix.python-version }}
-          VIRTUAL_ENV=/tmp/pkg uv pip install "$(ls dist/*.whl)[mcp,openai-agents]"
+          VIRTUAL_ENV=/tmp/pkg uv pip install "$(ls dist/*.whl)[mcp,openai-agents,schema]"
           cd /tmp
           /tmp/pkg/bin/python -c "import benchpress; print(benchpress.__version__); from benchpress.shims.mcp import mcp_executor; from benchpress.shims.openai_agents import guard_tools"
           /tmp/pkg/bin/benchpress demo --trace-dir /tmp/demo
+          /tmp/pkg/bin/python -c "import json; from benchpress.schemas import validate_receipt; validate_receipt(json.load(open('/tmp/demo/receipt.json'))); print('receipt.json validates against receipt v1')"
           /tmp/pkg/bin/benchpress gate check
           /tmp/pkg/bin/benchpress policy list

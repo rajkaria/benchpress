@@ -140,13 +140,6 @@ def context() -> Context:
 
 
 ARGA_FORCE_ENV = "BENCHPRESS_ARGA_TESTS"
-ARGA_DEPENDENT = (
-    "tests/devsim/test_candidates.py",
-    "tests/devsim/test_lifecycle.py",
-    "tests/devsim/test_scaffold.py",
-    "tests/test_harness_bridge.py",
-    "tests/test_scenarios.py",
-)
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -159,15 +152,14 @@ def _harness_present() -> bool:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Tests that import the vendored ArgaBench harness skip unless it is present (or forced)."""
-    if _harness_present():
+    """Tests marked `@pytest.mark.arga` need the vendored ArgaBench harness: they skip unless it is present.
+
+    `BENCHPRESS_ARGA_TESTS=1` forces them to run (and fail) without it, so CI that vendors the harness can never
+    pass by silently skipping.
+    """
+    if _harness_present() or os.environ.get(ARGA_FORCE_ENV) == "1":
         return
-    forced = os.environ.get(ARGA_FORCE_ENV) == "1"
     skip = pytest.mark.skip(reason="vendored ArgaBench harness not present; set BENCHPRESS_ARGA_TESTS=1 to require it")
     for item in items:
-        try:
-            rel = Path(str(item.fspath)).resolve().relative_to(_REPO_ROOT)
-        except ValueError:
-            continue
-        if rel.as_posix().startswith(ARGA_DEPENDENT) and not forced:
+        if item.get_closest_marker("arga") is not None:
             item.add_marker(skip)

@@ -100,6 +100,7 @@ def test_spec_for_uses_stub_only_for_missing_modules(monkeypatch: pytest.MonkeyP
         spec_for("stripe")
 
 
+@pytest.mark.arga
 def test_load_profile_reads_canonical_and_devsim_profiles() -> None:
     canonical = load_profile("opus-5-high")
     assert canonical["model_id"] == "claude-opus-5"
@@ -110,6 +111,7 @@ def test_load_profile_reads_canonical_and_devsim_profiles() -> None:
         load_profile("no-such-profile")
 
 
+@pytest.mark.arga
 def test_write_matrix_copy_has_37_profiles_with_one_slot_swapped(tmp_path: Path) -> None:
     profile = load_profile("benchpress-deepseek-chat")
     path = write_matrix_copy(tmp_path / "model-matrix.json", swap_out=DEFAULT_SWAP_SLOT, swap_in=profile)
@@ -125,6 +127,7 @@ def test_write_matrix_copy_has_37_profiles_with_one_slot_swapped(tmp_path: Path)
     ]
 
 
+@pytest.mark.arga
 def test_prepare_output_root_writes_classifier_configs(tmp_path: Path) -> None:
     output = tmp_path / "matrix"
     prepared = prepare_output_root(output, load_profile("baseline-deepseek-chat"), [TASK_ID])
@@ -156,6 +159,7 @@ def test_prepare_output_root_writes_classifier_configs(tmp_path: Path) -> None:
     assert os.readlink(output / "tasks") == "profiles/benchpress-deepseek-chat/tasks"
 
 
+@pytest.mark.arga
 def test_patch_run_script_swaps_only_the_documented_globals() -> None:
     module = load_run_script()
     originals = {name: getattr(module, name) for name in SWAPPED_GLOBALS}
@@ -176,6 +180,7 @@ def test_patch_run_script_swaps_only_the_documented_globals() -> None:
         assert getattr(module, name) is value
 
 
+@pytest.mark.arga
 async def test_run_trial_on_stubs_produces_every_artifact_and_classifies_exact_completed(tmp_path: Path) -> None:
     output = tmp_path / "d0"
     profile = load_profile("baseline-deepseek-chat")
