@@ -224,6 +224,15 @@ def main(argv: list[str] | None = None) -> int:
     for name, text in (("upgrade", "apply migrations up to head"), ("current", "print the applied revision")):
         cmd = db_sub.add_parser(name, help=text)
         cmd.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    workspace = sub.add_parser("workspace", help="manage gateway workspaces and API keys (needs the server extra)")
+    workspace_sub = workspace.add_subparsers(dest="workspace_command", required=True)
+    ws_create = workspace_sub.add_parser("create", help="create a workspace and its first API key")
+    ws_create.add_argument("name")
+    ws_create.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    ws_key = workspace_sub.add_parser("key", help="create a new API key for an existing workspace")
+    ws_key.add_argument("name")
+    ws_key.add_argument("--name", dest="key_name", default="key", help="name for the new key (default: key)")
+    ws_key.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
     args = parser.parse_args(argv)
     if args.command == "mcp-guard":
         try:
@@ -244,6 +253,28 @@ def main(argv: list[str] | None = None) -> int:
         else:
             revision = gateway_store.current_revision(args.store)
             print(revision if revision is not None else "none")
+        return 0
+    if args.command == "workspace":
+        try:
+            from benchpress.gateway import store as gateway_store
+        except ImportError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        ws_store = gateway_store.Store.open(args.store)
+        if args.workspace_command == "create":
+            if ws_store.workspace_by_name(args.name) is not None:
+                print(f"workspace {args.name!r} already exists", file=sys.stderr)
+                return 1
+            created = ws_store.create_workspace(args.name)
+            _row, plaintext = ws_store.create_api_key(created.id, "default")
+            print(f"workspace {args.name} created; API key (shown once): {plaintext}")
+            return 0
+        found = ws_store.workspace_by_name(args.name)
+        if found is None:
+            print(f"workspace {args.name!r} not found", file=sys.stderr)
+            return 1
+        _row, plaintext = ws_store.create_api_key(found.id, args.key_name)
+        print(f"workspace {args.name}: new API key {args.key_name!r} (shown once): {plaintext}")
         return 0
     if args.command == "policy":
         from benchpress.packs import list_command, show_command
