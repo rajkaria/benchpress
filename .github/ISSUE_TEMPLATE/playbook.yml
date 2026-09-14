@@ -1,0 +1,14 @@
+name: New playbook
+description: Propose a provider playbook
+labels: [playbook, good first issue]
+body:
+  - type: input
+    id: provider
+    attributes: {label: Provider, placeholder: "Linear"}
+    validations: {required: true}
+  - type: input
+    id: spec
+    attributes: {label: OpenAPI spec or API docs URL}
+  - type: textarea
+    id: writes
+    attributes: {label: Which writes matter, description: The mutations an ops agent would make, and how each can be read back.}

@@ -1,0 +1,17 @@
+name: Bug report
+description: Something refused, allowed, or reported the wrong thing
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes: {label: Benchpress version, placeholder: "benchpress --version"}
+    validations: {required: true}
+  - type: textarea
+    id: receipt
+    attributes:
+      label: Receipt excerpt
+      description: The gate decision, ledger entry or evidence line (redact identifiers). `benchpress receipt run/receipt.json` prints a summary.
+  - type: textarea
+    id: expected
+    attributes: {label: What should have happened}
+    validations: {required: true}
