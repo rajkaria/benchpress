@@ -11,11 +11,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from benchpress.context import Action, Context, Evidence, GateVerdict
+from benchpress.context import Action, Context, Evidence, GateVerdict, utc_now
 from benchpress.gate import Gate, PolicyRuleSet, fingerprint
 from benchpress.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from benchpress.phases.execute import is_unreadable, perform_readback, readback_evidence, resource_of
 from benchpress.tools import ToolBus, ToolExecutor, ToolResult
+from benchpress.write_receipts import Clock, ReceiptSink
 
 WriteStatus = Literal["refused", "failed", "unverified", "verified", "mismatch"]
 
@@ -75,12 +76,20 @@ class VerifiedWrite:
         allow_unplanned: bool = True,
         idempotency: IdempotencyStore | None = None,
         scope: str = "default",
+        receipts: ReceiptSink | None = None,
+        clock: Clock = utc_now,
+        workspace: str = "local",
+        session: str | None = None,
     ) -> None:
         self._context = context or Context()
         self._gate = Gate(self._context, allow_unplanned=allow_unplanned, policy_packs=policy_packs)
         self._bus = ToolBus(context=self._context, execute=execute, gate=self._gate, budgets=False)
         self._claims = idempotency or InMemoryIdempotencyStore()
         self._scope = scope
+        self._receipts = receipts
+        self._clock = clock
+        self._workspace = workspace
+        self._session = session
 
     @property
     def context(self) -> Context:
@@ -90,12 +99,25 @@ class VerifiedWrite:
     async def run(self, action: Action) -> WriteOutcome:
         result, verdict = await self._perform_once(action)
         if not verdict.allowed:
-            return WriteOutcome(action, verdict, None, ())
+            return await self._finish(WriteOutcome(action, verdict, None, ()))
         if not result.ok:
-            return WriteOutcome(action, verdict, result, ())
+            return await self._finish(WriteOutcome(action, verdict, result, ()))
         evidence = await self._readback(action, result.json())
         self._context.add_evidence(evidence)
-        return WriteOutcome(action, verdict, result, evidence)
+        return await self._finish(WriteOutcome(action, verdict, result, evidence))
+
+    async def _finish(self, outcome: WriteOutcome) -> WriteOutcome:
+        if self._receipts is not None:
+            from benchpress.write_receipts import write_line
+
+            line = write_line(
+                outcome,
+                at=self._clock(),
+                workspace=self._workspace,
+                session=self._session or self._context.trial_id,
+            )
+            await self._receipts.emit(line)
+        return outcome
 
     async def _perform_once(self, action: Action) -> tuple[ToolResult, GateVerdict]:
         """The gate first; then a claim on the store, so an identical write in flight or done anywhere is refused."""

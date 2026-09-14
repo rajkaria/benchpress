@@ -36,6 +36,7 @@ from benchpress.rehearse import (
 )
 from benchpress.tools import ToolExecutor
 from benchpress.verified import VerifiedWrite, WriteOutcome
+from benchpress.write_receipts import JsonlReceiptSink, MemoryReceiptSink, ReceiptSink
 
 __version__ = "1.0.0a1"
 
@@ -49,11 +50,14 @@ __all__ = [
     "GateRefusal",
     "IdempotencyStore",
     "InMemoryIdempotencyStore",
+    "JsonlReceiptSink",
+    "MemoryReceiptSink",
     "ModelConfig",
     "Normalizer",
     "PlannedWrite",
     "PolicyPack",
     "PolicyRuleSet",
+    "ReceiptSink",
     "Rehearsal",
     "ReplayReceipt",
     "RunRecord",
