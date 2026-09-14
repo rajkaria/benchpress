@@ -281,7 +281,7 @@ class ToolBus:
             self._record_harness_event(PROVIDER_API, payload, {"error": {"type": type(exc).__name__}}, True, started)
             return result
 
-        result = _interpret(raw)
+        result = interpret_result(raw)
         self._append_ledger(provider, method, path, _digest(payload), result, gate_verdict, action_id)
         self._record_event("api", payload, raw)
         self._record_harness_event(PROVIDER_API, payload, raw, not result.ok, started)
@@ -408,8 +408,8 @@ def _statically_blocked(path: str) -> str | None:
     return None
 
 
-def _interpret(raw: object) -> ToolResult:
-    """The gateway returns a mapping describing the upstream response."""
+def interpret_result(raw: object) -> ToolResult:
+    """An executor's raw response as a `ToolResult`: a mapping describes the response; anything else is a 200 body."""
     if not isinstance(raw, Mapping):
         return ToolResult(ok=True, status_code=200, body=raw)
     payload = dict(cast(Mapping[str, object], raw))

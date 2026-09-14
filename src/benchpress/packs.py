@@ -194,20 +194,30 @@ def _pack_path(name_or_path: str | Path) -> Path:
     return bundled
 
 
+def policy_pack_from_yaml(text: str, *, source: str) -> PolicyPack:
+    """A pack from YAML text. `source` says where the text came from, in every error and on the pack."""
+    try:
+        raw: object = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise PolicyPackError(f"{source}: cannot read YAML: {exc}") from exc
+    try:
+        pack = PolicyPack.model_validate(raw)
+    except ValidationError as exc:
+        raise PolicyPackError(f"{source}: {exc}") from exc
+    return pack.model_copy(update={"source": source})
+
+
 def load_policy_pack(name_or_path: str | Path) -> PolicyPack:
     """A bundled pack by name (`billing`) or a pack file by path (`./my-pack.yaml`)."""
     path = _pack_path(name_or_path)
     try:
-        raw: object = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as exc:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
         raise PolicyPackError(f"{path}: cannot read YAML: {exc}") from exc
-    try:
-        pack = PolicyPack.model_validate(raw)
-    except ValidationError as exc:
-        raise PolicyPackError(f"{path}: {exc}") from exc
+    pack = policy_pack_from_yaml(text, source=str(path))
     if path.parent == POLICY_PACKS_DIR and pack.name != path.stem:
         raise PolicyPackError(f"{path}: bundled pack name {pack.name!r} must match its file name")
-    return pack.model_copy(update={"source": str(path)})
+    return pack
 
 
 def load_policy_packs(names_or_paths: Iterable[str | Path]) -> tuple[PolicyPack, ...]:

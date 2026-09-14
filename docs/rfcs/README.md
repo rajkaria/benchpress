@@ -22,4 +22,6 @@ entry is enough.
 4. **Decision**: the maintainer merges the RFC as *accepted* or closes it with the reason. An accepted RFC is a
    commitment to the design, not to a date; implementation PRs link to it.
 
-No RFCs have been filed yet.
+## Index
+
+- [0001: Gateway sessions, context ownership and budgets](0001-gateway-sessions.md) (accepted)

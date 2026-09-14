@@ -857,3 +857,23 @@ async def test_dynamic_credentials_are_sent_and_redacted() -> None:
     assert result["body"] == {"echo": "[redacted]"}
     assert secret not in json.dumps(gateway.describe())
     await gateway.aclose()
+
+
+async def test_trace_limit_keeps_the_newest_records_while_counting_every_call() -> None:
+    recorder = Recorder()
+    gateway = make_gateway(recorder, trace_limit=2)
+    for _ in range(5):
+        await gateway.execute_tool("provider_api", {"provider": "slack", "method": "GET", "path": "/api/users.list"})
+    assert gateway.calls == 5 and len(gateway.trace) == 2
+    assert [record["sequence"] for record in gateway.trace] == [4, 5]
+    await gateway.aclose()
+
+    capped = make_gateway(Recorder(), max_calls=2, trace_limit=0)
+    for _ in range(2):
+        await capped.execute_tool("provider_api", {"provider": "slack", "method": "GET", "path": "/api/users.list"})
+    third = await capped.execute_tool("provider_api", {"provider": "slack", "method": "GET", "path": "/api/users.list"})
+    assert third["error"] == "provider_api call limit of 2 has been reached" and third["trace"]["sequence"] == 3
+    assert capped.calls == 3 and capped.trace == ()
+    await capped.aclose()
+    with pytest.raises(ValueError, match="trace_limit"):
+        make_gateway(Recorder(), trace_limit=-1)

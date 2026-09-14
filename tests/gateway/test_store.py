@@ -153,3 +153,14 @@ def test_db_upgrade_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert "revision 0001" in capsys.readouterr().out
     assert cli.main(["db", "current", "--store", url]) == 0
     assert capsys.readouterr().out.strip() == "0001"
+
+
+def test_receipt_ids_the_store_cannot_hold_find_nothing(store: Store) -> None:
+    """Receipt ids are integer row ids; anything else (or out of the column's range) is simply not found."""
+    ws = store.create_workspace("acme")
+    row = store.append_receipt(ws.id, "s1", _line("a1", "hubspot", "verified", "allowed", ()))
+    for bad in ("", "abc", "-1", "1.0", " 1", "1e3", "١", "9" * 30, "99999999999"):
+        assert store.receipt(ws.id, bad) is None
+    for bad in ("", "abc", "-1", "1.0", "١", "9" * 30):
+        assert store.receipts(ws.id, before=bad) == []
+    assert [r.id for r in store.receipts(ws.id, before=str(int(row.id) + 1))] == [row.id]

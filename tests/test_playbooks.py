@@ -1,7 +1,7 @@
 """Provider playbooks: request shapes, response parsing, write constructors, bounded budgets.
 
 Every provider call goes through a fake `execute_tool` that answers with harness-style envelopes
-(`{"ok", "status_code", "body", …}`, see `tools._interpret`) and records the exact request the
+(`{"ok", "status_code", "body", …}`, see `tools.interpret_result`) and records the exact request the
 playbook made. The entities are invented (the conftest "Rivermill" style); none of this refers
 to a benchmark task.
 """

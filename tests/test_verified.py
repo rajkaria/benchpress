@@ -408,3 +408,18 @@ async def test_a_cross_instance_replay_is_refused_every_time_not_deduplicated() 
     assert [v.rule for v in ctx.refusals] == ["idempotency", "idempotency"]
     assert [d.verdict.rule for d in ctx.gate_decisions] == ["idempotency", "idempotency"]
     assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]
+
+
+async def test_evaluate_judges_an_action_without_executing_recording_or_claiming() -> None:
+    provider = FakeProvider()
+    ctx = Context(user_prompt=_PROMPT)
+    ctx.protected.add_candidate(
+        Candidate(provider="hubspot", resource_type="company", resource_id="702", display="Rivermill Studio Prospect")
+    )
+    writer = VerifiedWrite(provider.execute_tool, context=ctx, idempotency=InMemoryIdempotencyStore(), scope="acct")
+    refused = writer.evaluate(_write(record="702"))
+    assert (refused.allowed, refused.rule) == (False, "protected")
+    assert writer.evaluate(_write()).allowed
+    assert provider.calls == [] and ctx.refusals == [] and ctx.gate_decisions == []
+    assert (await writer.run(_write())).status == "verified", "evaluate took no idempotency claim"
+    assert writer.evaluate(_write()).rule == "idempotency"

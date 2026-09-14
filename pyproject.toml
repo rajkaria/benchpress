@@ -111,6 +111,10 @@ benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml", "schemas/*.jso
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = ["arga: needs the vendored ArgaBench harness"]
+filterwarnings = [
+    # Starlette's TestClient module names anyio's deprecated `anyio.abc.BlockingPortal` alias when it is imported.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning:starlette.testclient",
+]
 
 [tool.ruff]
 line-length = 120

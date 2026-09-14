@@ -11,6 +11,7 @@ from __future__ import annotations
 import functools
 import hashlib
 import json
+import re
 import secrets
 import time
 from collections.abc import Callable
@@ -21,7 +22,7 @@ import anyio.to_thread
 from sqlalchemy import CursorResult, delete, insert, or_, select, text
 from sqlalchemy import update as sa_update
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session as OrmSession
 
 from benchpress.context import Action, Context, utc_now
@@ -153,6 +154,18 @@ def _approval_row(row: Approval) -> ApprovalRow:
 
 def _policy_row(row: Policy) -> PolicyRow:
     return PolicyRow(workspace_id=row.workspace_id, name=row.name, body=row.body, updated_at=row.updated_at)
+
+
+_ROW_ID = re.compile(r"[0-9]{1,19}")
+_MAX_ROW_ID = 2**63 - 1
+
+
+def _row_id(receipt_id: str) -> int | None:
+    """A receipt id as its integer primary key, or None when no row can have it (not plain digits, or past 64 bits)."""
+    if _ROW_ID.fullmatch(receipt_id) is None:
+        return None
+    value = int(receipt_id)
+    return value if value <= _MAX_ROW_ID else None
 
 
 class Store:
@@ -337,14 +350,28 @@ class Store:
             term = f"%{customer}%"
             stmt = stmt.where(or_(Receipt.resource.ilike(term), Receipt.refs.ilike(term)))
         if before is not None:
-            stmt = stmt.where(Receipt.id < int(before))
+            cursor = _row_id(before)
+            if cursor is None:
+                return []  # not a cursor this store issued
+            stmt = stmt.where(Receipt.id < cursor)
         stmt = stmt.order_by(Receipt.id.desc()).limit(limit)
         with OrmSession(self.engine) as db:
-            return [_receipt_row(row) for row in db.execute(stmt).scalars()]
+            try:
+                return [_receipt_row(row) for row in db.execute(stmt).scalars()]
+            except DataError:
+                if before is None:
+                    raise
+                return []  # a cursor the id column cannot hold (Postgres INTEGER) is not one this store issued
 
     def receipt(self, workspace_id: str, receipt_id: str) -> ReceiptRow | None:
+        row_id = _row_id(receipt_id)
+        if row_id is None:
+            return None
         with OrmSession(self.engine) as db:
-            row = db.get(Receipt, int(receipt_id))
+            try:
+                row = db.get(Receipt, row_id)
+            except DataError:  # past the id column's range (Postgres INTEGER): no such receipt
+                return None
             if row is None or row.workspace_id != workspace_id:
                 return None
             return _receipt_row(row)

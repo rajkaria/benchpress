@@ -96,6 +96,14 @@ class VerifiedWrite:
         """The context this write ran against — carries evidence and refusals for receipts."""
         return self._context
 
+    def evaluate(self, action: Action) -> GateVerdict:
+        """The gate's verdict on `action`, without executing it, recording a refusal or taking an idempotency claim.
+
+        Only `run` consults the shared claims, so a write already done by another instance can still evaluate as
+        allowed here; `run` would refuse it as `idempotency`.
+        """
+        return self._gate.evaluate(action)
+
     async def run(self, action: Action) -> WriteOutcome:
         result, verdict = await self._perform_once(action)
         if not verdict.allowed:
