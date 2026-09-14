@@ -19,6 +19,7 @@ from benchpress.context import (
     DefinitionOfDone,
     EndStateItem,
     Plan,
+    ReadBack,
     ResolvedTarget,
 )
 
@@ -34,6 +35,7 @@ def make_action(
     satisfies: tuple[str, ...] = ("end_state[0]",),
     kind: str = "update",
     query: dict[str, str] | None = None,
+    readback: ReadBack | None = None,
 ) -> Action:
     return Action.model_validate(
         {
@@ -46,6 +48,7 @@ def make_action(
             "fields": fields,
             "satisfies": satisfies,
             "query": query or {},
+            "readback": readback.model_dump() if readback else None,
         }
     )
 
