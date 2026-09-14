@@ -71,6 +71,7 @@ openai-agents = [
 [package.dev-dependencies]
 dev = [
     { name = "composio" },
+    { name = "jsonschema" },
     { name = "mcp" },
     { name = "openai-agents" },
     { name = "pyright" },
@@ -98,6 +99,7 @@ provides-extras = ["mcp", "openai-agents", "composio"]
 [package.metadata.requires-dev]
 dev = [
     { name = "composio", specifier = ">=0.21.1" },
+    { name = "jsonschema", specifier = ">=4.23" },
     { name = "mcp", specifier = ">=2.2.0" },
     { name = "openai-agents", specifier = ">=0.22.2" },
     { name = "pyright", specifier = ">=1.1.400" },

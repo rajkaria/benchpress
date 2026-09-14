@@ -69,13 +69,14 @@ dev = [
     "openai-agents>=0.22.2",
     # benchpress.shims.composio tests (the optional `composio` extra)
     "composio>=0.21.1",
+    "jsonschema>=4.23",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml"]
+benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml", "schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
