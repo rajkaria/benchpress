@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://benchpress-ten.vercel.app/schemas/receipt.v1.json",
+  "$id": "https://raw.githubusercontent.com/rajkaria/benchpress/main/src/benchpress/schemas/receipt.v1.json",
   "title": "Benchpress receipt v1",
+  "description": "A Benchpress run receipt, protocol benchpress-receipt/1. Compatibility rule for v1: changes are additive only (new optional keys, never a removed, renamed or retyped key); consumers must ignore unknown keys. A breaking change ships as a new protocol version and a new schema file.",
   "type": "object",
   "required": ["protocol", "trial_id", "generated_at", "status", "meta", "request", "policies", "candidates",
                "targets", "protected", "definition_of_done", "plan", "ledger", "refusals", "gate_decisions",

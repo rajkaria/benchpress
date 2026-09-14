@@ -67,6 +67,9 @@ mcp = [
 openai-agents = [
     { name = "openai-agents" },
 ]
+schema = [
+    { name = "jsonschema" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -89,12 +92,13 @@ dev = [
 requires-dist = [
     { name = "composio", marker = "extra == 'composio'", specifier = ">=0.21.1" },
     { name = "httpx", specifier = ">=0.28.0" },
+    { name = "jsonschema", marker = "extra == 'schema'", specifier = ">=4.23" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.2.0" },
     { name = "openai-agents", marker = "extra == 'openai-agents'", specifier = ">=0.22.2" },
     { name = "pydantic", specifier = ">=2.10.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
 ]
-provides-extras = ["mcp", "openai-agents", "composio"]
+provides-extras = ["mcp", "openai-agents", "composio", "schema"]
 
 [package.metadata.requires-dev]
 dev = [

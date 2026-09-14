@@ -49,6 +49,9 @@ openai-agents = [
 composio = [
     "composio>=0.21.1",
 ]
+schema = [
+    "jsonschema>=4.23",
+]
 
 [dependency-groups]
 dev = [
@@ -69,6 +72,7 @@ dev = [
     "openai-agents>=0.22.2",
     # benchpress.shims.composio tests (the optional `composio` extra)
     "composio>=0.21.1",
+    # benchpress.schemas.validate_receipt tests (the optional `schema` extra)
     "jsonschema>=4.23",
 ]
 
