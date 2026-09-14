@@ -219,6 +219,11 @@ def main(argv: list[str] | None = None) -> int:
     policy_sub.add_parser("list", help="the bundled policy packs")
     policy_show = policy_sub.add_parser("show", help="the rules of one policy pack")
     policy_show.add_argument("name", help="bundled pack name, or path to a pack YAML file")
+    db = sub.add_parser("db", help="gateway store migrations (needs the server extra)")
+    db_sub = db.add_subparsers(dest="db_command", required=True)
+    for name, text in (("upgrade", "apply migrations up to head"), ("current", "print the applied revision")):
+        cmd = db_sub.add_parser(name, help=text)
+        cmd.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
     args = parser.parse_args(argv)
     if args.command == "mcp-guard":
         try:
@@ -227,6 +232,19 @@ def main(argv: list[str] | None = None) -> int:
             print(str(exc), file=sys.stderr)
             return 2
         return mcp_guard.main(args.policy, args.upstream, args.receipts)
+    if args.command == "db":
+        try:
+            from benchpress.gateway import store as gateway_store  # the server extra is optional
+        except ImportError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        if args.db_command == "upgrade":
+            gateway_store.upgrade(args.store)
+            print(f"benchpress db: at revision {gateway_store.current_revision(args.store)}")
+        else:
+            revision = gateway_store.current_revision(args.store)
+            print(revision if revision is not None else "none")
+        return 0
     if args.command == "policy":
         from benchpress.packs import list_command, show_command
 
