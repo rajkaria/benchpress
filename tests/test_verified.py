@@ -6,6 +6,7 @@ import asyncio
 from typing import Any
 
 from benchpress.context import Candidate, Context, ReadBack
+from benchpress.idempotency import InMemoryIdempotencyStore
 from benchpress.phases.execute import readback_evidence
 from benchpress.tools import MAX_PROVIDER_CALLS, ToolResult
 from benchpress.verified import VerifiedWrite
@@ -296,4 +297,84 @@ def test_a_bracketed_form_field_is_observed_at_its_dotted_path() -> None:
     read = ToolResult(ok=True, status_code=200, body={"id": "cus_1", "metadata": {"lifecycle": "customer"}})
     assert [(e.check, e.observed, e.match) for e in readback_evidence(action, read)] == [
         ("readback:s1:metadata[lifecycle]", "customer", True)
+    ]
+
+
+async def test_two_instances_sharing_a_store_send_one_write() -> None:
+    provider = FakeProvider()
+    store = InMemoryIdempotencyStore()
+    first = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    second = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    assert (await first.run(_write())).status == "verified"
+    replay = await second.run(_write())
+    assert replay.status == "refused" and replay.verdict.rule == "idempotency"
+    assert "already succeeded" in replay.verdict.reason
+    assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]
+    ctx = second.context
+    assert [v.rule for v in ctx.refusals] == ["idempotency"]
+    assert [d.verdict.rule for d in ctx.gate_decisions] == ["idempotency"]
+    assert ctx.ledger[-1].error == "gate:idempotency"
+
+
+async def test_instances_with_different_scopes_do_not_share_claims() -> None:
+    provider = FakeProvider()
+    store = InMemoryIdempotencyStore()
+    a = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="a")
+    b = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="b")
+    assert (await a.run(_write())).status == "verified"
+    assert (await b.run(_write(email="ap@rivermill.example"))).status == "verified"
+
+
+async def test_an_in_flight_twin_on_another_instance_is_refused() -> None:
+    provider = FakeProvider()
+    store = InMemoryIdempotencyStore()
+    release = asyncio.Event()
+
+    async def slow(tool_name: str, tool_input: dict[str, Any]) -> object:
+        if tool_input["method"] != "GET":
+            await release.wait()
+        return await provider.execute_tool(tool_name, tool_input)
+
+    a = VerifiedWrite(slow, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    b = VerifiedWrite(slow, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    pending = asyncio.create_task(a.run(_write()))
+    await asyncio.sleep(0)
+    twin = await b.run(_write())
+    release.set()
+    assert (await pending).status == "verified"
+    assert twin.status == "refused" and "in flight" in twin.verdict.reason
+
+
+async def test_a_failed_write_releases_its_claim() -> None:
+    attempts: list[str] = []
+
+    async def flaky(tool_name: str, tool_input: dict[str, Any]) -> object:
+        attempts.append(tool_input["method"])
+        if len(attempts) == 1:
+            return {"status_code": 503, "body": {"error": "busy"}}
+        if tool_input["method"] == "GET":
+            return {"status_code": 200, "body": {"id": "701", "email": "ap@rivermill.example"}}
+        return {"status_code": 200, "body": {"id": "701"}}
+
+    writer = VerifiedWrite(flaky, context=Context(user_prompt=_PROMPT))
+    assert (await writer.run(_write())).status == "failed"
+    assert (await writer.run(_write())).status == "verified"
+    assert attempts == ["PATCH", "PATCH", "GET"]
+
+
+async def test_a_replayed_write_is_refused_every_time_not_deduplicated() -> None:
+    """Ruling R1: `ToolBus.refuse` appends every refusal, even byte-identical repeats on one instance."""
+    provider = FakeProvider()
+    writer = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT))
+    action = _write()
+
+    assert (await writer.run(action)).status == "verified"
+    assert (await writer.run(action)).status == "refused"
+    assert (await writer.run(action)).status == "refused"
+
+    ctx = writer.context
+    assert [v.rule for v in ctx.refusals] == ["idempotency", "idempotency"]
+    assert [d.verdict.rule for d in ctx.gate_decisions if d.verdict.rule == "idempotency"] == [
+        "idempotency",
+        "idempotency",
     ]

@@ -19,6 +19,7 @@ from benchpress.api import DEFAULT_SYSTEM_PROMPT, Benchpress, wrap
 from benchpress.controller import TrialResult, run_trial
 from benchpress.gate import Gate, GateRefusal, PolicyRuleSet
 from benchpress.gate_corpus import GateCase, load_corpus, run_case
+from benchpress.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from benchpress.model import ModelConfig
 from benchpress.packs import PolicyPack, available_policy_packs, load_policy_pack, load_policy_packs
 from benchpress.phases.common import Ablations
@@ -46,6 +47,8 @@ __all__ = [
     "Gate",
     "GateCase",
     "GateRefusal",
+    "IdempotencyStore",
+    "InMemoryIdempotencyStore",
     "ModelConfig",
     "Normalizer",
     "PlannedWrite",

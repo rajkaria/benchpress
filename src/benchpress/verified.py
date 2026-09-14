@@ -6,13 +6,13 @@ give it an executor with the harness `execute_tool(tool_name, tool_input)` shape
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from benchpress.context import Action, Context, Evidence, GateVerdict
 from benchpress.gate import Gate, PolicyRuleSet, fingerprint
+from benchpress.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from benchpress.phases.execute import is_unreadable, perform_readback, readback_evidence, resource_of
 from benchpress.tools import ToolBus, ToolExecutor, ToolResult
 
@@ -50,14 +50,15 @@ class WriteOutcome:
 class VerifiedWrite:
     """Gate -> execute -> read back -> evidence, for one action at a time.
 
-    Stateful only in the way `Gate` is stateful: writes performed through the same `VerifiedWrite` are
-    remembered, so a byte-identical replay is refused as `idempotency` rather than sent to the provider a
-    second time. That includes concurrent calls: identical actions racing on one instance are serialized, the
-    first is sent and the rest are refused as `idempotency`.
+    De-duplication spans every `VerifiedWrite` instance that shares an `IdempotencyStore` and `scope`: a
+    byte-identical write already done anywhere on that store is refused as `idempotency` rather than sent to the
+    provider again, and a byte-identical write already in flight on another instance (or another gateway
+    replica) is refused rather than queued behind it. By default each instance gets its own private
+    `InMemoryIdempotencyStore`, matching the single-instance behaviour of a lone writer.
 
-    * **One instance per logical session.** The idempotency memory lives in the instance. Two instances do not
-      know about each other's writes, so do not share one `Context` across instances expecting them to
-      de-duplicate: both would write.
+    * **Share the store to de-duplicate across instances.** Pass the same `idempotency` (and `scope`) to every
+      `VerifiedWrite` that should see each other's claims — e.g. every replica behind one gateway. Two instances
+      with different stores, or different scopes on the same store, do not know about each other's writes.
     * **A mismatch is still a write.** A write that returned 2xx but read back as `mismatch` is recorded as done,
       so replaying the identical action is refused. Fix the cause and send a different action.
     * **Not a benchmark trial.** The tool bus runs without the controller's per-phase budgets or lifetime call
@@ -71,11 +72,14 @@ class VerifiedWrite:
         context: Context | None = None,
         policy_packs: Sequence[PolicyRuleSet] = (),
         allow_unplanned: bool = True,
+        idempotency: IdempotencyStore | None = None,
+        scope: str = "default",
     ) -> None:
         self._context = context or Context()
         self._gate = Gate(self._context, allow_unplanned=allow_unplanned, policy_packs=policy_packs)
         self._bus = ToolBus(context=self._context, execute=execute, gate=self._gate, budgets=False)
-        self._inflight: dict[str, tuple[asyncio.Lock, int]] = {}
+        self._claims = idempotency or InMemoryIdempotencyStore()
+        self._scope = scope
 
     @property
     def context(self) -> Context:
@@ -93,19 +97,25 @@ class VerifiedWrite:
         return WriteOutcome(action, verdict, result, evidence)
 
     async def _perform_once(self, action: Action) -> tuple[ToolResult, GateVerdict]:
-        """`bus.perform`, serialized per fingerprint so the gate's idempotency check sees an in-flight twin land."""
+        """The gate first; then a claim on the store, so an identical write in flight or done anywhere is refused."""
+        if not action.is_write or not self._gate.evaluate(action).allowed:
+            return await self._bus.perform(action)
         key = fingerprint(action)
-        lock, waiting = self._inflight.get(key, (asyncio.Lock(), 0))
-        self._inflight[key] = (lock, waiting + 1)
+        claim = await self._claims.claim(self._scope, key)
+        if claim != "claimed":
+            reason = (
+                f"action {action.id!r} already succeeded; replay would duplicate"
+                if claim == "done"
+                else f"an identical write for action {action.id!r} is already in flight"
+            )
+            verdict = GateVerdict(action_id=action.id, allowed=False, rule="idempotency", reason=reason)
+            return self._bus.refuse(action, verdict)
+        result: ToolResult | None = None
         try:
-            async with lock:
-                return await self._bus.perform(action)
+            result, verdict = await self._bus.perform(action)
+            return result, verdict
         finally:
-            lock, waiting = self._inflight[key]
-            if waiting <= 1:
-                del self._inflight[key]
-            else:
-                self._inflight[key] = (lock, waiting - 1)
+            await self._claims.complete(self._scope, key, succeeded=result is not None and result.ok)
 
     async def _readback(self, action: Action, response_body: Mapping[str, object]) -> tuple[Evidence, ...]:
         if action.readback is None:

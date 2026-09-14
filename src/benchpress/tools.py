@@ -196,11 +196,8 @@ class ToolBus:
                 rule=refusal.rule,
                 reason=refusal.reason,
             )
-            self.context.gate_decisions.append(
-                GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict)
-            )
-            self._record_refusal(action, verdict)
-            return ToolResult(ok=False, status_code=None, body=None, error=f"gate:{refusal.rule}"), verdict
+            # `Gate.check` already appended `verdict` to `context.refusals` before raising.
+            return self.refuse(action, verdict, already_recorded=True)
         self.context.gate_decisions.append(GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict))
 
         result = await self._call(
@@ -217,6 +214,22 @@ class ToolBus:
         if result.ok:
             self.gate.record_success(fingerprint(action))
         return result, verdict
+
+    def refuse(
+        self, action: Action, verdict: GateVerdict, *, already_recorded: bool = False
+    ) -> tuple[ToolResult, GateVerdict]:
+        """Record a refusal decided outside `Gate.check` exactly as a gate refusal is recorded, and return it.
+
+        `already_recorded` is set by `perform`'s own `except GateRefusal` branch, where `Gate.check` has already
+        appended `verdict` to `context.refusals`. Every other caller (e.g. `VerifiedWrite`'s store-refusal path)
+        leaves it `False`, so the refusal is appended here — including a byte-identical repeat of an earlier
+        refusal, which must still count as its own occurrence rather than being silently dropped.
+        """
+        if not already_recorded:
+            self.context.refusals.append(verdict)
+        self.context.gate_decisions.append(GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict))
+        self._record_refusal(action, verdict)
+        return ToolResult(ok=False, status_code=None, body=None, error=f"gate:{verdict.rule}"), verdict
 
     # -- the one place a provider call actually happens --------------------------------
 
