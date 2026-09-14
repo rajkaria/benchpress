@@ -354,13 +354,15 @@ def _header(r: _Receipt) -> str:
 
 def _footer(r: _Receipt) -> str:
     meta = r.meta
+    provider_calls_text = _mono(f"{_int_text(meta.get('provider_calls'))}/{MAX_PROVIDER_CALLS}")
+    docs_calls_text = _mono(f"{_int_text(meta.get('docs_calls'))}/{MAX_DOCS_CALLS}")
     parts = [
         f"trial {_mono(r.trial_id)}",
         f"protocol {_mono(r.protocol or '—')}",
         f"model {_mono(_text(meta.get('model')) or '—')}"
         + (f" via {_esc(meta.get('model_provider'))}" if _text(meta.get("model_provider")) else ""),
-        f"provider_api {_mono(f'{_int_text(meta.get("provider_calls"))}/{MAX_PROVIDER_CALLS}')}",
-        f"provider_docs {_mono(f'{_int_text(meta.get("docs_calls"))}/{MAX_DOCS_CALLS}')}",
+        f"provider_api {provider_calls_text}",
+        f"provider_docs {docs_calls_text}",
         f"model calls {_mono(_int_text(meta.get('model_calls')))}",
         f"elapsed {_mono(_elapsed(meta.get('latency_ms')))}",
         f"cost {_mono(_cost(meta.get('cost_usd')))}",

@@ -14,7 +14,7 @@ import asyncio
 from collections.abc import Awaitable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, TypeAlias, runtime_checkable
 
 from benchpress.controller import TrialResult, run_trial
 from benchpress.model import ModelClient, ModelConfig, ModelTransport
@@ -36,8 +36,8 @@ class HasExecuteTool(Protocol):
     def execute_tool(self, tool_name: str, tool_input: dict[str, Any]) -> Awaitable[object]: ...
 
 
-type ExecutorLike = ToolExecutor | HasExecuteTool
-type ModelLike = str | ModelConfig | None
+ExecutorLike: TypeAlias = ToolExecutor | HasExecuteTool
+ModelLike: TypeAlias = str | ModelConfig | None
 
 
 @dataclass(frozen=True)

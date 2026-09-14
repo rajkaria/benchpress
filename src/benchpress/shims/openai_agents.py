@@ -37,7 +37,7 @@ import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeAlias, cast
 
 try:
     from agents import FunctionTool
@@ -101,7 +101,7 @@ class ProviderCall:
     body: object | None = None
 
 
-type ActionMapper = Callable[[Mapping[str, Any]], ProviderCall | None]
+ActionMapper: TypeAlias = Callable[[Mapping[str, Any]], ProviderCall | None]
 
 
 @dataclass

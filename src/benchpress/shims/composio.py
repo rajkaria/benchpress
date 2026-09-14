@@ -48,7 +48,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, Protocol, cast, runtime_checkable
+from typing import Any, Literal, Protocol, TypeAlias, cast, runtime_checkable
 from urllib.parse import unquote
 
 try:
@@ -227,7 +227,7 @@ def refusal_response(slug: str, decision: Decision) -> dict[str, Any]:
     return {"data": {}, "error": refusal_message(slug, decision), "successful": False}
 
 
-type ExecuteFn = Callable[..., Any]
+ExecuteFn: TypeAlias = Callable[..., Any]
 
 
 @dataclass
