@@ -12,6 +12,9 @@ from devsim.harness import SUITE_TAG, content_hash, harness_module, suite_task
 from devsim.lifecycle import DevsimLifecycleError, FakeArgaCli, scenario_id_for
 from devsim.runner import load_run_script, patch_run_script
 
+# Every test here drives the vendored ArgaBench harness.
+pytestmark = pytest.mark.arga
+
 TASK_ID = "ECOM-02"
 
 

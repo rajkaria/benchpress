@@ -7,6 +7,9 @@ verifier — the names are invented so the gate tests prove generic behaviour.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import pytest
 
 from benchpress.context import (
@@ -16,6 +19,7 @@ from benchpress.context import (
     DefinitionOfDone,
     EndStateItem,
     Plan,
+    ReadBack,
     ResolvedTarget,
 )
 
@@ -31,6 +35,7 @@ def make_action(
     satisfies: tuple[str, ...] = ("end_state[0]",),
     kind: str = "update",
     query: dict[str, str] | None = None,
+    readback: ReadBack | None = None,
 ) -> Action:
     return Action.model_validate(
         {
@@ -43,6 +48,7 @@ def make_action(
             "fields": fields,
             "satisfies": satisfies,
             "query": query or {},
+            "readback": readback.model_dump() if readback else None,
         }
     )
 
@@ -131,3 +137,29 @@ def context() -> Context:
         )
     )
     return ctx
+
+
+ARGA_FORCE_ENV = "BENCHPRESS_ARGA_TESTS"
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _harness_present() -> bool:
+    from evals.harness_bridge import DEFAULT_HARNESS_DIRNAME, HARNESS_ROOT_ENV
+
+    override = os.environ.get(HARNESS_ROOT_ENV)
+    root = Path(override).expanduser() if override else _REPO_ROOT / DEFAULT_HARNESS_DIRNAME
+    return (root / "src").exists()
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Tests marked `@pytest.mark.arga` need the vendored ArgaBench harness: they skip unless it is present.
+
+    `BENCHPRESS_ARGA_TESTS=1` forces them to run (and fail) without it, so CI that vendors the harness can never
+    pass by silently skipping.
+    """
+    if _harness_present() or os.environ.get(ARGA_FORCE_ENV) == "1":
+        return
+    skip = pytest.mark.skip(reason="vendored ArgaBench harness not present; set BENCHPRESS_ARGA_TESTS=1 to require it")
+    for item in items:
+        if item.get_closest_marker("arga") is not None:
+            item.add_marker(skip)

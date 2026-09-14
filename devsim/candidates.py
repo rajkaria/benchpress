@@ -26,13 +26,13 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypeAlias, cast
 
 from devsim.harness import harness_module
 
-type Provider = Literal["anthropic", "openai", "google"]
-type ToolExecutor = Callable[[str, dict[str, Any]], Awaitable[object]]
-type Candidate = Callable[..., Awaitable[Any]]
+Provider: TypeAlias = Literal["anthropic", "openai", "google"]
+ToolExecutor: TypeAlias = Callable[[str, dict[str, Any]], Awaitable[object]]
+Candidate: TypeAlias = Callable[..., Awaitable[Any]]
 
 PROVIDER_API = "provider_api"
 PROVIDER_DOCS = "provider_docs"

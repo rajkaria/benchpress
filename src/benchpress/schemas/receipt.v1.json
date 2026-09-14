@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rajkaria/benchpress/main/src/benchpress/schemas/receipt.v1.json",
+  "title": "Benchpress receipt v1",
+  "description": "A Benchpress run receipt, protocol benchpress-receipt/1. Compatibility rule for v1: changes are additive only (new optional keys, never a removed, renamed or retyped key); consumers must ignore unknown keys. A breaking change ships as a new protocol version and a new schema file.",
+  "type": "object",
+  "required": ["protocol", "trial_id", "generated_at", "status", "meta", "request", "policies", "candidates",
+               "targets", "protected", "definition_of_done", "plan", "ledger", "refusals", "gate_decisions",
+               "policy_packs", "evidence", "evidence_history", "deliverables", "created", "notes"],
+  "properties": {
+    "protocol": {"const": "benchpress-receipt/1"},
+    "trial_id": {"type": "string"},
+    "generated_at": {"type": "string"},
+    "status": {"enum": ["completed", "partial", "escalated"]},
+    "meta": {"type": "object"},
+    "request": {
+      "type": "object",
+      "required": ["prompt", "providers", "frame"],
+      "properties": {
+        "prompt": {"type": "string"},
+        "providers": {"type": "array", "items": {"type": "string"}},
+        "frame": {"type": "object"}
+      }
+    },
+    "policies": {"type": "array", "items": {"type": "object"}},
+    "candidates": {"type": "array", "items": {"type": "object"}},
+    "targets": {"type": "array", "items": {"type": "object"}},
+    "protected": {
+      "type": "object",
+      "required": ["ids", "names", "domains", "emails"],
+      "additionalProperties": {"type": "array", "items": {"type": "string"}}
+    },
+    "definition_of_done": {"type": "object"},
+    "plan": {"type": "array", "items": {"$ref": "#/$defs/action"}},
+    "ledger": {"type": "array", "items": {"$ref": "#/$defs/ledger_entry"}},
+    "refusals": {"type": "array", "items": {"$ref": "#/$defs/verdict"}},
+    "gate_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "phase", "action", "verdict"],
+        "properties": {
+          "at": {"type": "string"},
+          "phase": {"type": "string"},
+          "action": {"$ref": "#/$defs/action"},
+          "verdict": {"$ref": "#/$defs/verdict"}
+        }
+      }
+    },
+    "policy_packs": {"type": "array", "items": {"type": "string"}},
+    "would_refuse": {"type": "array", "items": {"$ref": "#/$defs/verdict"}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "evidence_history": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "deliverables": {"type": "object", "additionalProperties": {"type": "string"}},
+    "created": {"type": "object", "additionalProperties": {"type": "string"}},
+    "escalation_reason": {"type": ["string", "null"]},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "required": ["id", "kind", "provider", "method", "path"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string"},
+        "provider": {"type": "string"},
+        "method": {"enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]},
+        "path": {"type": "string"},
+        "query": {"type": "object"},
+        "body_encoding": {"enum": ["json", "form"]},
+        "headers": {"type": "object"},
+        "satisfies": {"type": "array", "items": {"type": "string"}},
+        "target_refs": {"type": "array", "items": {"type": "string"}},
+        "fields": {"type": "array", "items": {"type": "string"}},
+        "rationale": {"type": "string"}
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["action_id", "allowed"],
+      "properties": {
+        "action_id": {"type": "string"},
+        "allowed": {"type": "boolean"},
+        "rule": {"type": "string"},
+        "reason": {"type": "string"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["check", "provider", "resource", "expected", "observed", "match"],
+      "properties": {
+        "check": {"type": "string"},
+        "provider": {"type": "string"},
+        "resource": {"type": "string"},
+        "expected": {"type": "string"},
+        "observed": {"type": "string"},
+        "match": {"type": "boolean"},
+        "detail": {"type": "string"}
+      }
+    },
+    "ledger_entry": {
+      "type": "object",
+      "required": ["sequence", "phase", "provider", "method", "path", "fingerprint", "ok"],
+      "properties": {
+        "sequence": {"type": "integer"},
+        "phase": {"type": "string"},
+        "provider": {"type": "string"},
+        "method": {"type": "string"},
+        "path": {"type": "string"},
+        "fingerprint": {"type": "string"},
+        "status_code": {"type": ["integer", "null"]},
+        "ok": {"type": "boolean"},
+        "gate": {"anyOf": [{"$ref": "#/$defs/verdict"}, {"type": "null"}]},
+        "action_id": {"type": ["string", "null"]},
+        "error": {"type": ["string", "null"]},
+        "response_digest": {"type": "string"},
+        "at": {"type": "string"}
+      }
+    }
+  }
+}

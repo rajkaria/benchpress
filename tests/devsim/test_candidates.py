@@ -49,6 +49,7 @@ async def _invoke(candidate: Any, execute_tool: Any, *, model_id: str = "deepsee
     )
 
 
+@pytest.mark.arga
 async def test_stub_completes_without_tool_calls_and_matches_profile_identity() -> None:
     async def execute_tool(_name: str, _input: dict[str, Any]) -> object:
         raise AssertionError("stub must not call tools")
@@ -70,6 +71,7 @@ async def test_stub_completes_without_tool_calls_and_matches_profile_identity() 
     json.dumps(payload)  # invocation.json must serialise
 
 
+@pytest.mark.arga
 async def test_provider_derivation_and_google_thinking_shape() -> None:
     assert provider_for_model("claude-opus-5") == "anthropic"
     assert provider_for_model("gemini-3.1-pro-preview") == "google"
@@ -84,6 +86,7 @@ async def test_provider_derivation_and_google_thinking_shape() -> None:
     assert google.provider == "google" and google.config["thinking"] == "model_default"
 
 
+@pytest.mark.arga
 async def test_scripted_events_carry_executor_output_verbatim() -> None:
     seen: list[tuple[str, dict[str, Any]]] = []
     docs_result: dict[str, Any] = {"ok": True, "action": "search", "results": []}
@@ -125,6 +128,7 @@ async def test_scripted_events_carry_executor_output_verbatim() -> None:
     assert result.response_model == "deepseek-chat"
 
 
+@pytest.mark.arga
 async def test_scripted_marks_invalid_tools_and_executor_failures_as_errors() -> None:
     async def execute_tool(name: str, _input: dict[str, Any]) -> object:
         raise RuntimeError("boom")
@@ -147,6 +151,7 @@ async def test_scripted_marks_invalid_tools_and_executor_failures_as_errors() ->
         ScriptedCall.from_mapping({"tool": "not_a_tool", "input": {}})
 
 
+@pytest.mark.arga
 async def test_scripted_stops_at_the_tool_ceiling_and_propagates_infrastructure_errors() -> None:
     async def execute_tool(_name: str, _input: dict[str, Any]) -> object:
         return _gateway_result(1)

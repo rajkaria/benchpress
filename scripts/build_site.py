@@ -48,6 +48,10 @@ NPM_MANIFEST = REPO_ROOT / "packages" / "benchpress-guard" / "package.json"
 # One entry per CHANGELOG release heading (the heading text before the date). build() fails on a heading with no
 # entry, so a release can't land without the page saying what shipped.
 SHIPPED: dict[str, tuple[str, str]] = {
+    "1.0.0a1": (
+        "VerifiedWrite + ToolSpec + receipt schema",
+        "Pre-release, tagged in git: gate and read back one write, no controller. Python 3.11 floor. Public roadmap.",
+    ),
     "0.7.1": (
         "Docs and hygiene",
         "Every doc re-verified against the code; internal planning docs out of the public tree.",
@@ -393,6 +397,18 @@ def package_version() -> str:
     return match.group(1)
 
 
+_STABLE_VERSION = re.compile(r"^\d+(?:\.\d+)*$")
+
+
+def pypi_stable_version() -> str:
+    """The newest stable release in CHANGELOG.md. The PyPI chip shows what `pip install` resolves to, and a
+    pre-release (`1.0.0a1`) is tagged in git before it is uploaded, so it never claims PyPI availability."""
+    for release in changelog_releases():
+        if _STABLE_VERSION.match(release):
+            return release
+    raise ValueError("CHANGELOG.md has no stable release heading")
+
+
 def changelog_releases() -> list[str]:
     """Release headings in CHANGELOG.md, newest first, without the date."""
     return CHANGELOG_HEADING.findall((REPO_ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))
@@ -448,7 +464,7 @@ def build(check: bool = False) -> list[str]:
             "gate-replay": render_gate_replay(replay),
             "trials": render_trials_table(trials),
             "version": f"<b>{html.escape(package_version())}</b>",
-            "pypi-version": html.escape(package_version()),
+            "pypi-version": html.escape(pypi_stable_version()),
             "npm-version": html.escape(npm_version()),
             "shipped": render_shipped(changelog_releases()),
             "corpus": corpus_summary(),

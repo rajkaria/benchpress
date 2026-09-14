@@ -33,8 +33,9 @@ from benchpress.rehearse import (
     state_hash,
 )
 from benchpress.tools import ToolExecutor
+from benchpress.verified import VerifiedWrite, WriteOutcome
 
-__version__ = "0.7.1"
+__version__ = "1.0.0a1"
 
 __all__ = [
     "Ablations",
@@ -56,6 +57,8 @@ __all__ = [
     "StageFactory",
     "ToolExecutor",
     "TrialResult",
+    "VerifiedWrite",
+    "WriteOutcome",
     "__version__",
     "available_policy_packs",
     "load_corpus",

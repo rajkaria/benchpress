@@ -9,7 +9,7 @@ from benchpress.context import Action, Evidence
 from benchpress.normalize import canonical_email, contains_term
 from benchpress.phases.common import PhaseDeps
 from benchpress.playbooks import extract_field
-from benchpress.tools import BudgetExhausted
+from benchpress.tools import BudgetExhausted, ToolBus, ToolResult
 
 _WRAPPERS = frozenset({"properties", "message", "fields", "data", "input"})
 
@@ -51,51 +51,78 @@ async def execute(deps: PhaseDeps, actions: Sequence[Action] | None = None, *, p
 
 async def readback(deps: PhaseDeps, action: Action, response_body: Mapping[str, object]) -> None:
     ctx = deps.ctx
+    if action.readback is None:
+        return
+    result = await perform_readback(deps.bus, action, response_body)
+    if result is None:
+        deps.note(f"readback skipped for {action.id}: budget exhausted")
+        return
+    ctx.add_evidence(readback_evidence(action, result))
+
+
+async def perform_readback(bus: ToolBus, action: Action, response_body: Mapping[str, object]) -> ToolResult | None:
+    """Send the read-back request `action.readback` declares, placeholders filled from the write's response.
+
+    Returns `None` when there is nothing to read (no read-back declared) or the bus has no budget left for it;
+    never raises `BudgetExhausted`. Shared by `readback()` (the run-loop's P5 phase) and `VerifiedWrite`.
+    """
     spec = action.readback
     if spec is None:
-        return
+        return None
     path = fill_placeholders(spec.path, response_body)
     query = {key: fill_placeholders(value, response_body) for key, value in spec.query.items()}
     try:
-        result = await deps.bus.read(action.provider, path, query=query, method=spec.method, body=spec.body)
+        return await bus.read(action.provider, path, query=query, method=spec.method, body=spec.body)
     except BudgetExhausted:
-        deps.note(f"readback skipped for {action.id}: budget exhausted")
-        return
-    if not result.ok:
-        ctx.add_evidence(
-            [
-                Evidence(
-                    check=f"readback:{action.id}",
-                    provider=action.provider,
-                    resource=resource_of(action),
-                    expected="readable",
-                    observed=f"{result.status_code}: {str(result.error or '')[:120]}",
-                    match=False,
-                )
-            ]
-        )
-        return
+        return None
+
+
+def is_unreadable(action: Action, item: Evidence) -> bool:
+    """True for the evidence `readback_evidence` emits when the read-back itself failed (nothing was observed)."""
+    return item.check == f"readback:{action.id}" and not item.match
+
+
+def readback_evidence(action: Action, read: ToolResult) -> list[Evidence]:
+    """The read-back evidence for one write, given the already-performed read.
+
+    Pure: no I/O, no context mutation. Shared by `readback()` (the run-loop's P5 phase) and
+    `VerifiedWrite` (the model-free, controller-free primitive) so the field-matching logic
+    that decides `verified` vs `mismatch` lives in exactly one place.
+    """
+    resource = resource_of(action)
+    if not read.ok:
+        return [
+            Evidence(
+                check=f"readback:{action.id}",
+                provider=action.provider,
+                resource=resource,
+                expected="readable",
+                observed=f"{read.status_code}: {str(read.error or '')[:120]}",
+                match=False,
+            )
+        ]
+    field_path = action.readback.field_path if action.readback else None
+    items: list[Evidence] = []
     for field_name in action.fields:
         if field_name in _WRAPPERS:
             continue
         expected = leaf_value(action.body, field_name)
         if expected is None:
             continue
-        observed = observe(result.body, field_name, spec.field_path)
+        observed = observe(read.body, field_name, field_path)
         if observed is None:
             continue
-        ctx.add_evidence(
-            [
-                Evidence(
-                    check=f"readback:{action.id}:{field_name}",
-                    provider=action.provider,
-                    resource=resource_of(action),
-                    expected=expected,
-                    observed=observed,
-                    match=values_match(expected, observed),
-                )
-            ]
+        items.append(
+            Evidence(
+                check=f"readback:{action.id}:{field_name}",
+                provider=action.provider,
+                resource=resource,
+                expected=expected,
+                observed=observed,
+                match=values_match(expected, observed),
+            )
         )
+    return items
 
 
 def observe(payload: object, field_name: str, field_path: str | None) -> str | None:

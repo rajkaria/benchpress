@@ -6,6 +6,7 @@ import json
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -65,7 +66,10 @@ def resolve_playbooks(providers: Sequence[str]) -> dict[str, Playbook]:
     return found
 
 
-async def safe_emit[T: BaseModel](deps: PhaseDeps, phase: str, schema: type[T], content: str, default: T) -> T:
+T = TypeVar("T", bound=BaseModel)
+
+
+async def safe_emit(deps: PhaseDeps, phase: str, schema: type[T], content: str, default: T) -> T:
     """A model failure is data: note it, fall back to the conservative default."""
     try:
         return await deps.model.emit(phase=phase, schema=schema, content=content)

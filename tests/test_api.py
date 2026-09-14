@@ -86,7 +86,17 @@ def test_public_surface_and_version_match_the_distribution() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
     assert project["name"] == "benchpress-agent"
     assert benchpress.__version__ == project["version"]
-    for name in ("wrap", "Benchpress", "run_trial", "TrialResult", "ModelConfig", "Ablations", "Gate", "GateRefusal"):
+    for name in (
+        "wrap",
+        "Benchpress",
+        "run_trial",
+        "TrialResult",
+        "ModelConfig",
+        "Ablations",
+        "Gate",
+        "GateRefusal",
+        "VerifiedWrite",
+    ):
         assert name in benchpress.__all__ and hasattr(benchpress, name)
     assert (ROOT / "src" / "benchpress" / "py.typed").exists()
     assert (ROOT / "LICENSE").read_text().lstrip().startswith("Apache License")

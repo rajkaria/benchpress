@@ -21,6 +21,9 @@ import pytest
 from evals import harness_bridge
 from evals.harness_bridge import HarnessNotFoundError, TaskSpec
 
+# Every test here imports or compares against the vendored ArgaBench harness.
+pytestmark = pytest.mark.arga
+
 
 def _load_run_script() -> ModuleType:
     """Import `scripts/run_argabench_40.py` as a module (registered in sys.modules so dataclasses resolve)."""

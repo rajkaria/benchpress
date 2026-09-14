@@ -1,26 +1,29 @@
 # Benchpress
 
-> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Published on PyPI as `benchpress-agent` 0.7.0 (Apache-2.0, Python 3.12+) and on npm as `benchpress-guard` 0.1.0. Built for the Multi-App AI Agent Hackathon, 2026-09-13.
+> The reliability layer for AI agents with write access. A task-agnostic control loop (policy sweep → resolve and lock look-alikes → definition of done → plan → gate every write in code → read every write back → verify → deliver a receipt) that wraps any tool layer. Released on PyPI as `benchpress-agent` 0.1.0 through 0.7.1, with 1.0.0a1 tagged as a pre-release (Python 3.11+ from 1.0.0a1), and on npm as `benchpress-guard` 0.1.0. Apache-2.0. Built for the Multi-App AI Agent Hackathon, 2026-09-13.
 
 Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the real loop, gate and read-back on an in-memory workspace with a scripted model, shows the gate refusing a planted write to a look-alike record, verifies 12 of 12 checks, and writes `receipt.json` + `receipt.html` (with `--trace-dir`).
 
 ## Start here
 - [README](https://github.com/rajkaria/benchpress/blob/main/README.md): product story, architecture, the eight phases, the gate, substrates, results, disclosure
 - [PyPI page](https://pypi.org/project/benchpress-agent/): install and API quickstart (source: [docs/PYPI.md](https://github.com/rajkaria/benchpress/blob/main/docs/PYPI.md))
-- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release, 0.1.0 to 0.7.0 and benchpress-guard 0.1.0
+- [CHANGELOG](https://github.com/rajkaria/benchpress/blob/main/CHANGELOG.md): every release, 0.1.0 to 0.7.1, the 1.0.0a1 pre-release and benchpress-guard 0.1.0
 - [Reliability brief](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.md) ([PDF](https://github.com/rajkaria/benchpress/blob/main/docs/RELIABILITY-BRIEF.pdf)): numbers, methods, failures, cost
 - [VISION](https://github.com/rajkaria/benchpress/blob/main/VISION.md): what is shipped, what is roadmap, business model
 - [Step-through replay of a real demo run](https://github.com/rajkaria/benchpress/blob/main/docs/demo/index.html)
 - Landing page: https://benchpress-ten.vercel.app
 
 ## Releases
-- PyPI `benchpress-agent`: 0.1.0, 0.1.1, 0.2.0, 0.3.0, 0.3.1, 0.3.2, 0.3.3, 0.4.0, 0.5.0, 0.6.0, 0.6.1, 0.7.0 (git tags `v*`)
-- Extras: `[mcp]` (MCP executor + `mcp-guard`), `[openai-agents]` (OpenAI Agents SDK guard), `[composio]` (Composio guard + executor)
+- PyPI `benchpress-agent`: 0.1.0, 0.1.1, 0.2.0, 0.3.0, 0.3.1, 0.3.2, 0.3.3, 0.4.0, 0.5.0, 0.6.0, 0.6.1, 0.7.0, 0.7.1 (git tags `v*`)
+- Pre-release: 1.0.0a1 (git tag `v1.0.0a1`): `VerifiedWrite`, `ToolSpec`, receipt schema v1, Python 3.11 floor
+- Extras: `[mcp]` (MCP executor + `mcp-guard`), `[openai-agents]` (OpenAI Agents SDK guard), `[composio]` (Composio guard + executor), `[schema]` (receipt validation, from 1.0.0a1)
 - npm `benchpress-guard` 0.1.0 (git tag `benchpress-guard-v0.1.0`): the guard for Vercel AI SDK tools, source in `packages/benchpress-guard/`
 
 ## Public API (Python)
 - `benchpress.wrap(model, executor, providers=[...], policy_packs=...)` → `Benchpress`; `await agent.run(request, ...)` or `agent.run_sync(...)` → `TrialResult` (`status` is computed from read-back evidence; `context.refusals` lists every refused write with its rule)
 - `benchpress.run_trial(...)`: the loop itself; `benchpress.Gate`, `benchpress.GateRefusal`, `benchpress.ModelConfig`, `benchpress.Ablations`
+- `benchpress.VerifiedWrite(executor, context=...)` → `await .run(action)` → `WriteOutcome` (`status`: refused, failed, unverified, verified, mismatch; from evidence only). 1.0.0a1 pre-release
+- `benchpress.schemas.receipt_schema()` and `benchpress.schemas.validate_receipt(payload)` (extra `[schema]`): receipt v1, additive-only within v1. 1.0.0a1 pre-release
 - `benchpress.load_policy_pack(...)`, `benchpress.load_policy_packs([...])`, `benchpress.available_policy_packs()`: code-enforced rule sets
 - `benchpress.load_corpus(...)`, `benchpress.run_case(...)`: the gate-rule corpus
 - `benchpress.rehearse.rehearse(...)` / `benchpress.rehearse.replay(...)`: run N times on fresh stages, require convergence, replay the plan with no model
@@ -63,4 +66,4 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 
 ## Engineering
 - Task-agnostic by construction: CI greps the agent package for benchmark task ids and seeded entities
-- pyright strict, ruff, 1,034 Python tests; CI also builds the wheel, installs it into a clean venv on Python 3.12 and 3.13, runs `demo`, `gate check` and `policy list`, and builds and tests the npm guard
+- pyright strict, ruff, 1,076 Python tests collected (the 31 harness-backed tests skip unless the optional ArgaBench harness is vendored); CI runs the suite on Python 3.11, 3.12 and 3.13, vendoring the harness only when the `BENCHPRESS_ARGA_TESTS` repository variable is set; it also builds the wheel, installs it into a clean venv on Python 3.11 to 3.13, runs `demo`, `gate check` and `policy list`, validates the demo receipt against the schema, and builds and tests the npm guard

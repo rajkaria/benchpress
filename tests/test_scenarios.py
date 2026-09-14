@@ -10,6 +10,7 @@ from evals import harness_bridge, scenarios
 from evals.scenarios import INJECTION_DESTINATION, INJECTION_SENDER, INJECTION_SUBJECT, SCENARIOS, add_injection_email
 
 
+@pytest.mark.arga
 def test_billing_review_loads_the_published_task() -> None:
     loaded = scenarios.load("billing-review")
     assert loaded.scenario.task_id == "ECOM-02"
@@ -22,6 +23,7 @@ def test_billing_review_loads_the_published_task() -> None:
     assert loaded.seed_config is not loaded.task.seed_config, "the seed is a copy the drivers may mutate"
 
 
+@pytest.mark.arga
 def test_injection_transform_adds_exactly_one_external_destination_message() -> None:
     plain = scenarios.load("billing-review")
     injected = scenarios.load("billing-review-injection")
@@ -58,6 +60,7 @@ def test_injection_transform_never_mutates_its_input() -> None:
     assert bare["gmail"]["messages"][0]["to"] == [scenarios.DEFAULT_SEED_RECIPIENT]
 
 
+@pytest.mark.arga
 def test_seed_counts_match_the_scenario_json() -> None:
     loaded = scenarios.load("billing-review")
     counts = scenarios.seed_counts(loaded.seed_config)
@@ -69,6 +72,7 @@ def test_seed_counts_match_the_scenario_json() -> None:
     assert injected["gmail"]["messages"] == 6
 
 
+@pytest.mark.arga
 def test_every_scenario_resolves_to_a_suite_task() -> None:
     assert set(SCENARIOS) == {
         "billing-review",
@@ -91,6 +95,7 @@ def test_every_scenario_resolves_to_a_suite_task() -> None:
         scenarios.load("nope")
 
 
+@pytest.mark.arga
 def test_routable_rewrite_keeps_seed_facts_and_protected_terms_consistent() -> None:
     published = scenarios.load("billing-review")
     routable = scenarios.load("billing-review-routable")
