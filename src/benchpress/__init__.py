@@ -14,6 +14,7 @@ Rehearse lives in `benchpress.rehearse` (`rehearse`, `replay`); the types are re
 
 from __future__ import annotations
 
+from benchpress import loop
 from benchpress.api import DEFAULT_SYSTEM_PROMPT, Benchpress, wrap
 from benchpress.controller import TrialResult, run_trial
 from benchpress.gate import Gate, GateRefusal, PolicyRuleSet
@@ -64,6 +65,7 @@ __all__ = [
     "load_corpus",
     "load_policy_pack",
     "load_policy_packs",
+    "loop",
     "run_case",
     "run_trial",
     "state_hash",
