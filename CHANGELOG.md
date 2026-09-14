@@ -6,6 +6,15 @@ The TypeScript guard is on npm as [`benchpress-guard`](https://www.npmjs.com/pac
 pyright strict, the task-agnostic grep) and, after upload, was installed back from PyPI into a clean virtualenv and
 imported before its GitHub release was cut; CI also builds the wheel and runs the user-facing commands from a clean venv.
 
+## 1.0.0a1 (2026-09-14)
+First pre-release on the road to 1.0, where Benchpress becomes the open-source execution layer for agents that act on real systems (see [docs/ROADMAP.md](docs/ROADMAP.md)).
+- **`VerifiedWrite`**: the gate → execute → read-back → evidence primitive, usable without the controller or a model. `outcome.status` is `refused | failed | unverified | verified | mismatch`, computed from evidence only.
+- **`ToolSpec`**: one tool-metadata contract (declared class, target fields, read-back mapping) shared by every adapter; a declared class always beats the name heuristic.
+- **Receipt schema v1** ships in the package (`benchpress.schemas.validate_receipt`); the demo receipt validates in CI.
+- **Python 3.11** is now the floor; CI runs 3.11, 3.12 and 3.13.
+- The ArgaBench harness is opt-in for tests and CI and is never redistributed (the upstream repository carries no license).
+- Contributing guide, security policy, code of conduct, issue and PR templates, public roadmap.
+
 ## 0.7.1 (2026-09-13)
 - Documentation and repository hygiene only; no behavior changes. The PyPI description now reflects every feature
   through 0.7.0 and the npm guard, with results stated under the pre-0.3.2 gate they were produced on. Internal

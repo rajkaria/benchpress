@@ -35,7 +35,7 @@ from benchpress.rehearse import (
 from benchpress.tools import ToolExecutor
 from benchpress.verified import VerifiedWrite, WriteOutcome
 
-__version__ = "0.7.1"
+__version__ = "1.0.0a1"
 
 __all__ = [
     "Ablations",

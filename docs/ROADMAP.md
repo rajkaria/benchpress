@@ -13,8 +13,8 @@ Goal: make the repository safe to promote and ship the two primitives every late
 - [x] Receipt schema v1, versioned and shipped as package data
 - [x] `ToolSpec`, the shared tool metadata contract, classified from spec first and a name heuristic second
 - [x] `VerifiedWrite`, the gate-to-execute-to-read-back-to-evidence primitive, usable without the full controller
-- [ ] Contributing guide, security policy, code of conduct, issue and PR templates, and this roadmap
-- [ ] README rewritten around three doors, PyPI readme, CHANGELOG entry, `v1.0.0a1` tag
+- [x] Contributing guide, security policy, code of conduct, issue and PR templates, and this roadmap
+- [x] README rewritten around three doors, PyPI readme, CHANGELOG entry, `v1.0.0a1` tag
 
 ## Sprint 1: Gateway + local console (weeks 2-3)
 

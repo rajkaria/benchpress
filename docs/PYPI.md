@@ -15,7 +15,7 @@ auditable **receipt**.
 pip install benchpress-agent        # or: uv add benchpress-agent
 ```
 
-Python 3.12+. Runtime dependencies: `httpx`, `pydantic`.
+Python 3.11+. Runtime dependencies: `httpx`, `pydantic`.
 
 **See it work in one command, no keys needed:**
 
@@ -67,6 +67,29 @@ A real-app gateway for Slack, Gmail, HubSpot and Stripe ships in `benchpress.rea
 benchpress run --providers hubspot,stripe --prompt "..." --trace-dir runs/demo
 benchpress receipt runs/demo --html
 ```
+
+**Gate one write, no controller, no model** (the primitive every adapter and the gateway compose):
+
+```python
+from benchpress import VerifiedWrite
+from benchpress.context import Action, Context, ReadBack
+
+action = Action(
+    id="w1", kind="update", provider="hubspot", method="PATCH",
+    path="/crm/v3/objects/companies/701",
+    body={"properties": {"email": "ap@rivermill.example"}}, fields=("email",),
+    readback=ReadBack(path="/crm/v3/objects/companies/701", field_path="email"),
+)
+outcome = await VerifiedWrite(
+    my_gateway.execute_tool,
+    context=Context(user_prompt="Rivermill asked for renewal notices to go to ap@rivermill.example."),
+).run(action)
+print(outcome.status)            # refused | failed | unverified | verified | mismatch
+print(outcome.verdict.rule)      # why the gate said yes or no
+print(outcome.evidence)          # what the provider showed after the write
+```
+
+Python 3.11+. Roadmap: gateway, console, adapters for every major framework, Helm chart. See docs/ROADMAP.md in the repository.
 
 ## MCP: put the gate in front of any MCP server
 

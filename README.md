@@ -9,7 +9,7 @@
   <img alt="pyright strict" src="https://img.shields.io/badge/pyright-strict-2F74C0">
   <img alt="ruff" src="https://img.shields.io/badge/lint-ruff-D7FF64?logo=ruff&logoColor=black">
   <a href="https://www.npmjs.com/package/benchpress-guard"><img alt="npm" src="https://img.shields.io/npm/v/benchpress-guard?label=npm%20benchpress-guard&color=CB3837&logo=npm&logoColor=white"></a>
-  <img alt="tests" src="https://img.shields.io/badge/tests-1%2C034-3FB950">
+  <img alt="tests" src="https://img.shields.io/badge/tests-939-3FB950">
   <img alt="gate corpus" src="https://img.shields.io/badge/gate%20corpus-178%2F178-3FB950">
   <img alt="task-agnostic" src="https://img.shields.io/badge/task--specific%20code-0%20lines-58A6FF">
 </p>
@@ -32,20 +32,23 @@
 ---
 
 > **An ops agent gets a Slack message:** *"Move Northwind's renewal notices to their accounts-payable address."*
-> It looks like a thirty-second job. It touches a billing system, a CRM, an inbox and a chat channel.
-> There's a policy email saying customer confirmations need owner review, and a look-alike prospect
-> account that must not be touched.
+> It touches a billing system, a CRM, an inbox and a chat channel. A policy email says customer
+> confirmations need owner review. A look-alike prospect account must not be touched.
 >
 > **Arga Labs gave this exact job to 37 frontier model configurations. None passed, not once in 111 tries.**
->
-> The models aren't the problem. The loop around them is. **Benchpress replaces that loop.**
+> The same model passes it 3 times out of 3 when the loop reads the rules, locks the look-alike, gates every
+> write in code and reads every write back. **The loop is the problem. Benchpress is the loop.**
 
-Benchpress is a **task-agnostic control loop** for AI agents that can write to money, customers and
-code. It reads the workspace's rules before deciding what "done" means. It finds the right record
-among look-alikes and locks the rest in a deny-list **enforced in code**. It plans only the writes
-the definition of done needs, gates every one, and **reads every write back**. Customer-facing
-messages stay unsent drafts until the owner reviews them. Status is computed **from provider state,
-never from an HTTP 200**. Every run ends with an auditable **receipt**.
+Benchpress is the open-source execution layer for AI agents that act on real systems. It works three ways,
+from the same code:
+
+| You are | Install | You get |
+|---|---|---|
+| **One developer** | `pip install benchpress-agent` | a gate, read-back and a receipt around any tool call, in-process, no server, no account |
+| **A team** | `docker run ghcr.io/rajkaria/benchpress` *(Sprint 1)* | a gateway (HTTP + MCP) every agent points at, an approval inbox, searchable receipts |
+| **An enterprise** | `helm install benchpress …` *(Sprint 6)* | SSO, RBAC, hash-chained receipts, SIEM export, OPA/Cedar policies, compliance mapping |
+
+Everything is Apache-2.0. The roadmap is public: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 It runs the same code on **real Slack, Gmail, HubSpot and Stripe**, on **local grader-faithful twins
 under ArgaBench's unmodified runner**, and behind ArgaBench's `invoke_model` candidate contract.
@@ -597,6 +600,27 @@ result = await agent.run("Acme asked for renewal notices to go to ap@acme.exampl
 print(result.status, result.context.refusals)   # status from read-back evidence; every refused write with its rule
 ```
 
+**Gate one write, no controller, no model** (the primitive every adapter and the gateway compose):
+
+```python
+from benchpress import VerifiedWrite
+from benchpress.context import Action, Context, ReadBack
+
+action = Action(
+    id="w1", kind="update", provider="hubspot", method="PATCH",
+    path="/crm/v3/objects/companies/701",
+    body={"properties": {"email": "ap@rivermill.example"}}, fields=("email",),
+    readback=ReadBack(path="/crm/v3/objects/companies/701", field_path="email"),
+)
+outcome = await VerifiedWrite(
+    my_gateway.execute_tool,
+    context=Context(user_prompt="Rivermill asked for renewal notices to go to ap@rivermill.example."),
+).run(action)
+print(outcome.status)            # refused | failed | unverified | verified | mismatch
+print(outcome.verdict.rule)      # why the gate said yes or no
+print(outcome.evidence)          # what the provider showed after the write
+```
+
 The rest of the CLI (each command's `--help` lists every flag):
 
 ```bash
@@ -819,18 +843,22 @@ release tagged in git with notes in [CHANGELOG.md](CHANGELOG.md):
 | 0.6.0–0.6.1 | GitHub playbook; Anthropic transport contract tests and fixes |
 | 0.7.0 | `benchpress regress` (runs become corpus cases) and `benchpress receipts export` (local audit log) |
 | npm `benchpress-guard` 0.1.0 | The same guard for Vercel AI SDK tools, byte-compatible policy and receipts |
+| 1.0.0a1 | `VerifiedWrite` (gate → execute → read-back → evidence, no controller needed), `ToolSpec` metadata contract, receipt schema v1 shipped as package data, Python 3.11 floor, public roadmap and community files |
 
-| Horizon | Still roadmap |
+**Still roadmap.** The full plan, with dated goals and checkboxes updated every sprint, lives in
+[docs/ROADMAP.md](docs/ROADMAP.md). One line per sprint:
+
+| Sprint | Goal |
 |---|---|
-| **Open core** | Playbooks beyond Slack, Gmail, HubSpot, Stripe and GitHub (the other twin providers). The ArgaBench adapter upstreamed as a community profile, with a full 40-task row on hosted twins |
-| **Rehearse in production** | `rehearse` / `replay` run today on local stages. Next: fork the relevant **live** state into twins when a request arrives, require a converged final-state hash with zero refusals, then replay the typed plan against production with read-back on every write. **The model never decides a production write live** |
-| **Closed loop** | `regress` already turns a run into permanent corpus cases. Next: every silent failure an observability layer (Lemma) groups in production becomes a twin scenario automatically; more policy packs per function; **hosted** receipts with audit export as SOC 2 evidence for "who changed this customer record, and why" |
-
-**Business model:** priced **per verified task** ($0.50–$2). Refused and escalated tasks are free,
-so revenue only comes from work that finished with evidence, which ties our incentive to safety. A
-platform tier covers rehearsal volume, hosted receipts and policy packs. First design partners are
-teams whose agents already touch money and customers: RevOps, CS (the renewal-rescue workflow) and
-platform teams. Details in [VISION.md](VISION.md).
+| **0 — Foundation** | Make the repository safe to promote and ship the primitives every later phase composes on (this release) |
+| **1 — Gateway + local console** | `benchpress serve` and `docker run` produce identical receipts to library mode |
+| **2 — Adapters wave 1** | One line of integration in every mainstream agent framework, Python and TypeScript |
+| **3 — Console + policy** | Approval inbox, Slack approvals, policy simulator, OPA/Cedar bridge |
+| **4 — Providers, record/replay, twins** | A playbook generator, ten new provider playbooks, local twins with no live credentials |
+| **5 — Evals and the scoreboard** | Benchmark against public agent-safety suites and publish the numbers, whatever they say |
+| **6 — Enterprise** | Helm chart, SSO/RBAC, hash-chained receipts, SIEM export, compliance mapping |
+| **7 — Docs, release engineering, launch** | A real docs site, trusted publishing, signed images, public launch day |
+| **8 — Design partners** | Real teams run the gateway in production; every incident becomes a public test case |
 
 ---
 

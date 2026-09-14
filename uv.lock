@@ -49,7 +49,7 @@ wheels = [
 
 [[package]]
 name = "benchpress-agent"
-version = "0.7.1"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
