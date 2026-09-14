@@ -6,14 +6,15 @@ give it an executor with the harness `execute_tool(tool_name, tool_input)` shape
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from benchpress.context import Action, Context, Evidence, GateVerdict
-from benchpress.gate import Gate, PolicyRuleSet
-from benchpress.phases.execute import fill_placeholders, readback_evidence
-from benchpress.tools import BudgetExhausted, ToolBus, ToolExecutor, ToolResult
+from benchpress.gate import Gate, PolicyRuleSet, fingerprint
+from benchpress.phases.execute import is_unreadable, perform_readback, readback_evidence, resource_of
+from benchpress.tools import ToolBus, ToolExecutor, ToolResult
 
 WriteStatus = Literal["refused", "failed", "unverified", "verified", "mismatch"]
 
@@ -27,21 +28,39 @@ class WriteOutcome:
 
     @property
     def status(self) -> WriteStatus:
+        """Computed from evidence only.
+
+        `mismatch` means a field was read back and contradicted the write. A read-back that could not be performed
+        or read (skipped, non-2xx, transport error) proves nothing either way, so it is `unverified`; its evidence
+        is kept on the outcome so the reason is visible.
+        """
         if not self.verdict.allowed:
             return "refused"
         if self.result is None or not self.result.ok:
             return "failed"
-        if not self.evidence:
+        observed = [item for item in self.evidence if not is_unreadable(self.action, item)]
+        if any(not item.match for item in observed):
+            return "mismatch"
+        if not observed or len(observed) != len(self.evidence):
             return "unverified"
-        return "verified" if all(item.match for item in self.evidence) else "mismatch"
+        return "verified"
 
 
 class VerifiedWrite:
     """Gate -> execute -> read back -> evidence, for one action at a time.
 
-    Stateful only in the way `Gate` is stateful: writes performed through the same
-    `VerifiedWrite` are remembered, so a byte-identical replay is refused as `idempotency`
-    rather than sent to the provider a second time.
+    Stateful only in the way `Gate` is stateful: writes performed through the same `VerifiedWrite` are
+    remembered, so a byte-identical replay is refused as `idempotency` rather than sent to the provider a
+    second time. That includes concurrent calls: identical actions racing on one instance are serialized, the
+    first is sent and the rest are refused as `idempotency`.
+
+    * **One instance per logical session.** The idempotency memory lives in the instance. Two instances do not
+      know about each other's writes, so do not share one `Context` across instances expecting them to
+      de-duplicate: both would write.
+    * **A mismatch is still a write.** A write that returned 2xx but read back as `mismatch` is recorded as done,
+      so replaying the identical action is refused. Fix the cause and send a different action.
+    * **Not a benchmark trial.** The tool bus runs without the controller's per-phase budgets or lifetime call
+      cap, so a long-lived instance never runs out of calls and `run()` never raises `BudgetExhausted`.
     """
 
     def __init__(
@@ -54,7 +73,8 @@ class VerifiedWrite:
     ) -> None:
         self._context = context or Context()
         self._gate = Gate(self._context, allow_unplanned=allow_unplanned, policy_packs=policy_packs)
-        self._bus = ToolBus(context=self._context, execute=execute, gate=self._gate)
+        self._bus = ToolBus(context=self._context, execute=execute, gate=self._gate, budgets=False)
+        self._inflight: dict[str, tuple[asyncio.Lock, int]] = {}
 
     @property
     def context(self) -> Context:
@@ -62,7 +82,7 @@ class VerifiedWrite:
         return self._context
 
     async def run(self, action: Action) -> WriteOutcome:
-        result, verdict = await self._bus.perform(action)
+        result, verdict = await self._perform_once(action)
         if not verdict.allowed:
             return WriteOutcome(action, verdict, None, ())
         if not result.ok:
@@ -71,14 +91,34 @@ class VerifiedWrite:
         self._context.add_evidence(evidence)
         return WriteOutcome(action, verdict, result, evidence)
 
-    async def _readback(self, action: Action, response_body: Mapping[str, object]) -> tuple[Evidence, ...]:
-        spec = action.readback
-        if spec is None:
-            return ()
-        path = fill_placeholders(spec.path, response_body)
-        query = {key: fill_placeholders(value, response_body) for key, value in spec.query.items()}
+    async def _perform_once(self, action: Action) -> tuple[ToolResult, GateVerdict]:
+        """`bus.perform`, serialized per fingerprint so the gate's idempotency check sees an in-flight twin land."""
+        key = fingerprint(action)
+        lock, waiting = self._inflight.get(key, (asyncio.Lock(), 0))
+        self._inflight[key] = (lock, waiting + 1)
         try:
-            read = await self._bus.read(action.provider, path, query=query, method=spec.method, body=spec.body)
-        except BudgetExhausted:
+            async with lock:
+                return await self._bus.perform(action)
+        finally:
+            lock, waiting = self._inflight[key]
+            if waiting <= 1:
+                del self._inflight[key]
+            else:
+                self._inflight[key] = (lock, waiting - 1)
+
+    async def _readback(self, action: Action, response_body: Mapping[str, object]) -> tuple[Evidence, ...]:
+        if action.readback is None:
             return ()
+        read = await perform_readback(self._bus, action, response_body)
+        if read is None:
+            return (
+                Evidence(
+                    check=f"readback:{action.id}",
+                    provider=action.provider,
+                    resource=resource_of(action),
+                    expected="readable",
+                    observed="skipped: the tool bus had no budget left for the read-back",
+                    match=False,
+                ),
+            )
         return tuple(readback_evidence(action, read))

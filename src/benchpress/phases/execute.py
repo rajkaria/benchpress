@@ -9,7 +9,7 @@ from benchpress.context import Action, Evidence
 from benchpress.normalize import canonical_email, contains_term
 from benchpress.phases.common import PhaseDeps
 from benchpress.playbooks import extract_field
-from benchpress.tools import BudgetExhausted, ToolResult
+from benchpress.tools import BudgetExhausted, ToolBus, ToolResult
 
 _WRAPPERS = frozenset({"properties", "message", "fields", "data", "input"})
 
@@ -51,17 +51,35 @@ async def execute(deps: PhaseDeps, actions: Sequence[Action] | None = None, *, p
 
 async def readback(deps: PhaseDeps, action: Action, response_body: Mapping[str, object]) -> None:
     ctx = deps.ctx
-    spec = action.readback
-    if spec is None:
+    if action.readback is None:
         return
-    path = fill_placeholders(spec.path, response_body)
-    query = {key: fill_placeholders(value, response_body) for key, value in spec.query.items()}
-    try:
-        result = await deps.bus.read(action.provider, path, query=query, method=spec.method, body=spec.body)
-    except BudgetExhausted:
+    result = await perform_readback(deps.bus, action, response_body)
+    if result is None:
         deps.note(f"readback skipped for {action.id}: budget exhausted")
         return
     ctx.add_evidence(readback_evidence(action, result))
+
+
+async def perform_readback(bus: ToolBus, action: Action, response_body: Mapping[str, object]) -> ToolResult | None:
+    """Send the read-back request `action.readback` declares, placeholders filled from the write's response.
+
+    Returns `None` when there is nothing to read (no read-back declared) or the bus has no budget left for it;
+    never raises `BudgetExhausted`. Shared by `readback()` (the run-loop's P5 phase) and `VerifiedWrite`.
+    """
+    spec = action.readback
+    if spec is None:
+        return None
+    path = fill_placeholders(spec.path, response_body)
+    query = {key: fill_placeholders(value, response_body) for key, value in spec.query.items()}
+    try:
+        return await bus.read(action.provider, path, query=query, method=spec.method, body=spec.body)
+    except BudgetExhausted:
+        return None
+
+
+def is_unreadable(action: Action, item: Evidence) -> bool:
+    """True for the evidence `readback_evidence` emits when the read-back itself failed (nothing was observed)."""
+    return item.check == f"readback:{action.id}" and not item.match
 
 
 def readback_evidence(action: Action, read: ToolResult) -> list[Evidence]:

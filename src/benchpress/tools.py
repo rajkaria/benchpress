@@ -35,6 +35,9 @@ MAX_WALL_SECONDS = 1_800.0
 # Reserved so P6/P7 can always verify and deliver, no matter how P1/P2 went.
 DELIVERY_RESERVE = 12
 
+# What `budget_left()` reports for a bus built with `budgets=False`.
+UNBOUNDED = 2**31 - 1
+
 _REDACT_KEYS = frozenset({"authorization", "x-api-key", "api_key", "token", "secret", "password", "cookie"})
 
 
@@ -87,6 +90,9 @@ class ToolBus:
     execute: ToolExecutor
     gate: Gate
     trace_path: str | None = None
+    # False turns off the benchmark trial limits (per-phase budgets, the delivery reserve and the lifetime caps).
+    # The controller always runs bounded; a long-lived primitive such as `VerifiedWrite` is not a trial.
+    budgets: bool = True
 
     phase: str = "P0"
     started_at: float = field(default_factory=time.monotonic)
@@ -113,6 +119,8 @@ class ToolBus:
         return max(0, MAX_PROVIDER_CALLS - self.provider_calls)
 
     def budget_left(self, *, docs: bool = False) -> int:
+        if not self.budgets:
+            return UNBOUNDED
         budget = PHASE_BUDGETS.get(self.phase, PhaseBudget(0, 0, 0.0))
         if docs:
             return max(0, budget.provider_docs - self._phase_docs.get(self.phase, 0))
@@ -144,7 +152,7 @@ class ToolBus:
         body: object | None = None,
         body_encoding: Literal["json", "form"] = "json",
     ) -> ToolResult:
-        """A data-plane read. Never gated (reads cannot mutate), always budgeted."""
+        """A data-plane read. Never gated (reads cannot mutate); budgeted unless built with `budgets=False`."""
         if method == "POST" and body is None:
             body = {}
         return await self._call(
@@ -159,7 +167,7 @@ class ToolBus:
         )
 
     async def docs(self, action: Literal["search", "fetch"], **kwargs: object) -> ToolResult:
-        if self.budget_left(docs=True) <= 0 or self.docs_calls >= MAX_DOCS_CALLS:
+        if self.budgets and (self.budget_left(docs=True) <= 0 or self.docs_calls >= MAX_DOCS_CALLS):
             raise BudgetExhausted(f"{self.phase}: provider_docs budget exhausted")
         payload: dict[str, Any] = {"action": action, **kwargs}
         self.docs_calls += 1
@@ -233,9 +241,9 @@ class ToolBus:
             self._append_ledger(provider, method, path, "", result, gate_verdict, action_id)
             return result
 
-        if self.budget_left() <= 0:
+        if self.budgets and self.budget_left() <= 0:
             raise BudgetExhausted(f"{self.phase}: provider_api budget exhausted")
-        if self.provider_calls >= MAX_PROVIDER_CALLS:
+        if self.budgets and self.provider_calls >= MAX_PROVIDER_CALLS:
             raise BudgetExhausted("global provider_api budget exhausted")
 
         payload: dict[str, Any] = {"provider": provider, "method": method, "path": path}
