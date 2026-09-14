@@ -26,8 +26,12 @@ def test_schema_is_draft_2020_and_pins_the_protocol() -> None:
         assert key in schema["required"]
 
 
-def test_schema_rejects_a_status_from_a_2xx() -> None:
+async def test_schema_rejects_a_status_from_a_2xx(tmp_path: Path) -> None:
     schema = receipt_schema()
-    bad = {"protocol": "benchpress-receipt/1", "trial_id": "x", "status": "http_200"}
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate(bad, schema)
+    await run_demo(tmp_path)
+    payload = json.loads((tmp_path / "receipt.json").read_text())
+    payload["status"] = "http_200"
+    with pytest.raises(jsonschema.ValidationError) as excinfo:
+        jsonschema.validate(payload, schema)
+    assert excinfo.value.validator == "enum"
+    assert list(excinfo.value.path) == ["status"]
