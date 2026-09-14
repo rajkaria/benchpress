@@ -6,6 +6,7 @@ give it an executor with the harness `execute_tool(tool_name, tool_input)` shape
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
@@ -101,7 +102,8 @@ class VerifiedWrite:
         if not action.is_write or not self._gate.evaluate(action).allowed:
             return await self._bus.perform(action)
         key = fingerprint(action)
-        claim = await self._claims.claim(self._scope, key)
+        holder = uuid.uuid4().hex
+        claim = await self._claims.claim(self._scope, key, holder=holder)
         if claim != "claimed":
             reason = (
                 f"action {action.id!r} already succeeded; replay would duplicate"
@@ -115,7 +117,7 @@ class VerifiedWrite:
             result, verdict = await self._bus.perform(action)
             return result, verdict
         finally:
-            await self._claims.complete(self._scope, key, succeeded=result is not None and result.ok)
+            await self._claims.complete(self._scope, key, holder=holder, succeeded=result is not None and result.ok)
 
     async def _readback(self, action: Action, response_body: Mapping[str, object]) -> tuple[Evidence, ...]:
         if action.readback is None:

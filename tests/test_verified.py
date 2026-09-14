@@ -362,8 +362,11 @@ async def test_a_failed_write_releases_its_claim() -> None:
     assert attempts == ["PATCH", "PATCH", "GET"]
 
 
-async def test_a_replayed_write_is_refused_every_time_not_deduplicated() -> None:
-    """Ruling R1: `ToolBus.refuse` appends every refusal, even byte-identical repeats on one instance."""
+async def test_a_replayed_write_is_refused_every_time_on_one_instance() -> None:
+    """Single-instance repeats: each replay is caught by this instance's own `Gate` (`has_succeeded`), which
+    routes through `perform`'s `except GateRefusal` branch (`already_recorded=True`) rather than the store's
+    `refuse(..., already_recorded=False)` path. It does not by itself exercise the guard Ruling R1 is about —
+    see `test_a_cross_instance_replay_is_refused_every_time_not_deduplicated` for that."""
     provider = FakeProvider()
     writer = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT))
     action = _write()
@@ -378,3 +381,30 @@ async def test_a_replayed_write_is_refused_every_time_not_deduplicated() -> None
         "idempotency",
         "idempotency",
     ]
+
+
+async def test_a_cross_instance_replay_is_refused_every_time_not_deduplicated() -> None:
+    """Ruling R1: `ToolBus.refuse` appends every refusal it is asked to, never deduplicating by value equality.
+
+    This is the path where the (rejected) `verdict not in context.refusals` guard would have failed: instance
+    `b` never performs the write itself, so its own `Gate` never learns the fingerprint succeeded and keeps
+    reporting the action as allowed. Every one of `b`'s replays therefore reaches the shared store's `claim`,
+    finds `done`, and calls `self._bus.refuse(action, verdict)` with `already_recorded=False` — building an
+    equal `GateVerdict` each time. A value-equality guard would only append the first of these.
+    """
+    provider = FakeProvider()
+    store = InMemoryIdempotencyStore()
+    a = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    b = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT), idempotency=store, scope="acct")
+    assert (await a.run(_write())).status == "verified"
+
+    first = await b.run(_write())
+    second = await b.run(_write())
+    assert first.status == "refused" and second.status == "refused"
+    assert first.verdict.rule == "idempotency" and second.verdict.rule == "idempotency"
+
+    ctx = b.context
+    assert len(ctx.refusals) == len(ctx.gate_decisions) == 2
+    assert [v.rule for v in ctx.refusals] == ["idempotency", "idempotency"]
+    assert [d.verdict.rule for d in ctx.gate_decisions] == ["idempotency", "idempotency"]
+    assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]
