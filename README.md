@@ -49,7 +49,7 @@ work three ways from the same code. The developer door ships today; the team and
 
 | You are | Install | You get |
 |---|---|---|
-| **One developer** *(available)* | `pip install benchpress-agent` | in-process, no server, no account: the code gate and read-back around HTTP-shaped writes (`VerifiedWrite`, in the 1.0.0a1 pre-release), receipts from the full loop (`benchpress.wrap`), and policy guards for MCP, OpenAI Agents SDK, Composio and Vercel AI SDK tools |
+| **One developer** *(available)* | `pip install benchpress-agent` (Python) · `npm i benchpress-guard` (TypeScript) | in-process, no server, no account: the code gate and read-back around HTTP-shaped writes (`VerifiedWrite`, in the 1.0.0a1 pre-release), receipts from the full loop (`benchpress.wrap`), and policy guards for MCP, OpenAI Agents SDK and Composio tools; the npm package guards Vercel AI SDK tools |
 | **A team** *(planned, Sprint 1; not released)* | `docker run ghcr.io/rajkaria/benchpress` | a gateway (HTTP + MCP) every agent points at, an approval inbox, searchable receipts |
 | **An enterprise** *(planned, Sprint 6; not released)* | `helm install benchpress …` | SSO, RBAC, hash-chained receipts, SIEM export, OPA/Cedar policies, compliance mapping |
 

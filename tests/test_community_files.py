@@ -50,9 +50,7 @@ COMMUNITY_FILES = (
 def _unexpected_emails(text: str) -> list[str]:
     found: list[str] = []
     for match in EMAIL.finditer(text):
-        address, domain = match.group(0).casefold(), match.group(1).casefold()
-        if "noreply" in address:
-            continue
+        domain = match.group(1).casefold()
         if any(domain == allowed or domain.endswith(f".{allowed}") for allowed in ALLOWED_EMAIL_DOMAINS):
             continue
         found.append(match.group(0))
@@ -97,3 +95,8 @@ def test_roadmap_links_contributing_and_issue_tracker() -> None:
     roadmap = (ROOT / "docs" / "ROADMAP.md").read_text()
     assert "CONTRIBUTING.md" in roadmap
     assert "https://github.com/rajkaria/benchpress/issues" in roadmap
+
+
+def test_noreply_addresses_outside_github_are_flagged() -> None:
+    assert _unexpected_emails("noreply@evil.example") == ["noreply@evil.example"]
+    assert _unexpected_emails("12345+someone@users.noreply.github.com") == []
