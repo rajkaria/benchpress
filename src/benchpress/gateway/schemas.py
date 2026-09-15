@@ -14,6 +14,8 @@ from benchpress.normalize import canonical_email
 
 __all__ = [
     "SESSION_ID_PATTERN",
+    "ApprovalDecision",
+    "ApprovalView",
     "ContextInput",
     "ExecuteRequest",
     "ExecuteResponse",
@@ -138,6 +140,25 @@ class ReceiptDetail(_Schema):
     kind: ReceiptKind
     payload: dict[str, Any]
     html: bool
+
+
+class ApprovalDecision(_Schema):
+    decision: Literal["approve", "deny"]
+    note: str = ""
+
+
+class ApprovalView(_Schema):
+    id: str
+    session_id: str
+    rule: str
+    status: str
+    requested_at: str
+    expires_at: str
+    resolved_at: str | None
+    resolved_by: str | None
+    note: str
+    action: Action
+    fingerprint: str
 
 
 class ReceiptFilters(_Schema):

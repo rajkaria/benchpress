@@ -6,6 +6,7 @@ HTTP-shaped thing in this module; each surface maps it to its own error.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
@@ -13,10 +14,19 @@ from typing import TYPE_CHECKING, cast
 import anyio.to_thread
 from sqlalchemy.exc import IntegrityError
 
-from benchpress.context import Action
+from benchpress.context import Action, GateVerdict
 from benchpress.gate import PolicyRuleSet
+from benchpress.gateway.approvals import ApprovalClosed, ApprovalNotFound, ApprovalQueue, approval_view, matching_rule
 from benchpress.gateway.config import ConfigError, Settings
-from benchpress.gateway.schemas import ContextInput, ExecuteRequest, ExecuteResponse, SessionCreate, SessionCreated
+from benchpress.gateway.schemas import (
+    ApprovalDecision,
+    ApprovalView,
+    ContextInput,
+    ExecuteRequest,
+    ExecuteResponse,
+    SessionCreate,
+    SessionCreated,
+)
 from benchpress.gateway.store import Store, WorkspaceRow
 from benchpress.packs import (
     PolicyPack,
@@ -39,9 +49,10 @@ DEFAULT_WORKSPACE = "default"
 class RequestRejected(ValueError):
     """A request refused before anything runs, carrying the HTTP-style status every surface reports."""
 
-    def __init__(self, status: int, message: str) -> None:
+    def __init__(self, status: int, message: str, *, extra: dict[str, object] | None = None) -> None:
         super().__init__(message)
         self.status = status
+        self.extra = extra or {}
 
 
 def load_directory_packs(policy_dir: Path | None) -> tuple[PolicyPack, ...]:
@@ -71,11 +82,13 @@ class GatewayService:
         *,
         clock: Clock,
         now: Callable[[], float],
+        approvals: ApprovalQueue,
         directory_packs: Sequence[PolicyPack] = (),
     ) -> None:
         self.settings = settings
         self.store = store
         self.sessions = sessions
+        self.approvals = approvals
         self._clock = clock
         self._now = now
         self._directory_packs = tuple(directory_packs)
@@ -110,15 +123,42 @@ class GatewayService:
         return await self.sessions.create(workspace, body)
 
     async def execute(self, workspace: WorkspaceRow, request: ExecuteRequest) -> ExecuteResponse:
-        """Gate, execute and read back one write, then append its one receipt line."""
+        """Gate the write; if it's allowed but an approval rule matches, park it instead of running it."""
         if request.context is not None:
             created = await self.sessions.create(workspace, SessionCreate(context=request.context))
             session_id = created.session_id
         else:
             session_id = cast(str, request.session_id)
         session = await self._session(workspace, session_id)
-        outcome = await session.writer.run(request.action)
-        line = write_line(outcome, at=self._clock(), workspace=workspace.name, session=session_id)
+        verdict = session.writer.evaluate(request.action)
+        if verdict.allowed:
+            rule = matching_rule(self.settings.approval_rules, request.action)
+            if rule is not None:
+                row, receipt_id = await self.approvals.park(workspace, session_id, request.action, verdict, rule)
+                return ExecuteResponse(
+                    status="needs_approval",
+                    session_id=session_id,
+                    verdict=verdict,
+                    status_code=None,
+                    evidence=[],
+                    receipt_id=receipt_id,
+                    approval_id=row.id,
+                )
+        return await self._run_and_receipt(workspace, session, session_id, request.action)
+
+    async def _run_and_receipt(
+        self,
+        workspace: WorkspaceRow,
+        session: GatewaySession,
+        session_id: str,
+        action: Action,
+        *,
+        approval_id: str | None = None,
+        approval: Mapping[str, object] | None = None,
+    ) -> ExecuteResponse:
+        """Run one write and append its one receipt line, optionally carrying the approval that let it through."""
+        outcome = await session.writer.run(action)
+        line = write_line(outcome, at=self._clock(), workspace=workspace.name, session=session_id, approval=approval)
         row = await anyio.to_thread.run_sync(self.store.append_receipt, workspace.id, session_id, line)
         return ExecuteResponse(
             status=outcome.status,
@@ -127,7 +167,50 @@ class GatewayService:
             status_code=outcome.result.status_code if outcome.result is not None else None,
             evidence=list(outcome.evidence),
             receipt_id=row.id,
+            approval_id=approval_id,
         )
+
+    async def resolve_approval(
+        self, workspace: WorkspaceRow, approval_id: str, body: ApprovalDecision, *, by: str
+    ) -> ExecuteResponse:
+        """Approve, deny, or discover the approval already closed or expired; approving resumes the same write."""
+        try:
+            row = await self.approvals.resolve(workspace, approval_id, decision=body.decision, by=by, note=body.note)
+        except ApprovalNotFound as exc:
+            raise RequestRejected(404, f"no approval {approval_id!r} in this workspace") from exc
+        except ApprovalClosed as exc:
+            raise RequestRejected(
+                409, f"approval {approval_id!r} is already {exc.status}", extra={"status": exc.status}
+            ) from exc
+        if row.status == "denied":
+            return ExecuteResponse(
+                status="denied",
+                session_id=row.session_id,
+                verdict=GateVerdict(action_id=row.action.id, allowed=False, rule=row.rule_name, reason="denied"),
+                status_code=None,
+                evidence=[],
+                receipt_id=None,
+                approval_id=approval_id,
+            )
+        session = await self._session(workspace, row.session_id)
+        return await self._run_and_receipt(
+            workspace,
+            session,
+            row.session_id,
+            row.action,
+            approval_id=approval_id,
+            approval={"id": approval_id, "decision": "approve", "by": by},
+        )
+
+    async def list_approvals(self, workspace: WorkspaceRow, status: str | None) -> list[ApprovalView]:
+        rows = await anyio.to_thread.run_sync(functools.partial(self.store.approvals, workspace.id, status=status))
+        return [approval_view(row) for row in rows]
+
+    async def get_approval(self, workspace: WorkspaceRow, approval_id: str) -> ApprovalView:
+        row = await anyio.to_thread.run_sync(self.store.approval, workspace.id, approval_id)
+        if row is None:
+            raise RequestRejected(404, f"no approval {approval_id!r} in this workspace")
+        return approval_view(row)
 
     async def explain(
         self, workspace: WorkspaceRow, action: Action, *, session_id: str | None, context: ContextInput | None
