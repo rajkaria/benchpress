@@ -1,0 +1,22 @@
+# To use Postgres, run: BENCHPRESS_STORE=postgresql://benchpress:benchpress@postgres:5432/benchpress docker compose --profile postgres up
+
+services:
+  benchpress:
+    image: ghcr.io/rajkaria/benchpress:latest
+    build: .
+    ports: ["8787:8787"]
+    environment:
+      BENCHPRESS_BOOTSTRAP_KEY: ${BENCHPRESS_BOOTSTRAP_KEY:-}
+      BENCHPRESS_STORE: ${BENCHPRESS_STORE:-sqlite:////data/benchpress.db}
+    volumes: ["benchpress-data:/data"]
+  postgres:
+    profiles: ["postgres"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: benchpress
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-benchpress}
+      POSTGRES_DB: benchpress
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+volumes:
+  benchpress-data: {}
+  postgres-data: {}
