@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "benchpress-agent"
-version = "1.0.0a1"
+version = "1.0.0a2"
 description = "The reliability layer for AI agents with write access: policy-first, code-gated, read-back-verified multi-app execution"
 readme = "docs/PYPI.md"
 requires-python = ">=3.11"
@@ -52,6 +52,21 @@ composio = [
 schema = [
     "jsonschema>=4.23",
 ]
+server = [
+    "fastapi>=0.115",
+    "uvicorn>=0.32.0",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "prometheus-client>=0.21",
+    "mcp>=2.2.0",
+]
+postgres = [
+    "psycopg[binary]>=3.2",
+]
+otel = [
+    "opentelemetry-api>=1.30",
+    "opentelemetry-sdk>=1.30",
+]
 
 [dependency-groups]
 dev = [
@@ -74,18 +89,32 @@ dev = [
     "composio>=0.21.1",
     # benchpress.schemas.validate_receipt tests (the optional `schema` extra)
     "jsonschema>=4.23",
+    # benchpress.gateway.store tests (the optional `server` extra)
+    "fastapi>=0.115",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "prometheus-client>=0.21",
+    # benchpress.gateway.store tests against Postgres (the optional `postgres` extra)
+    "psycopg[binary]>=3.2",
+    # gateway span tests (the optional `otel` extra)
+    "opentelemetry-api>=1.30",
+    "opentelemetry-sdk>=1.30",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml", "schemas/*.json"]
+benchpress = ["py.typed", "corpus/*.yaml", "policy_packs/*.yaml", "schemas/*.json", "gateway/store/migrations/script.py.mako", "console_dist/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = ["arga: needs the vendored ArgaBench harness"]
+filterwarnings = [
+    # Starlette's TestClient module names anyio's deprecated `anyio.abc.BlockingPortal` alias when it is imported.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning:starlette.testclient",
+]
 
 [tool.ruff]
 line-length = 120

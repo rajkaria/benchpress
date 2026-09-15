@@ -30,7 +30,8 @@ import json
 import os
 import re
 import time
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections import deque
+from collections.abc import Awaitable, Callable, Mapping, MutableSequence, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -330,6 +331,9 @@ class RealAppGateway:
     Every provider_api attempt — blocked, over-limit, failed or successful — becomes exactly one
     trace record, numbered from 1, with the harness's fingerprints. Credentials never appear in
     a result, a trace record, or `repr()`.
+
+    `trace_limit` keeps only that many of the newest records (a long-lived gateway passes 0); `calls`,
+    the numbering and the `max_calls` cap still count every attempt. The default keeps them all.
     """
 
     def __init__(
@@ -338,6 +342,7 @@ class RealAppGateway:
         *,
         max_calls: int = DEFAULT_MAX_CALLS,
         max_docs_calls: int = DEFAULT_MAX_DOCS_CALLS,
+        trace_limit: int | None = None,
         docs_executor: ToolExecutor | None = None,
         timeout: float = 60.0,
         response_limit_bytes: int = 200_000,
@@ -361,6 +366,8 @@ class RealAppGateway:
                 raise ValueError(f"{label} must be a positive integer")
         if timeout <= 0:
             raise ValueError("timeout must be positive")
+        if trace_limit is not None and trace_limit < 0:
+            raise ValueError("trace_limit must be a non-negative integer or None")
         environment = os.environ if env is None else env
 
         self._configs: dict[str, RealAppConfig] = {}
@@ -387,7 +394,8 @@ class RealAppGateway:
         self._sleep: SleepFn = sleep or _default_sleep
         self._user_agent = user_agent
         self._client = httpx.AsyncClient(timeout=timeout, follow_redirects=False, transport=transport)
-        self._trace: list[dict[str, Any]] = []
+        self._trace: MutableSequence[dict[str, Any]] = [] if trace_limit is None else deque(maxlen=trace_limit)
+        self._call_count = 0
         self._docs_calls = 0
         self._retries = 0
         self._secrets: set[str] = set()
@@ -507,7 +515,7 @@ class RealAppGateway:
 
     @property
     def calls(self) -> int:
-        return len(self._trace)
+        return self._call_count
 
     @property
     def docs_calls(self) -> int:
@@ -609,7 +617,7 @@ class RealAppGateway:
             }
 
         try:
-            if len(self._trace) >= self._max_calls:
+            if self._call_count >= self._max_calls:
                 raise ValueError(f"provider_api call limit of {self._max_calls} has been reached")
             provider_name, config = self._resolve_provider(requested_provider)
             checked_method = _validate_method(method)
@@ -745,9 +753,10 @@ class RealAppGateway:
         action_fingerprint: str | None,
         attempt_fingerprint: str | None,
     ) -> dict[str, Any]:
+        self._call_count += 1
         # Field order and names match ProviderTraceRecord.to_dict() (gateway.py:195-226).
         record: dict[str, Any] = {
-            "sequence": len(self._trace) + 1,
+            "sequence": self._call_count,
             "started_at": started_at,
             "requested_provider": requested_provider,
             "provider": provider,

@@ -196,11 +196,8 @@ class ToolBus:
                 rule=refusal.rule,
                 reason=refusal.reason,
             )
-            self.context.gate_decisions.append(
-                GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict)
-            )
-            self._record_refusal(action, verdict)
-            return ToolResult(ok=False, status_code=None, body=None, error=f"gate:{refusal.rule}"), verdict
+            # `Gate.check` already appended `verdict` to `context.refusals` before raising.
+            return self.refuse(action, verdict, already_recorded=True)
         self.context.gate_decisions.append(GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict))
 
         result = await self._call(
@@ -218,6 +215,22 @@ class ToolBus:
             self.gate.record_success(fingerprint(action))
         return result, verdict
 
+    def refuse(
+        self, action: Action, verdict: GateVerdict, *, already_recorded: bool = False
+    ) -> tuple[ToolResult, GateVerdict]:
+        """Record a refusal decided outside `Gate.check` exactly as a gate refusal is recorded, and return it.
+
+        `already_recorded` is set by `perform`'s own `except GateRefusal` branch, where `Gate.check` has already
+        appended `verdict` to `context.refusals`. Every other caller (e.g. `VerifiedWrite`'s store-refusal path)
+        leaves it `False`, so the refusal is appended here — including a byte-identical repeat of an earlier
+        refusal, which must still count as its own occurrence rather than being silently dropped.
+        """
+        if not already_recorded:
+            self.context.refusals.append(verdict)
+        self.context.gate_decisions.append(GateDecision(at=utc_now(), phase=self.phase, action=action, verdict=verdict))
+        self._record_refusal(action, verdict)
+        return ToolResult(ok=False, status_code=None, body=None, error=f"gate:{verdict.rule}"), verdict
+
     # -- the one place a provider call actually happens --------------------------------
 
     async def _call(
@@ -233,7 +246,7 @@ class ToolBus:
         gate_verdict: GateVerdict | None,
         headers: dict[str, str] | None = None,
     ) -> ToolResult:
-        blocked = _statically_blocked(path)
+        blocked = statically_blocked(path)
         if blocked:
             # Defense in depth: a blocked attempt is a hard unsafe at the gateway, so it
             # must never leave this process.
@@ -268,7 +281,7 @@ class ToolBus:
             self._record_harness_event(PROVIDER_API, payload, {"error": {"type": type(exc).__name__}}, True, started)
             return result
 
-        result = _interpret(raw)
+        result = interpret_result(raw)
         self._append_ledger(provider, method, path, _digest(payload), result, gate_verdict, action_id)
         self._record_event("api", payload, raw)
         self._record_harness_event(PROVIDER_API, payload, raw, not result.ok, started)
@@ -360,6 +373,11 @@ class ToolBus:
             }
         )
 
+    def trim_history(self, keep: int) -> None:
+        """Keep only the newest `keep` events and harness events (harness call indices then restart from `keep`)."""
+        del self._events[: max(0, len(self._events) - keep)]
+        del self._harness_events[: max(0, len(self._harness_events) - keep)]
+
     @property
     def events(self) -> tuple[dict[str, Any], ...]:
         return tuple(self._events)
@@ -382,7 +400,8 @@ class ToolBus:
 # --------------------------------------------------------------------------------------
 
 
-def _statically_blocked(path: str) -> str | None:
+def statically_blocked(path: str) -> str | None:
+    """The block-list entry a path hits (a control-plane root or prefix, or `absolute_url`), or None."""
     candidate = path if path.startswith("/") else f"/{path}"
     lowered = candidate.split("?", 1)[0].casefold()
     if "://" in path:
@@ -395,8 +414,8 @@ def _statically_blocked(path: str) -> str | None:
     return None
 
 
-def _interpret(raw: object) -> ToolResult:
-    """The gateway returns a mapping describing the upstream response."""
+def interpret_result(raw: object) -> ToolResult:
+    """An executor's raw response as a `ToolResult`: a mapping describes the response; anything else is a 200 body."""
     if not isinstance(raw, Mapping):
         return ToolResult(ok=True, status_code=200, body=raw)
     payload = dict(cast(Mapping[str, object], raw))

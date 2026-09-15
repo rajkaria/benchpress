@@ -19,16 +19,10 @@ from typing import Any, Literal
 
 from benchpress.context import Action, Context, GateVerdict
 from benchpress.gate import Gate, PolicyRuleSet
+from benchpress.loop import run_phases
 from benchpress.model import ModelClient, ModelConfig, UsageTotals
 from benchpress.phases.common import Ablations, PhaseDeps, resolve_playbooks
 from benchpress.phases.deliver import deliver, final_json
-from benchpress.phases.dod import define_done
-from benchpress.phases.execute import execute
-from benchpress.phases.orient import orient
-from benchpress.phases.plan import plan
-from benchpress.phases.policy import policy_sweep
-from benchpress.phases.resolve import resolve
-from benchpress.phases.verify import repair, verify
 from benchpress.playbooks import Playbook
 from benchpress.prompts import system_text
 from benchpress.report import receipt_payload, write_receipt
@@ -132,14 +126,7 @@ async def run_trial(
     error: str | None = None
     try:
         async with asyncio.timeout(PHASES_TIMEOUT_S):
-            await orient(deps)
-            await policy_sweep(deps)
-            await resolve(deps)
-            await define_done(deps)
-            await plan(deps)
-            await execute(deps)
-            await verify(deps)
-            await repair(deps)
+            await run_phases(deps)
     except TimeoutError:
         error = "timeout"
         ctx.notes.append("controller: phase budget exhausted (timeout); delivering with the evidence so far")

@@ -11,7 +11,7 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from benchpress.api import DEFAULT_SYSTEM_PROMPT
 from benchpress.controller import run_trial
@@ -21,6 +21,12 @@ from benchpress.playbooks import Playbook
 from benchpress.receipt_html import write_receipt_html
 from benchpress.rehearse import ModelFactory, Rehearsal, StageFactory, rehearse, replay
 from benchpress.report import receipt_summary
+from benchpress.tools import ToolExecutor
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+    from benchpress.gateway.config import Settings
 
 
 class GatewayLike(Protocol):
@@ -148,8 +154,7 @@ async def _replay(args: argparse.Namespace) -> int:
     return 0 if receipt.status == "completed" else 1
 
 
-def main(argv: list[str] | None = None) -> int:
-    _load_env()
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="benchpress", description="the reliability layer for agents with write access"
     )
@@ -184,9 +189,15 @@ def main(argv: list[str] | None = None) -> int:
     export.add_argument("paths", nargs="+", metavar="PATH", help="receipt files or run directories (searched)")
     export.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     export.add_argument("--out", metavar="FILE", help="write here instead of stdout")
-    guard = sub.add_parser("mcp-guard", help="MCP stdio proxy: writes are refused unless a policy rule allows them")
+    guard = sub.add_parser("mcp-guard", help="MCP proxy: writes are refused unless a policy rule allows them")
     guard.add_argument("--policy", required=True, help="guard policy JSON (see docs/MCP.md)")
     guard.add_argument("--receipts", help="JSONL receipt path; defaults to mcp-guard-receipts.jsonl next to the policy")
+    guard.add_argument(
+        "--http", metavar="HOST:PORT", help="serve streamable HTTP at http://HOST:PORT/mcp instead of stdio"
+    )
+    guard.add_argument(
+        "--allow-remote", action="store_true", help="allow a non-loopback --http host (the guard has no auth)"
+    )
     guard.add_argument("upstream", nargs=argparse.REMAINDER, help="-- <upstream MCP server command...>")
     rehearsal = sub.add_parser("rehearse", help="run a request n times on fresh stages and check convergence")
     rehearsal.add_argument("--prompt")
@@ -219,6 +230,39 @@ def main(argv: list[str] | None = None) -> int:
     policy_sub.add_parser("list", help="the bundled policy packs")
     policy_show = policy_sub.add_parser("show", help="the rules of one policy pack")
     policy_show.add_argument("name", help="bundled pack name, or path to a pack YAML file")
+    db = sub.add_parser("db", help="gateway store migrations (needs the server extra)")
+    db_sub = db.add_subparsers(dest="db_command", required=True)
+    for name, text in (("upgrade", "apply migrations up to head"), ("current", "print the applied revision")):
+        cmd = db_sub.add_parser(name, help=text)
+        cmd.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    workspace = sub.add_parser("workspace", help="manage gateway workspaces and API keys (needs the server extra)")
+    workspace_sub = workspace.add_subparsers(dest="workspace_command", required=True)
+    ws_create = workspace_sub.add_parser("create", help="create a workspace and its first API key")
+    ws_create.add_argument("name")
+    ws_create.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    ws_key = workspace_sub.add_parser("key", help="create a new API key for an existing workspace")
+    ws_key.add_argument("name")
+    ws_key.add_argument("--name", dest="key_name", default="key", help="name for the new key (default: key)")
+    ws_key.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    serve = sub.add_parser("serve", help="run the benchpress gateway (needs the server extra)")
+    serve.add_argument("--config", metavar="PATH", help="benchpress.toml (default: $BENCHPRESS_CONFIG, if set)")
+    serve.add_argument("--host")
+    serve.add_argument("--port", type=int)
+    serve.add_argument("--store")
+    serve.add_argument("--policy", metavar="DIR", help="policy pack directory")
+    serve.add_argument("--auth", choices=("api_key", "none"))
+    serve.add_argument("--executor", metavar="module:callable", help="called with no arguments for a ToolExecutor")
+    serve.add_argument("--no-console", action="store_true", help="do not serve the console at /")
+    ui = sub.add_parser("ui", help="a read-only local console over on-disk receipts (needs the server extra)")
+    ui.add_argument("--dir", default=".", help="receipts directory to browse (default: the current directory)")
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8788)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    _load_env()
+    parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "mcp-guard":
         try:
@@ -226,7 +270,44 @@ def main(argv: list[str] | None = None) -> int:
         except ImportError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        return mcp_guard.main(args.policy, args.upstream, args.receipts)
+        if args.http is None:  # stdio: the flags below only apply to the HTTP mode
+            return mcp_guard.main(args.policy, args.upstream, args.receipts)
+        return mcp_guard.main(args.policy, args.upstream, args.receipts, http=args.http, allow_remote=args.allow_remote)
+    if args.command == "db":
+        try:
+            from benchpress.gateway import store as gateway_store  # the server extra is optional
+        except ImportError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        if args.db_command == "upgrade":
+            gateway_store.upgrade(args.store)
+            print(f"benchpress db: at revision {gateway_store.current_revision(args.store)}")
+        else:
+            revision = gateway_store.current_revision(args.store)
+            print(revision if revision is not None else "none")
+        return 0
+    if args.command == "workspace":
+        try:
+            from benchpress.gateway import store as gateway_store
+        except ImportError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        ws_store = gateway_store.Store.open(args.store)
+        if args.workspace_command == "create":
+            if ws_store.workspace_by_name(args.name) is not None:
+                print(f"workspace {args.name!r} already exists", file=sys.stderr)
+                return 1
+            created = ws_store.create_workspace(args.name)
+            _row, plaintext = ws_store.create_api_key(created.id, "default")
+            print(f"workspace {args.name} created; API key (shown once): {plaintext}")
+            return 0
+        found = ws_store.workspace_by_name(args.name)
+        if found is None:
+            print(f"workspace {args.name!r} not found", file=sys.stderr)
+            return 1
+        _row, plaintext = ws_store.create_api_key(found.id, args.key_name)
+        print(f"workspace {args.name}: new API key {args.key_name!r} (shown once): {plaintext}")
+        return 0
     if args.command == "policy":
         from benchpress.packs import list_command, show_command
 
@@ -262,7 +343,96 @@ def main(argv: list[str] | None = None) -> int:
             out = Path(args.html) if args.html else path.with_suffix(".html")
             print(f"\nreceipt page: {write_receipt_html(path, out)}")
         return 0
+    if args.command == "serve":
+        return _serve(args)
+    if args.command == "ui":
+        return _ui(args)
     return 1
+
+
+def _serve_overrides(args: argparse.Namespace) -> dict[str, object]:
+    """`serve`'s CLI flags as `load_settings` overrides: only a flag the caller actually passed appears here,
+    so an unset flag leaves `benchpress.toml`/the environment/the defaults in charge of that setting."""
+    overrides: dict[str, object] = {}
+    if args.host is not None:
+        overrides["host"] = args.host
+    if args.port is not None:
+        overrides["port"] = args.port
+    if args.store is not None:
+        overrides["store"] = args.store
+    if args.policy is not None:
+        overrides["policy_dir"] = args.policy
+    if args.auth is not None:
+        overrides["auth"] = args.auth
+    if args.no_console:
+        overrides["console"] = False
+    return overrides
+
+
+def build_server(args: argparse.Namespace, env: Mapping[str, str]) -> tuple[FastAPI, Settings]:
+    """Build the gateway from `benchpress.toml` + `env` + `args`' overrides, bootstrapping its first
+    workspace and API key. Prints the bootstrap key to stderr when one was generated (never on a later
+    call against the same store, since by then a workspace already exists).
+
+    Raises `ImportError` when the `server` extra isn't installed, and `ConfigError` for settings that
+    don't add up (an unresolvable `env:` reference, `auth = "none"` off loopback, a bad upstream, ...);
+    the caller (`_serve`) turns both into a stderr message and exit code 2, never a traceback.
+    """
+    from benchpress.gateway.app import create_app
+    from benchpress.gateway.auth import ensure_bootstrap
+    from benchpress.gateway.config import load_settings
+    from benchpress.gateway.store import Store
+
+    config_path = Path(args.config) if args.config else None
+    settings = load_settings(config_path, env=env, overrides=_serve_overrides(args))
+    store = Store.open(settings.store)
+    executor: ToolExecutor | None = None
+    if args.executor:
+        executor = cast(ToolExecutor, _import_callable(args.executor, "--executor")())
+    bootstrap_key = ensure_bootstrap(store, env)
+    if bootstrap_key is not None:
+        print(f"benchpress serve: bootstrapped workspace 'default'; API key (shown once): {bootstrap_key}",
+              file=sys.stderr)
+    app = create_app(settings, store=store, executor=executor)
+    return app, settings
+
+
+def _serve(args: argparse.Namespace) -> int:
+    from benchpress.gateway.config import ConfigError
+
+    try:
+        app, settings = build_server(args, os.environ)
+    except ImportError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except ConfigError as exc:
+        print(f"benchpress serve: {exc}", file=sys.stderr)
+        return 2
+    print(f"benchpress gateway: http://{settings.host}:{settings.port} (console /, API /v1, MCP /mcp/)",
+          file=sys.stderr)
+    import uvicorn
+
+    uvicorn.run(app, host=settings.host, port=settings.port)
+    return 0
+
+
+def _ui(args: argparse.Namespace) -> int:
+    from benchpress.gateway.config import is_loopback
+
+    if not is_loopback(args.host):
+        print("benchpress ui serves local receipts without auth, so it binds to loopback only", file=sys.stderr)
+        return 2
+    try:
+        from benchpress.gateway.app import create_ui_app
+    except ImportError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    app = create_ui_app(Path(args.dir))
+    print(f"benchpress ui: http://{args.host}:{args.port}", file=sys.stderr)
+    import uvicorn
+
+    uvicorn.run(app, host=args.host, port=args.port)
+    return 0
 
 
 if __name__ == "__main__":

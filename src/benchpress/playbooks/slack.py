@@ -309,6 +309,7 @@ class SlackPlaybook(BasePlaybook):
                 path="/api/conversations.replies",
                 query={"channel": channel, "ts": CREATED_TS_PLACEHOLDER, "limit": "1"},
                 field_path="messages.0.text",
+                unobserved=("channel",),
             ),
             rationale=f"post a message to {where}",
         )

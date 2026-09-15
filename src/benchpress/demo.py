@@ -384,6 +384,7 @@ class SlackBook(FakeBook):
                 path="/api/conversations.replies",
                 query={"channel": channel_id, "ts": "{created_ts}"},
                 field_path="messages.0.text",
+                unobserved=("channel",),
             ),
         )
 
@@ -437,7 +438,10 @@ class GmailBook(FakeBook):
             satisfies=tuple(satisfies),
             target_refs=tuple(target_refs),
             readback=ReadBack(
-                path="/gmail/v1/users/me/drafts/{created_id}", query={"format": "full"}, field_path="message.snippet"
+                path="/gmail/v1/users/me/drafts/{created_id}",
+                query={"format": "full"},
+                field_path="message.snippet",
+                unobserved=("raw",),
             ),
         )
 

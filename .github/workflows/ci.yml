@@ -59,6 +59,55 @@ jobs:
             echo "unexpected file in the npm tarball"; exit 1
           fi
 
+  gateway-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_USER: benchpress, POSTGRES_PASSWORD: benchpress, POSTGRES_DB: benchpress}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U benchpress" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: {python-version: "3.12"}
+      - run: uv sync --group dev
+      - run: uv run pytest -q tests/gateway
+        env:
+          BENCHPRESS_TEST_POSTGRES_URL: postgresql://benchpress:benchpress@localhost:5432/benchpress
+
+  console:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: packages/console}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm, cache-dependency-path: packages/console/package-lock.json}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Committed console build matches the source
+        run: git diff --exit-code src/benchpress/console_dist
+        working-directory: .
+
+  image-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t benchpress:ci .
+      - name: Run the image and hit /healthz, the API and the console
+        env: {KEY: bp_ci_smoke_key_0123456789abcdefghij}
+        run: |
+          docker run -d --name bp -p 8787:8787 -e BENCHPRESS_BOOTSTRAP_KEY=$KEY benchpress:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8787/healthz && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8787/healthz | grep '"status":"ok"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8787/v1/receipts)" = "401"
+          curl -fsS -H "Authorization: Bearer $KEY" http://127.0.0.1:8787/v1/receipts | grep receipts
+          curl -fsS http://127.0.0.1:8787/ | grep 'id="root"'
+          docker logs bp
+
   package:
     # The published artifact, not the repo: build the wheel, install it into a clean venv, run what users run.
     runs-on: ubuntu-latest
@@ -76,10 +125,12 @@ jobs:
       - name: Install the wheel into a clean venv and run the user-facing commands
         run: |
           uv venv /tmp/pkg --python ${{ matrix.python-version }}
-          VIRTUAL_ENV=/tmp/pkg uv pip install "$(ls dist/*.whl)[mcp,openai-agents,schema]"
+          VIRTUAL_ENV=/tmp/pkg uv pip install "$(ls dist/*.whl)[mcp,openai-agents,schema,server]"
           cd /tmp
           /tmp/pkg/bin/python -c "import benchpress; print(benchpress.__version__); from benchpress.shims.mcp import mcp_executor; from benchpress.shims.openai_agents import guard_tools"
           /tmp/pkg/bin/benchpress demo --trace-dir /tmp/demo
           /tmp/pkg/bin/python -c "import json; from benchpress.schemas import validate_receipt; validate_receipt(json.load(open('/tmp/demo/receipt.json'))); print('receipt.json validates against receipt v1')"
           /tmp/pkg/bin/benchpress gate check
           /tmp/pkg/bin/benchpress policy list
+          /tmp/pkg/bin/python -c "import benchpress, pathlib; p = pathlib.Path(benchpress.__file__).parent; assert (p / 'console_dist' / 'index.html').is_file(); assert (p / 'gateway' / 'store' / 'migrations' / 'script.py.mako').is_file(); print('console and migrations packaged')"
+          /tmp/pkg/bin/benchpress db upgrade --store sqlite:////tmp/pkg.db

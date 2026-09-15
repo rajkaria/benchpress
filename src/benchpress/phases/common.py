@@ -49,6 +49,7 @@ class PhaseDeps:
     bus: ToolBus
     ablations: Ablations = field(default_factory=Ablations)
     playbooks: dict[str, Playbook] = field(default_factory=dict[str, Playbook])
+    completed: list[str] = field(default_factory=list[str])
 
     def playbook(self, provider: str) -> Playbook | None:
         return self.playbooks.get(provider)

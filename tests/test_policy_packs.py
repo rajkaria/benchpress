@@ -211,3 +211,10 @@ async def test_run_trial_applies_policy_packs(tmp_path: Path) -> None:
     assert not crm_writes, crm_writes
     receipt = json.loads((tmp_path / "receipt.json").read_text())
     assert any(item["rule"] == "pack:local.no-crm" for item in receipt["refusals"])
+
+
+def test_policy_pack_from_yaml_matches_load_policy_pack() -> None:
+    from benchpress.packs import POLICY_PACKS_DIR, load_policy_pack, policy_pack_from_yaml
+
+    path = POLICY_PACKS_DIR / "billing.yaml"
+    assert policy_pack_from_yaml(path.read_text(encoding="utf-8"), source=str(path)) == load_policy_pack("billing")

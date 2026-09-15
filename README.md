@@ -45,12 +45,13 @@
 > [§11](#11-how-we-know-it-works). **The loop is the problem. Benchpress is the loop.**
 
 Benchpress is the open-source execution layer for AI agents that act on real systems. It is being built to
-work three ways from the same code. The developer door ships today; the team and enterprise doors are planned:
+work three ways from the same code. The developer and team doors ship today, both pre-release; the enterprise door
+is planned:
 
 | You are | Install | You get |
 |---|---|---|
-| **One developer** *(available)* | `pip install benchpress-agent` | in-process, no server, no account: the code gate and read-back around HTTP-shaped writes (`VerifiedWrite`, in the 1.0.0a1 pre-release), receipts from the full loop (`benchpress.wrap`), and policy guards for MCP, OpenAI Agents SDK, Composio and Vercel AI SDK tools |
-| **A team** *(planned, Sprint 1; not released)* | `docker run ghcr.io/rajkaria/benchpress` | a gateway (HTTP + MCP) every agent points at, an approval inbox, searchable receipts |
+| **One developer** *(available)* | `pip install benchpress-agent` (Python) · `npm i benchpress-guard` (TypeScript) | in-process, no server, no account: the code gate and read-back around HTTP-shaped writes (`VerifiedWrite`, in the 1.0.0a1 pre-release), receipts from the full loop (`benchpress.wrap`), and policy guards for MCP, OpenAI Agents SDK and Composio tools; the npm package guards Vercel AI SDK tools |
+| **A team** *(pre-release, 1.0.0a2)* | `docker run ghcr.io/rajkaria/benchpress` or `benchpress serve` | a gateway (HTTP + MCP) every agent points at, an approval queue, searchable receipts and a console; see [docs/GATEWAY.md](docs/GATEWAY.md) |
 | **An enterprise** *(planned, Sprint 6; not released)* | `helm install benchpress …` | SSO, RBAC, hash-chained receipts, SIEM export, OPA/Cedar policies, compliance mapping |
 
 Everything is Apache-2.0. The roadmap is public: [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -605,10 +606,10 @@ result = await agent.run("Acme asked for renewal notices to go to ap@acme.exampl
 print(result.status, result.context.refusals)   # status from read-back evidence; every refused write with its rule
 ```
 
-**Gate one write, no controller, no model** (the primitive the planned gateway and adapters will compose):
+**Gate one write, no controller, no model** (the primitive the gateway and adapters compose):
 
 ```bash
-pip install --pre benchpress-agent   # VerifiedWrite is new in the 1.0.0a1 pre-release
+pip install --pre benchpress-agent   # VerifiedWrite has shipped since the 1.0.0a1 pre-release
 ```
 
 ```python
@@ -643,7 +644,7 @@ benchpress gate check cases/                                     # ...and stay p
 benchpress receipts export runs/demo --format csv --out audit.csv   # one row per write attempt
 ```
 
-Docs: [PyPI page](https://pypi.org/project/benchpress-agent/) · [MCP](docs/MCP.md) ·
+Docs: [PyPI page](https://pypi.org/project/benchpress-agent/) · [Gateway](docs/GATEWAY.md) · [MCP](docs/MCP.md) ·
 [OpenAI Agents SDK](docs/OPENAI-AGENTS.md) · [Composio](docs/COMPOSIO.md) ·
 [Policy packs](docs/POLICY-PACKS.md) · [Gate corpus](docs/GATE-CORPUS.md) · [Rehearse](docs/REHEARSE.md) ·
 [GitHub playbook](docs/PLAYBOOK-GITHUB.md) · [Audit export](docs/AUDIT-EXPORT.md) ·
@@ -855,6 +856,7 @@ release tagged in git with notes in [CHANGELOG.md](CHANGELOG.md). Pre-releases a
 | 0.7.0 | `benchpress regress` (runs become corpus cases) and `benchpress receipts export` (local audit log) |
 | npm `benchpress-guard` 0.1.0 | The same guard for Vercel AI SDK tools, byte-compatible policy and receipts |
 | 1.0.0a1 (pre-release) | `VerifiedWrite` (gate → execute → read-back → evidence, no controller needed), `ToolSpec` metadata contract, receipt schema v1 shipped as package data, Python 3.11 floor, public roadmap and community files |
+| 1.0.0a2 (pre-release) | The gateway: `benchpress serve` and `docker run` expose `VerifiedWrite` over HTTP and MCP, with sessions, an approval queue, a receipts console, SQLite/Postgres storage and metrics; a 100-call fixture proves library, HTTP and MCP produce byte-identical receipt lines; see [docs/GATEWAY.md](docs/GATEWAY.md) |
 
 **Still roadmap.** The full plan, with dated goals and checkboxes updated every sprint, lives in
 [docs/ROADMAP.md](docs/ROADMAP.md). One line per sprint:

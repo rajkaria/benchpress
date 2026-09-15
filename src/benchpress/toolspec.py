@@ -43,12 +43,10 @@ class ToolSpec(BaseModel):
 
 
 def _segment_name(name: str) -> list[str]:
-    """Split a property name into segments on `_`, `-`, and camelCase boundaries."""
-    # Insert underscore before uppercase letters (camelCase -> camel_Case)
-    with_separators = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    # Split on `_` and `-`, filter empty strings, and lowercase
-    segments = [seg.lower() for seg in re.split(r"[_-]+", with_separators) if seg]
-    return segments
+    """Split a property name into lowercase segments on `_`, `-`, camelCase and all-caps runs (`URLKey`)."""
+    with_separators = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
+    with_separators = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", with_separators)
+    return [segment.lower() for segment in re.split(r"[_-]+", with_separators) if segment]
 
 
 def _is_id_like_field(name: str) -> bool:

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rajkaria/benchpress/main/src/benchpress/schemas/write.v1.json",
+  "title": "Benchpress write receipt line v1",
+  "description": "One canonical JSON line per write or approval event, protocol benchpress-write/1. The unit of byte parity between library mode, the HTTP gateway and the MCP gateway.",
+  "type": "object",
+  "required": ["protocol", "at", "event", "workspace", "session", "action", "fingerprint", "verdict", "status",
+               "status_code", "evidence", "approval"],
+  "additionalProperties": false,
+  "properties": {
+    "protocol": {"const": "benchpress-write/1"},
+    "at": {"type": "string"},
+    "event": {"enum": ["write", "approval_requested", "approval_resolved"]},
+    "workspace": {"type": "string"},
+    "session": {"type": "string"},
+    "action": {
+      "type": "object",
+      "required": ["id", "kind", "provider", "method", "path"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string"},
+        "provider": {"type": "string"},
+        "method": {"enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]},
+        "path": {"type": "string"},
+        "query": {"type": "object"},
+        "body_encoding": {"enum": ["json", "form"]},
+        "headers": {"type": "object"},
+        "satisfies": {"type": "array", "items": {"type": "string"}},
+        "target_refs": {"type": "array", "items": {"type": "string"}},
+        "fields": {"type": "array", "items": {"type": "string"}},
+        "rationale": {"type": "string"}
+      }
+    },
+    "fingerprint": {"type": "string"},
+    "verdict": {
+      "type": "object",
+      "required": ["action_id", "allowed"],
+      "properties": {
+        "action_id": {"type": "string"},
+        "allowed": {"type": "boolean"},
+        "rule": {"type": "string"},
+        "reason": {"type": "string"}
+      }
+    },
+    "status": {"enum": ["refused", "failed", "unverified", "verified", "mismatch", null]},
+    "status_code": {"type": ["integer", "null"]},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check", "provider", "resource", "expected", "observed", "match"],
+        "properties": {
+          "check": {"type": "string"},
+          "provider": {"type": "string"},
+          "resource": {"type": "string"},
+          "expected": {"type": "string"},
+          "observed": {"type": "string"},
+          "match": {"type": "boolean"},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "approval": {"type": ["object", "null"]}
+  }
+}
