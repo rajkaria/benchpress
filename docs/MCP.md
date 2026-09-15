@@ -4,8 +4,12 @@ Two ways to put Benchpress between an agent and tools served over the Model Cont
 
 1. **`benchpress.shims.mcp.mcp_executor`**: MCP sessions become a Benchpress `ToolExecutor`, so the
    tool bus, the mutation gate and the receipts of the Benchpress loop govern MCP tools.
-2. **`benchpress mcp-guard`**: a stdio MCP proxy for any MCP client (Claude Desktop, Cursor, your own
-   agent). It re-exposes an upstream server's tools and refuses writes in code unless a policy allows them.
+2. **`benchpress mcp-guard`**: an MCP proxy for any MCP client (Claude Desktop, Cursor, your own
+   agent), over stdio or streamable HTTP. It re-exposes an upstream server's tools and refuses writes in
+   code unless a policy allows them.
+
+The gateway (`benchpress serve`) is also an MCP server in its own right, with verified writes as tools:
+see [section 3](#3-pointing-an-mcp-client-at-the-gateway).
 
 ## Install
 
@@ -132,6 +136,80 @@ Wrap the server command you already have. Claude Desktop (`claude_desktop_config
 
 Use absolute paths: desktop clients start servers from an unpredictable working directory.
 
+### Guard over streamable HTTP
+
+```bash
+benchpress mcp-guard --policy guard.json --http 127.0.0.1:8788 -- <upstream MCP server command...>
+```
+
+The upstream still runs as a stdio subprocess under the same policy and receipts, but clients connect to
+`http://127.0.0.1:8788/mcp` over streamable HTTP instead of spawning the guard. Use it for a client that
+only speaks HTTP, or to put several local clients behind one guard. They then share its `max_calls`
+counters, which count per guard process.
+
+- **The guard has no auth.** `--http` expects a loopback host (`127.0.0.1`, `localhost`, `[::1]`) and a
+  port from 1 to 65535. Any other host exits 2 with
+  `the guard has no auth; bind to loopback or pass --allow-remote`. With `--allow-remote` the guard serves
+  anyway and prints a warning to stderr, because anyone who can reach the port can call every tool the
+  policy allows. Put an authenticating proxy in front of a remote guard.
+- **Host checks.** On a loopback bind the guard keeps the MCP SDK's DNS-rebinding protection. The `Host`
+  header must be `127.0.0.1:<port>`, `localhost:<port>`, `[::1]:<port>` or the bound host, and a browser
+  `Origin`, when sent, must be `http://` plus one of those. Anything else gets 421 (Host) or 403 (Origin).
+  A remote bind checks neither header.
+
+## 3. Pointing an MCP client at the gateway
+
+`benchpress serve` serves MCP over streamable HTTP at `/mcp/`, with the trailing slash. The tools call the
+same service as the HTTP API, so an MCP write is gated, executed, read back, receipted and counted in
+`/metrics` exactly like `POST /v1/execute`, and its receipt appears in `GET /v1/receipts`.
+
+```bash
+claude mcp add --transport http benchpress http://127.0.0.1:8787/mcp/ --header "Authorization: Bearer bp_…"
+```
+
+Any streamable-HTTP client works the same way: the URL `http://HOST:PORT/mcp/` and an
+`Authorization: Bearer <API key>` header, using a key from `benchpress workspace create`/`key` or the
+bootstrap key `benchpress serve` prints. With the Python SDK, headers go on the HTTP client:
+
+```python
+import httpx2
+from mcp import Client
+from mcp.client.streamable_http import streamable_http_client
+
+async with (
+    httpx2.AsyncClient(headers={"Authorization": "Bearer bp_…"}) as http,
+    Client(streamable_http_client("http://127.0.0.1:8787/mcp/", http_client=http)) as gateway,
+):
+    result = await gateway.call_tool("verified_write", {"action": action, "context": {"user_prompt": prompt}})
+```
+
+**Auth** follows the HTTP API's rules and uses the same key check. Under `auth = "api_key"` (the default),
+every tool call needs a valid key and draws on that key's `requests_per_minute`, the same budget its HTTP
+requests use. Under `auth = "none"` (loopback only), every call acts as the `default` workspace. A missing,
+unknown or rate-limited key is a tool error (`a valid API key is required`, `rate limit exceeded`).
+Connecting and listing tools need no key.
+
+| Tool | Arguments | Returns |
+|---|---|---|
+| `verified_write` | `action`, plus exactly one of `session_id` or `context` | the `POST /v1/execute` body: `status` (`verified`, `mismatch`, `unverified`, `failed`, `refused`, `needs_approval`), `session_id`, `verdict`, `status_code`, `evidence`, `receipt_id`, `approval_id` |
+| `read` | `provider`, `path`, `query` (optional) | `{ok, status_code, body, error}` from one provider GET. Reads are not gated, but a control-plane path is refused. |
+| `explain_refusal` | same as `verified_write` | `{allowed, rule, reason, help}`. It never executes, claims or receipts anything, and an inline `context` creates no session. |
+
+An inline `context` on `verified_write` creates a one-shot session, exactly as it does over HTTP.
+
+**A refusal is data, not an error.** A refused write returns `status: "refused"`, with the rule and reason in
+`verdict`. Tool errors (`isError: true`) are for calls that cannot be judged: a refused key, invalid input,
+an unknown session or a control-plane read. The error text is the message. For invalid input it names
+each field and never echoes the rejected value, since an action's headers might carry a credential.
+
+`help` is one plain sentence per gate rule (`benchpress.gateway.mcp_server.RULE_HELP`). Every policy pack
+rule (`pack:<pack>.<rule>`) gets the generic `policy_pack` sentence, and its `reason` names the pack rule.
+
+**Host checks.** When the gateway's `host` is `127.0.0.1`, `localhost` or `::1`, the MCP endpoint keeps the
+MCP SDK's DNS-rebinding protection. The `Host` header must be `127.0.0.1:<port>`, `localhost:<port>` or
+`[::1]:<port>`, and a browser `Origin`, when sent, must be `http://` plus one of those. On any other host
+neither header is checked.
+
 ## Limits
 
 - **Annotations are hints.** An upstream that marks a writing tool `readOnlyHint: true` is treated
@@ -147,4 +225,5 @@ Use absolute paths: desktop clients start servers from an unpredictable working 
 - Argument constraints see top-level arguments only.
 - Tools only: upstream resources and prompts are not proxied. `tools/list_changed` notifications are
   not forwarded, but every `tools/list` re-reads the upstream.
-- Upstream over stdio only (the transport desktop clients use).
+- The guard's upstream runs over stdio only (the transport desktop clients use). Clients can reach the
+  guard over stdio or streamable HTTP.

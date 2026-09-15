@@ -1,8 +1,9 @@
 """`create_app`: the Benchpress gateway as a FastAPI application.
 
 Each route (in `benchpress.gateway.routes`) authenticates through a `benchpress.gateway.deps` dependency, calls
-`GatewayService` (or a `ReceiptSource`) and returns its model; the behaviour lives in the service. The body cap
-is a pure ASGI middleware, so it holds whatever a route reads and however it reads it.
+`GatewayService` (or a `ReceiptSource`) and returns its model; the behaviour lives in the service. The MCP tools
+(`benchpress.gateway.mcp_server`) are mounted at `/mcp/` over the same service. The body cap is a pure ASGI
+middleware, so it holds whatever a route reads and however it reads it.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import httpx
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.datastructures import Headers
+from starlette.routing import Match, Mount
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from benchpress import __version__
@@ -28,8 +30,9 @@ from benchpress.gateway.approvals import ApprovalQueue
 from benchpress.gateway.auth import RateLimiter
 from benchpress.gateway.config import Settings
 from benchpress.gateway.console import CONSOLE_DIST, mount_console
-from benchpress.gateway.deps import authenticate, current_workspace
+from benchpress.gateway.deps import authenticate, current_workspace, header_authenticator
 from benchpress.gateway.executors import executor_from_settings
+from benchpress.gateway.mcp_server import build_mcp_server
 from benchpress.gateway.metrics import GatewayMetrics, create_metrics
 from benchpress.gateway.receipt_sources import DiskReceiptSource, ReceiptSource, StoreReceiptSource
 from benchpress.gateway.routes import router
@@ -138,6 +141,17 @@ class HTTPMetrics:
             route_path = route.path if route is not None else "unmatched"
             self.metrics.http_requests.labels(route=route_path, method=scope["method"], code=str(status_code)).inc()
             self.metrics.http_seconds.labels(route=route_path).observe(time.perf_counter() - started)
+
+
+class _RoutedMount(Mount):
+    """A `Mount` that records itself as `scope["route"]`, as FastAPI's own routes do, so `HTTPMetrics` labels every
+    request the mounted app serves with the mount path (`/mcp`) rather than `"unmatched"`."""
+
+    def matches(self, scope: Scope) -> tuple[Match, Scope]:
+        match, child_scope = super().matches(scope)
+        if match is Match.FULL:
+            child_scope["route"] = self
+        return match, child_scope
 
 
 # ---- exception mapping ------------------------------------------------------------------------
@@ -317,15 +331,27 @@ def create_app(
         directory_packs=directory_packs,
     )
 
+    # One limiter for every surface: the HTTP routes read it from `app.state.limiter`, and the MCP tools'
+    # authenticator holds the same instance, so a key's rate budget is shared between them (Ruling R19).
+    limiter = RateLimiter(settings.requests_per_minute)
+    # The MCP tools, served over streamable HTTP at the SDK path "/" of the `/mcp` mount (clients use `/mcp/`).
+    # `host` keeps the SDK's DNS-rebinding protection on for a loopback bind: the Host header must then be
+    # `127.0.0.1:*`, `localhost:*` or `[::1]:*`. On any other host the SDK checks no Host header.
+    mcp_app = build_mcp_server(service, header_authenticator(service, limiter)).streamable_http_app(
+        streamable_http_path="/", host=settings.host
+    )
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+        # A mounted app's lifespan never runs on its own, so the MCP app's (which runs its session manager's task
+        # group) is entered here, before the sweeper's task group and exited after it.
         # The sweeper's own cancel scope covers this host task too, so cancelling it here (to stop the sweep
-        # before shutdown) must happen *inside* the `async with`, and every close that needs its own
-        # checkpoints to complete (a real upstream client's `aclose`, the http client's, the store engine's
-        # dispose) must happen *after* the task group has exited — otherwise the still-cancelled scope
-        # cancels those closes too, and they get silently skipped rather than run.
+        # before shutdown) must happen *inside* the `async with`, and everything that needs its own checkpoints
+        # to complete must happen *after* the task group has exited: the MCP session manager's shutdown, then a
+        # real upstream client's `aclose`, the http client's, and the store engine's dispose. Otherwise the
+        # still-cancelled scope cancels those closes too, and they get silently skipped rather than run.
         try:
-            async with anyio.create_task_group() as sweeper:
+            async with mcp_app.router.lifespan_context(mcp_app), anyio.create_task_group() as sweeper:
                 if settings.approval_rules:
                     sweeper.start_soon(_expire_sweep, approvals)
                 try:
@@ -343,7 +369,7 @@ def create_app(
     app.state.service = service
     app.state.store = opened
     app.state.metrics = metrics
-    app.state.limiter = RateLimiter(settings.requests_per_minute)
+    app.state.limiter = limiter
     # `HTTPMetrics` is added last, so it wraps `BodySizeLimit` and stays the outermost middleware: a request
     # `BodySizeLimit` rejects with 413 is still counted, under route "unmatched".
     app.add_middleware(BodySizeLimit, max_bytes=settings.max_body_bytes)
@@ -352,9 +378,10 @@ def create_app(
     app.include_router(router)
     app.include_router(receipts_router(_store_receipt_source))
     app.add_api_route("/metrics", _metrics_endpoint, methods=["GET"])
+    app.router.routes.append(_RoutedMount("/mcp", app=mcp_app))
     if settings.console:
         # `mount_console` must be the LAST registration: a static mount at "/" answers every request that
         # no earlier route claimed, and Starlette tries routes in registration order, so it would shadow
-        # any route registered after it. Task 11 registers `/mcp` before this line for the same reason.
+        # any route registered after it, which is why `/mcp` is mounted above.
         mount_console(app)
     return app

@@ -189,9 +189,15 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("paths", nargs="+", metavar="PATH", help="receipt files or run directories (searched)")
     export.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     export.add_argument("--out", metavar="FILE", help="write here instead of stdout")
-    guard = sub.add_parser("mcp-guard", help="MCP stdio proxy: writes are refused unless a policy rule allows them")
+    guard = sub.add_parser("mcp-guard", help="MCP proxy: writes are refused unless a policy rule allows them")
     guard.add_argument("--policy", required=True, help="guard policy JSON (see docs/MCP.md)")
     guard.add_argument("--receipts", help="JSONL receipt path; defaults to mcp-guard-receipts.jsonl next to the policy")
+    guard.add_argument(
+        "--http", metavar="HOST:PORT", help="serve streamable HTTP at http://HOST:PORT/mcp instead of stdio"
+    )
+    guard.add_argument(
+        "--allow-remote", action="store_true", help="allow a non-loopback --http host (the guard has no auth)"
+    )
     guard.add_argument("upstream", nargs=argparse.REMAINDER, help="-- <upstream MCP server command...>")
     rehearsal = sub.add_parser("rehearse", help="run a request n times on fresh stages and check convergence")
     rehearsal.add_argument("--prompt")
@@ -264,7 +270,9 @@ def main(argv: list[str] | None = None) -> int:
         except ImportError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        return mcp_guard.main(args.policy, args.upstream, args.receipts)
+        if args.http is None:  # stdio: the flags below only apply to the HTTP mode
+            return mcp_guard.main(args.policy, args.upstream, args.receipts)
+        return mcp_guard.main(args.policy, args.upstream, args.receipts, http=args.http, allow_remote=args.allow_remote)
     if args.command == "db":
         try:
             from benchpress.gateway import store as gateway_store  # the server extra is optional

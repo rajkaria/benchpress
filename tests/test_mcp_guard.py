@@ -6,10 +6,13 @@ No network and no model. The stdio test spawns two local Python processes (guard
 from __future__ import annotations
 
 import json
+import socket
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+import anyio
 import pytest
 from mcp import Client, StdioServerParameters
 from mcp.server.mcpserver import MCPServer
@@ -19,6 +22,10 @@ from pydantic import ValidationError
 from benchpress import cli
 from benchpress.shims import mcp_guard
 from benchpress.shims.mcp_guard import Guard, GuardPolicy, GuardRule, arguments_digest, build_guard_server
+from tests.gateway.test_mcp_server import (
+    _free_port,  # pyright: ignore[reportPrivateUsage]
+    _running,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 def tool(name: str, *, read_only: bool | None = None, destructive: bool | None = None) -> Tool:
@@ -280,3 +287,109 @@ async def test_cli_stdio_proxy_end_to_end(tmp_path: Path) -> None:
         ("update_ticket", "allow"),
         ("get_ticket", "allow"),
     ]
+
+
+# -- the guard over streamable HTTP --------------------------------------------------------
+
+
+def test_guard_http_mode_refuses_remote_binds_without_opt_in(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    policy = tmp_path / "guard.json"
+    policy.write_text("{}", encoding="utf-8")
+    argv = ["mcp-guard", "--policy", str(policy), "--http", "0.0.0.0:9000", "--", sys.executable, "-c", "pass"]
+    code = cli.main(argv)
+    assert code == 2 and "allow-remote" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("bind", ["127.0.0.1", "127.0.0.1:0", "127.0.0.1:65536", "127.0.0.1:http", ":8788"])
+def test_guard_http_mode_validates_host_and_port(
+    bind: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    policy = tmp_path / "guard.json"
+    policy.write_text("{}", encoding="utf-8")
+    assert mcp_guard.main(str(policy), ["--", sys.executable, "-c", "pass"], http=bind) == 2
+    assert "HOST:PORT" in capsys.readouterr().err
+
+
+def test_guard_http_mode_serves_remote_binds_with_a_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    policy = tmp_path / "guard.json"
+    policy.write_text("{}", encoding="utf-8")
+    served: dict[str, Any] = {}
+
+    async def fake_serve(
+        policy: GuardPolicy, command: list[str], *, receipts: Path | None, host: str, port: int
+    ) -> None:
+        served.update(command=command, receipts=receipts, host=host, port=port)
+
+    monkeypatch.setattr(mcp_guard, "serve_guard_http", fake_serve)
+    argv = ["mcp-guard", "--policy", str(policy), "--http", "[::]:9000", "--allow-remote", "--", "upstream", "-x"]
+    assert cli.main(argv) == 0
+    assert "no auth" in capsys.readouterr().err
+    assert served == {
+        "command": ["upstream", "-x"],
+        "receipts": (tmp_path / mcp_guard.DEFAULT_RECEIPTS_NAME).resolve(),
+        "host": "::",
+        "port": 9000,
+    }
+
+
+async def test_guard_http_app_proxies_reads_and_refuses_writes(tmp_path: Path) -> None:
+    store = {"T-1": "open"}
+    async with Client(tickets_server(store)) as upstream:
+        guard = Guard(GuardPolicy(), receipts_path=tmp_path / "r.jsonl")
+        app = mcp_guard.guard_http_app(upstream.session, guard, host="127.0.0.1")
+        with _running(app) as base, anyio.fail_after(30):
+            async with Client(f"{base}/mcp") as client:
+                read = await client.call_tool("get_ticket", {"ticket_id": "T-1"})
+                assert not read.is_error and read.structured_content == {"id": "T-1", "status": "open"}
+                write = await client.call_tool("update_ticket", {"ticket_id": "T-1", "status": "closed"})
+                assert write.is_error and "refused" in text_of(write)
+    assert store == {"T-1": "open"}
+
+
+UPSTREAM_HTTP_POLICY = {"rules": [{"tool": "update_ticket", "arguments": {"status": "resolved"}}]}
+
+
+async def test_cli_guard_over_streamable_http_end_to_end(tmp_path: Path) -> None:
+    state = tmp_path / "state.json"
+    state.write_text(json.dumps({"T-1": "open"}))
+    script = tmp_path / "upstream.py"
+    script.write_text(UPSTREAM_SCRIPT)
+    policy = tmp_path / "guard.json"
+    policy.write_text(json.dumps(UPSTREAM_HTTP_POLICY))
+    port = _free_port()
+    argv = [sys.executable, "-m", "benchpress.cli", "mcp-guard", "--policy", str(policy),
+            "--http", f"127.0.0.1:{port}", "--", sys.executable, str(script), str(state)]
+    log = tmp_path / "guard.log"
+    with log.open("wb") as sink:
+        proc = subprocess.Popen(argv, cwd=tmp_path, stdin=subprocess.DEVNULL, stdout=sink, stderr=sink)
+        try:
+            with anyio.fail_after(60):
+                while True:
+                    assert proc.poll() is None, log.read_text()
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.2):
+                            break
+                    except OSError:
+                        await anyio.sleep(0.1)
+                async with Client(f"http://127.0.0.1:{port}/mcp") as client:
+                    names = {t.name for t in (await client.list_tools()).tools}
+                    assert names == {"get_ticket", "update_ticket", "delete_ticket"}
+                    refused = await client.call_tool("delete_ticket", {"ticket_id": "T-1"})
+                    assert refused.is_error and "[no_allow_rule]" in text_of(refused)
+                    allowed = await client.call_tool("update_ticket", {"ticket_id": "T-1", "status": "resolved"})
+                    assert not allowed.is_error
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=10)
+    assert json.loads(state.read_text()) == {"T-1": "resolved"}
+    receipts = [json.loads(raw) for raw in (tmp_path / "mcp-guard-receipts.jsonl").read_text().splitlines()]
+    assert [(line["tool"], line["decision"]) for line in receipts] == [("delete_ticket", "refuse"),
+                                                                       ("update_ticket", "allow")]
