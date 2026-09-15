@@ -17,7 +17,9 @@ import pytest
 import uvicorn
 from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
+from mcp.shared.exceptions import MCPError
 from mcp.types import CallToolResult, TextContent
+from mcp_types.version import LATEST_HANDSHAKE_VERSION
 
 import benchpress
 from benchpress.gateway.app import create_app
@@ -26,6 +28,7 @@ from benchpress.gateway.config import Settings
 from benchpress.gateway.deps import header_authenticator
 from benchpress.gateway.mcp_server import RULE_HELP, build_mcp_server
 from benchpress.gateway.store import Store, WorkspaceRow
+from benchpress.shims.mcp import classify_tool
 from tests.gateway.test_app import FIXED, PROMPT, WRITE
 from tests.test_verified import FakeProvider
 
@@ -52,8 +55,14 @@ async def test_tools_are_listed_and_verified_write_matches_http(tmp_path: Path) 
 
     server = build_mcp_server(app.state.service, authenticate)
     async with Client(server) as client:
-        names = sorted(tool.name for tool in (await client.list_tools()).tools)
-        assert names == ["explain_refusal", "read", "verified_write"]
+        listed = {tool.name: tool for tool in (await client.list_tools()).tools}
+        assert sorted(listed) == ["explain_refusal", "read", "verified_write"]
+        write_hints = listed["verified_write"].annotations
+        assert write_hints is not None and write_hints.destructive_hint is not False
+        assert classify_tool(listed["verified_write"]) == "destructive"
+        read_hints = listed["read"].annotations
+        assert read_hints is not None and read_hints.read_only_hint is True
+        assert classify_tool(listed["read"]) == classify_tool(listed["explain_refusal"]) == "read"
         result = await client.call_tool("verified_write", {"action": WRITE, "context": {"user_prompt": PROMPT}})
         assert not result.is_error
         payload: dict[str, Any] = result.structured_content or {}
@@ -207,9 +216,11 @@ async def test_streamable_http_mcp_requires_a_key(tmp_path: Path) -> None:
         ):
             result = await client.call_tool("verified_write", {"action": WRITE, "context": {"user_prompt": PROMPT}})
             assert (result.structured_content or {})["status"] == "verified"
-        async with Client(f"{base}/mcp/") as anonymous:
-            denied = await anonymous.call_tool("verified_write", {"action": WRITE, "context": {"user_prompt": PROMPT}})
-            assert denied.is_error and "a valid API key is required" in _text(denied)
+        # The SDK client surfaces the 401 as an `MCPError` inside its transport's task-group `ExceptionGroup`s.
+        with pytest.raises(ExceptionGroup) as refused:
+            async with Client(f"{base}/mcp/"):
+                pass
+        assert refused.group_contains(MCPError)
     assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]
     metrics = app.state.metrics.render()[0].decode()
     assert 'route="/mcp"' in metrics and 'route="unmatched"' not in metrics
@@ -233,4 +244,47 @@ async def test_streamable_http_mcp_shares_the_http_rate_limit_and_receipts(tmp_p
                 assert limited.status_code == 429
             over = await client.call_tool("read", {"provider": "hubspot", "path": "/crm/v3/objects/companies/701"})
             assert over.is_error and "rate limit exceeded" in _text(over)
+    assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]
+
+
+def _open_sessions(app: Any) -> int:
+    """How many stateful MCP sessions the gateway's session manager holds, reached through the `/mcp` mount."""
+    mount = next(route for route in app.routes if getattr(route, "path", None) == "/mcp")
+    sdk_app = mount.app.app  # the mount serves the key check, which wraps the SDK's streamable-HTTP app
+    return len(sdk_app.routes[0].endpoint.session_manager._server_instances)
+
+
+async def test_anonymous_requests_never_reach_the_mcp_session_manager(tmp_path: Path) -> None:
+    app, _, provider, key = _service(tmp_path, requests_per_minute=1)
+    initialize = {
+        "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": {"protocolVersion": LATEST_HANDSHAKE_VERSION, "capabilities": {},
+                   "clientInfo": {"name": "probe", "version": "0"}},
+    }
+    accept = {"Accept": "application/json, text/event-stream"}
+    with _running(app) as base, anyio.fail_after(30):
+        async with httpx.AsyncClient(base_url=base) as http:
+            for refused in (accept, {**accept, "Authorization": "Bearer bp_unknown"}):
+                denied = await http.post("/mcp/", json=initialize, headers=refused)
+                assert denied.status_code == 401 and denied.headers["www-authenticate"] == "Bearer"
+                assert "mcp-session-id" not in denied.headers
+            assert _open_sessions(app) == 0
+            keyed = {**accept, "Authorization": f"Bearer {key}"}
+            opened = await http.post("/mcp/", json=initialize, headers=keyed)
+            assert opened.status_code == 200 and opened.headers["mcp-session-id"]
+            assert _open_sessions(app) == 1
+            # The mount only looks the key up: the key's single request per minute is still unspent.
+            assert (await http.get("/v1/receipts", headers=keyed)).status_code == 200
+    metrics = app.state.metrics.render()[0].decode()
+    assert 'benchpress_http_requests_total{code="401",method="POST",route="/mcp"} 2.0' in metrics
+    assert provider.calls == []
+
+
+async def test_streamable_http_mcp_stays_open_under_auth_none(tmp_path: Path) -> None:
+    app, _, provider, _ = _service(tmp_path, auth="none")
+    with _running(app) as base, anyio.fail_after(30):
+        async with Client(f"{base}/mcp/") as anonymous:
+            result = await anonymous.call_tool("verified_write", {"action": WRITE, "context": {"user_prompt": PROMPT}})
+            payload: dict[str, Any] = result.structured_content or {}
+            assert payload["status"] == "verified"
     assert [c["method"] for c in provider.calls] == ["PATCH", "GET"]

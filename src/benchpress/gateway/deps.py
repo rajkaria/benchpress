@@ -13,6 +13,9 @@ from typing import Annotated, cast
 import anyio.to_thread
 from fastapi import Depends, HTTPException, Request
 from fastapi import Path as PathParam
+from fastapi.responses import JSONResponse
+from starlette.datastructures import Headers
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from benchpress.gateway.auth import RateLimiter, bearer_token
 from benchpress.gateway.service import GatewayService
@@ -21,13 +24,16 @@ from benchpress.gateway.store import ApiKeyRow, WorkspaceRow
 __all__ = [
     "KeyRefused",
     "PolicyName",
+    "RequireKey",
     "ServiceDep",
     "WorkspaceDep",
     "actor",
     "authenticate",
+    "charge_rate_limit",
     "check_key",
     "current_workspace",
     "header_authenticator",
+    "lookup_key",
 ]
 
 
@@ -44,23 +50,57 @@ class KeyRefused(PermissionError):
         self.headers = headers
 
 
-async def check_key(
-    header: str | None, service: GatewayService, limiter: RateLimiter
-) -> tuple[WorkspaceRow, ApiKeyRow]:
-    """The gateway's one key check: a valid bearer key in `header` and its workspace, then the per-key rate limit.
-
-    Every authenticated surface goes through here (`authenticate` for the HTTP routes and `/metrics`,
-    `header_authenticator` for the MCP tools), so all of them enforce the identical lookup, and passing them the
-    app's one `app.state.limiter` gives each key a single budget across surfaces. Raises `KeyRefused`.
-    """
+async def lookup_key(header: str | None, service: GatewayService) -> tuple[WorkspaceRow, ApiKeyRow]:
+    """The gateway's one key lookup: the valid bearer key in `header` and its workspace, else `KeyRefused` (401)."""
     token = bearer_token(header)
     found = await anyio.to_thread.run_sync(service.store.key_for, token) if token is not None else None
     if found is None:
         raise KeyRefused(401, "a valid API key is required", {"WWW-Authenticate": "Bearer"})
-    workspace, key = found
+    return found
+
+
+def charge_rate_limit(key: ApiKeyRow, limiter: RateLimiter) -> None:
+    """Spend one of `key`'s requests from `limiter`, else `KeyRefused` (429)."""
     if not limiter.allow(key.id):
         raise KeyRefused(429, "rate limit exceeded", {"Retry-After": "1"})
+
+
+async def check_key(
+    header: str | None, service: GatewayService, limiter: RateLimiter
+) -> tuple[WorkspaceRow, ApiKeyRow]:
+    """The gateway's one key check: `lookup_key`, then `charge_rate_limit`. Raises `KeyRefused`.
+
+    Every authenticated surface goes through here (`authenticate` for the HTTP routes and `/metrics`,
+    `header_authenticator` for the MCP tools), so all of them enforce the identical lookup, and passing them the
+    app's one `app.state.limiter` gives each key a single budget across surfaces.
+    """
+    workspace, key = await lookup_key(header, service)
+    charge_rate_limit(key, limiter)
     return workspace, key
+
+
+class RequireKey:
+    """Pure ASGI: under `auth = "api_key"`, answers 401 before `app` sees a request without a valid key (Ruling R20).
+
+    Wraps the mounted MCP app, so an anonymous caller can never open an MCP session. It only looks the key up and
+    never charges the rate limit: one streamable-HTTP tool call is several HTTP requests, and the tool itself
+    charges the key's one shared budget through `check_key`. Under `auth = "none"` (loopback only) it lets
+    everything through.
+    """
+
+    def __init__(self, app: ASGIApp, service: GatewayService) -> None:
+        self.app = app
+        self.service = service
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and self.service.settings.auth != "none":
+            try:
+                await lookup_key(Headers(scope=scope).get("authorization"), self.service)
+            except KeyRefused as refused:
+                response = JSONResponse({"detail": str(refused)}, status_code=refused.status, headers=refused.headers)
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
 
 async def authenticate(request: Request, service: GatewayService) -> tuple[WorkspaceRow, ApiKeyRow]:

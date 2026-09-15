@@ -122,7 +122,9 @@ def build_mcp_server(service: GatewayService, authenticate: Authenticator) -> MC
         except PermissionError as exc:
             raise ToolError(str(exc)) from None
 
-    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=True))
+    # Not additive-only: a verified write can overwrite a field, send an email or void an invoice, so it is marked
+    # destructive and a client that auto-approves non-destructive tools never waves it through.
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=True, open_world_hint=True))
     async def verified_write(
         action: dict[str, Any],
         ctx: Context[Any, Any],

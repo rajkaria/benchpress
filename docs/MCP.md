@@ -184,10 +184,11 @@ async with (
 ```
 
 **Auth** follows the HTTP API's rules and uses the same key check. Under `auth = "api_key"` (the default),
-every tool call needs a valid key and draws on that key's `requests_per_minute`, the same budget its HTTP
-requests use. Under `auth = "none"` (loopback only), every call acts as the `default` workspace. A missing,
-unknown or rate-limited key is a tool error (`a valid API key is required`, `rate limit exceeded`).
-Connecting and listing tools need no key.
+every request to `/mcp/` needs a valid key. Without one the endpoint answers `401` with
+`WWW-Authenticate: Bearer` before any MCP session exists, so an anonymous client cannot even connect. Each
+tool call then draws once on the key's `requests_per_minute`, the same budget its HTTP requests use, however
+many HTTP requests the call takes. A rate-limited key is a tool error (`rate limit exceeded`). Under
+`auth = "none"` (loopback only), the endpoint is open and every call acts as the `default` workspace.
 
 | Tool | Arguments | Returns |
 |---|---|---|
@@ -198,8 +199,8 @@ Connecting and listing tools need no key.
 An inline `context` on `verified_write` creates a one-shot session, exactly as it does over HTTP.
 
 **A refusal is data, not an error.** A refused write returns `status: "refused"`, with the rule and reason in
-`verdict`. Tool errors (`isError: true`) are for calls that cannot be judged: a refused key, invalid input,
-an unknown session or a control-plane read. The error text is the message. For invalid input it names
+`verdict`. Tool errors (`isError: true`) are for calls that cannot be judged: a rate-limited key, invalid
+input, an unknown session or a control-plane read. The error text is the message. For invalid input it names
 each field and never echoes the rejected value, since an action's headers might carry a credential.
 
 `help` is one plain sentence per gate rule (`benchpress.gateway.mcp_server.RULE_HELP`). Every policy pack

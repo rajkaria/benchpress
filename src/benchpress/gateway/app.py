@@ -30,7 +30,7 @@ from benchpress.gateway.approvals import ApprovalQueue
 from benchpress.gateway.auth import RateLimiter
 from benchpress.gateway.config import Settings
 from benchpress.gateway.console import CONSOLE_DIST, mount_console
-from benchpress.gateway.deps import authenticate, current_workspace, header_authenticator
+from benchpress.gateway.deps import RequireKey, authenticate, current_workspace, header_authenticator
 from benchpress.gateway.executors import executor_from_settings
 from benchpress.gateway.mcp_server import build_mcp_server
 from benchpress.gateway.metrics import GatewayMetrics, create_metrics
@@ -378,7 +378,9 @@ def create_app(
     app.include_router(router)
     app.include_router(receipts_router(_store_receipt_source))
     app.add_api_route("/metrics", _metrics_endpoint, methods=["GET"])
-    app.router.routes.append(_RoutedMount("/mcp", app=mcp_app))
+    # `RequireKey` refuses a request without a valid key (401) before the SDK can open a session for it; its 401
+    # is still counted under route "/mcp", since `_RoutedMount` marks the route before the wrapper runs.
+    app.router.routes.append(_RoutedMount("/mcp", app=RequireKey(mcp_app, service)))
     if settings.console:
         # `mount_console` must be the LAST registration: a static mount at "/" answers every request that
         # no earlier route claimed, and Starlette tries routes in registration order, so it would shadow
