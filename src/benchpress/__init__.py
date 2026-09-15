@@ -38,7 +38,7 @@ from benchpress.tools import ToolExecutor
 from benchpress.verified import VerifiedWrite, WriteOutcome
 from benchpress.write_receipts import JsonlReceiptSink, MemoryReceiptSink, ReceiptSink
 
-__version__ = "1.0.0a1"
+__version__ = "1.0.0a2"
 
 __all__ = [
     "Ablations",

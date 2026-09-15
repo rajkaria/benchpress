@@ -40,7 +40,7 @@ describe("App key flow", () => {
     const fetchImpl = fetchSequence([
       new Response("{}", { status: 401 }), // call 1: the stale stored key, on mount
       new Response("{}", { status: 401 }), // call 2: a freshly submitted, still-bad key
-      new Response(JSON.stringify({ mode: "gateway", version: "1.0.0a1" }), { status: 200 }), // call 3: a good key
+      new Response(JSON.stringify({ mode: "gateway", version: "1.0.0a2" }), { status: 200 }), // call 3: a good key
     ]);
 
     render(<App fetchImpl={fetchImpl} keyStore={keyStore} />);

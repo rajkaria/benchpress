@@ -18,18 +18,19 @@ Goal: make the repository safe to promote and ship the two primitives every late
 
 ## Sprint 1: Gateway + local console (weeks 2-3)
 
-Goal: `benchpress serve` and `docker run` both exist, and a LangChain agent and an MCP client going through the same gateway produce identical receipt lines.
+Goal: `benchpress serve` and `docker run` both exist, and an HTTP client and an MCP client going through the same
+gateway produce byte-identical receipt lines (the LangChain leg lands with its adapter in Sprint 2).
 
-- [ ] Receipts, writes, approvals, policies and workspaces stored durably, on SQLite or Postgres
-- [ ] Gateway HTTP API: execute a write, list receipts, manage approvals and policies, health and metrics endpoints
-- [ ] Approval queue with a time-to-live and webhook notifications; a parked write resumes with the same fingerprint
-- [ ] Remote MCP server surface alongside the existing local proxy
-- [ ] `benchpress serve` command with a config file, per-workspace API keys and rate limits
-- [ ] Tracing spans and metrics counters per phase and write
-- [ ] Local console: a receipts list and a receipt detail view, served by the gateway or standalone
-- [ ] Container image published to a public registry; `docker run` serves the console and the API together
-- [ ] Parity fixture proving library mode and gateway mode produce byte-identical receipt lines for the same calls
-- [ ] Standalone, importable phase functions (`policy_sweep`, `resolve_targets`, `definition_of_done`, `verify`), with the controller as their composition
+- [x] Receipts, writes, approvals, policies and workspaces stored durably, on SQLite or Postgres
+- [x] Gateway HTTP API: execute a write, list receipts, manage approvals and policies, health and metrics endpoints
+- [x] Approval queue with a time-to-live and webhook notifications; a parked write resumes with the same fingerprint
+- [x] Remote MCP server surface alongside the existing local proxy
+- [x] `benchpress serve` command with a config file, per-workspace API keys and rate limits
+- [x] Tracing spans and metrics counters per phase and write
+- [x] Local console: a receipts list and a receipt detail view, served by the gateway or standalone
+- [x] Container image published to a public registry; `docker run` serves the console and the API together
+- [x] Parity fixture proving library mode and gateway mode produce byte-identical receipt lines for the same calls
+- [x] Standalone, importable phase functions (`policy_sweep`, `resolve_targets`, `definition_of_done`, `verify`), with the controller as their composition
 
 ## Sprint 2: Adapters wave 1 (weeks 3-4)
 

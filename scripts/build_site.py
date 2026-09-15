@@ -48,6 +48,11 @@ NPM_MANIFEST = REPO_ROOT / "packages" / "benchpress-guard" / "package.json"
 # One entry per CHANGELOG release heading (the heading text before the date). build() fails on a heading with no
 # entry, so a release can't land without the page saying what shipped.
 SHIPPED: dict[str, tuple[str, str]] = {
+    "1.0.0a2": (
+        "The gateway",
+        "benchpress serve and docker run expose VerifiedWrite over HTTP and MCP: sessions, an approval queue, "
+        "SQLite/Postgres storage and a receipts console. 100-call library/HTTP/MCP parity.",
+    ),
     "1.0.0a1": (
         "VerifiedWrite + ToolSpec + receipt schema",
         "Pre-release, tagged in git: gate and read back one write, no controller. Python 3.11 floor. Public roadmap.",

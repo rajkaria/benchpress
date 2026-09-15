@@ -16,7 +16,8 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 ## Releases
 - PyPI `benchpress-agent`: 0.1.0, 0.1.1, 0.2.0, 0.3.0, 0.3.1, 0.3.2, 0.3.3, 0.4.0, 0.5.0, 0.6.0, 0.6.1, 0.7.0, 0.7.1 (git tags `v*`)
 - Pre-release: 1.0.0a1 (git tag `v1.0.0a1`): `VerifiedWrite`, `ToolSpec`, receipt schema v1, Python 3.11 floor
-- Extras: `[mcp]` (MCP executor + `mcp-guard`), `[openai-agents]` (OpenAI Agents SDK guard), `[composio]` (Composio guard + executor), `[schema]` (receipt validation, from 1.0.0a1)
+- Pre-release: 1.0.0a2 (git tag `v1.0.0a2`): the gateway (`benchpress serve`, HTTP + MCP), durable store (SQLite/Postgres), approval queue, receipts console, `benchpress ui`, 100-call library/HTTP/MCP parity
+- Extras: `[mcp]` (MCP executor + `mcp-guard`), `[openai-agents]` (OpenAI Agents SDK guard), `[composio]` (Composio guard + executor), `[schema]` (receipt validation, from 1.0.0a1), `[server]` (gateway HTTP + MCP, from 1.0.0a2)
 - npm `benchpress-guard` 0.1.0 (git tag `benchpress-guard-v0.1.0`): the guard for Vercel AI SDK tools, source in `packages/benchpress-guard/`
 
 ## Public API (Python)
@@ -37,11 +38,15 @@ Try it with no keys: `uvx --from benchpress-agent benchpress demo`. It runs the 
 - `benchpress gate check [-v] [PATH ...]`: the public gate-rule corpus (178 cases, 178 passing)
 - `benchpress policy list` / `benchpress policy show NAME`: policy packs
 - `benchpress rehearse --prompt-file FILE --providers ... --n 3 --out rehearsal.json` / `benchpress replay rehearsal.json [--providers ...] [--out FILE]`
-- `benchpress mcp-guard --policy guard.json [--receipts FILE] -- <upstream MCP server>`
+- `benchpress mcp-guard --policy guard.json [--receipts FILE] [--http HOST:PORT [--allow-remote]] -- <upstream MCP server>`
 - `benchpress regress RECEIPT [--out DIR]`: turn a run into permanent gate-corpus regression cases
 - `benchpress receipts export PATH... [--format jsonl|csv] [--out FILE]`: audit log of every write attempt
+- `benchpress serve [--config PATH] [--host] [--port] [--store] [--policy DIR] [--auth api_key|none] [--executor module:callable] [--no-console]`: the gateway (extra `[server]`)
+- `benchpress ui [--dir DIR] [--host 127.0.0.1] [--port 8788]`: read-only console over on-disk receipts, loopback only
+- `benchpress db upgrade|current --store URL`, `benchpress workspace create NAME --store URL` / `workspace key NAME --store URL`: gateway store migrations and workspace/key setup
 
 ## Docs
+- [Gateway](https://github.com/rajkaria/benchpress/blob/main/docs/GATEWAY.md): HTTP API, MCP tools, sessions, approvals, config reference, performance
 - [Gate-rule corpus](https://github.com/rajkaria/benchpress/blob/main/docs/GATE-CORPUS.md)
 - [Policy packs](https://github.com/rajkaria/benchpress/blob/main/docs/POLICY-PACKS.md)
 - [Rehearse](https://github.com/rajkaria/benchpress/blob/main/docs/REHEARSE.md)
