@@ -19,7 +19,7 @@ __all__ = ["GatewayMetrics", "create_metrics"]
 class GatewayMetrics:
     """Every gateway metric, on its own registry so several apps in one process never collide.
 
-    Ruling R15: a provider is a label value only if it is bundled (a playbook provider) or configured (an
+    A provider is a label value only if it is bundled (a playbook provider) or configured (an
     upstream) — `known_providers`. Anything else is a free string straight from an `/v1/execute` body, so it
     is labelled `"other"` instead of letting a caller mint unbounded (including histogram) series.
     """
@@ -71,7 +71,8 @@ class GatewayMetrics:
         )
 
     def _provider_label(self, provider: str) -> str:
-        """`provider` itself if it is bundled or configured, else `"other"` (Ruling R15)."""
+        """`provider` itself if it is bundled or configured, else `"other"`, so an arbitrary provider string
+        cannot create unbounded label series."""
         return provider if provider in self._known_providers else "other"
 
     def observe_outcome(self, outcome: WriteOutcome, seconds: float) -> None:

@@ -167,7 +167,7 @@ class ApprovalQueue:
         return row, receipt_row.id
 
     def _requested_receipt_id(self, workspace_id: str, session_id: str, approval_id: str) -> str | None:
-        """Ruling R14: the receipt id of the `approval_requested` line whose `approval.id` is `approval_id`."""
+        """The receipt id of the `approval_requested` line whose `approval.id` is `approval_id`."""
         rows = self._store.receipts(workspace_id, session=session_id, event="approval_requested", limit=1000)
         for row in rows:
             payload = cast(dict[str, object], json.loads(row.line))

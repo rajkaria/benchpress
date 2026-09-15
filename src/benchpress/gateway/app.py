@@ -166,7 +166,7 @@ async def _rejected(_request: Request, exc: Exception) -> Response:
 
 
 async def _metrics_endpoint(request: Request) -> Response:
-    """Requires a valid key (the same lookup and rate limit `current_workspace` applies, Ruling R16) unless
+    """Requires a valid key (the same lookup and rate limit `current_workspace` applies) unless
     `metrics_auth == "none"` — independent of `settings.auth`, so the two can differ."""
     service = cast(GatewayService, request.app.state.service)
     if service.settings.metrics_auth != "none":
@@ -182,8 +182,8 @@ def receipts_router(source_for: Callable[[Request], Awaitable[ReceiptSource]]) -
     """The three `/v1/receipts` routes, parameterized over where a `ReceiptSource` comes from.
 
     `create_app` passes a `source_for` that authenticates and returns a `StoreReceiptSource`;
-    `create_ui_app` passes one that always returns its single `DiskReceiptSource`. Ruling R2: every route
-    here names its path parameter `receipt_id`, in both apps.
+    `create_ui_app` passes one that always returns its single `DiskReceiptSource`. Every route here names
+    its path parameter `receipt_id`, in both apps.
 
     `source_for` is captured as a plain `Depends(source_for)` default (not `Annotated[..., Depends(...)]`):
     this module runs under `from __future__ import annotations`, which turns every annotation into a
@@ -332,7 +332,7 @@ def create_app(
     )
 
     # One limiter for every surface: the HTTP routes read it from `app.state.limiter`, and the MCP tools'
-    # authenticator holds the same instance, so a key's rate budget is shared between them (Ruling R19).
+    # authenticator holds the same instance, so a key's rate budget is shared between them.
     limiter = RateLimiter(settings.requests_per_minute)
     # The MCP tools, served over streamable HTTP at the SDK path "/" of the `/mcp` mount (clients use `/mcp/`).
     # `host` keeps the SDK's DNS-rebinding protection on for a loopback bind: the Host header must then be

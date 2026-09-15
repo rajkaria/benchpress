@@ -486,7 +486,7 @@ class Store:
                             .values(state="done", completed_at=now)
                         )
             else:
-                # A release only clears the entry this holder itself owns (Ruling R4): a stale holder
+                # A release only clears the entry this holder itself owns: a stale holder
                 # must never clobber a newer holder's claim after a lease takeover.
                 db.execute(
                     delete(Write).where(

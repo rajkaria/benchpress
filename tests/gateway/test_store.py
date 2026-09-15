@@ -102,7 +102,7 @@ def test_write_claims_follow_the_idempotency_contract(store: Store) -> None:
 
 
 def test_a_success_is_recorded_even_after_a_lease_takeover_released_the_claim(store: Store) -> None:
-    """Ruling R4: succeeded=True marks a key done unconditionally, whoever holds the lease now — even if
+    """succeeded=True marks a key done unconditionally, whoever holds the lease now — even if
     a stale holder's release already deleted the row (a takeover raced with the original holder's slow
     write actually succeeding). A later claim must see "done", never a fresh "claimed"."""
     assert store.claim_write("acme:s1", "fp", holder="a", now=100.0, lease_seconds=30) == "claimed"

@@ -24,7 +24,7 @@ from tests.test_verified import _PROMPT, FakeProvider, _write  # pyright: ignore
 @pytest.fixture
 def spans(monkeypatch: pytest.MonkeyPatch) -> Iterator[InMemorySpanExporter]:
     """A `TracerProvider` local to this test, wired in by monkeypatching `_tracer` rather than by calling
-    `trace.set_tracer_provider` globally (Ruling R17) — the real SDK global is process-wide and un-resettable,
+    `trace.set_tracer_provider` globally — the real SDK global is process-wide and un-resettable,
     so setting it at import time would leak real spans into every later test in the session.
     """
     exporter = InMemorySpanExporter()

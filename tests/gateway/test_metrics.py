@@ -35,7 +35,7 @@ def test_metrics_can_be_public_on_loopback(tmp_path: Path) -> None:
 
 
 def test_an_unknown_provider_is_labelled_other(tmp_path: Path) -> None:
-    """Ruling R15: only a bundled playbook provider or a configured upstream may become a label value."""
+    """Only a bundled playbook provider or a configured upstream may become a label value."""
     with _gateway(f"sqlite:///{tmp_path / 'unk.db'}") as gw:
         _session(gw)
         made_up = {**WRITE, "id": "w-unknown", "provider": "made-up-xyz"}

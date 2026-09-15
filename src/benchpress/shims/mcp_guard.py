@@ -151,7 +151,7 @@ def _transport_security(host: str) -> TransportSecuritySettings | None:
 
 
 def guard_http_app(upstream: ClientSession, guard: Guard, *, host: str) -> Starlette:
-    """The guard over streamable HTTP: a Starlette app serving `/mcp` from one session manager (Ruling R18).
+    """The guard over streamable HTTP: a Starlette app serving `/mcp` from one session manager.
 
     `build_guard_server` is a lowlevel server, so the app routes `/mcp` to a `StreamableHTTPSessionManager` for it
     and runs the manager in its lifespan. `host` is the address the app will be bound to (see `_transport_security`).

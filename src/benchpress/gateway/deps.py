@@ -80,7 +80,7 @@ async def check_key(
 
 
 class RequireKey:
-    """Pure ASGI: under `auth = "api_key"`, answers 401 before `app` sees a request without a valid key (Ruling R20).
+    """Pure ASGI: under `auth = "api_key"`, answers 401 before `app` sees a request without a valid key.
 
     Wraps the mounted MCP app, so an anonymous caller can never open an MCP session. It only looks the key up and
     never charges the rate limit: one streamable-HTTP tool call is several HTTP requests, and the tool itself

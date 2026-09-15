@@ -45,7 +45,7 @@ async def test_an_expired_lease_is_taken_over() -> None:
 
 
 async def test_a_stale_holders_release_does_not_clobber_a_newer_holders_claim() -> None:
-    """Ruling R4: after a lease takeover, the original holder's own `complete(succeeded=False)` must not
+    """After a lease takeover, the original holder's own `complete(succeeded=False)` must not
     release the new holder's claim — otherwise a slow-to-clean-up crashed holder could free a key a live
     holder is still working on."""
     clock = FakeClock()

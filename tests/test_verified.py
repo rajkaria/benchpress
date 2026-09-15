@@ -368,8 +368,9 @@ async def test_a_failed_write_releases_its_claim() -> None:
 async def test_a_replayed_write_is_refused_every_time_on_one_instance() -> None:
     """Single-instance repeats: each replay is caught by this instance's own `Gate` (`has_succeeded`), which
     routes through `perform`'s `except GateRefusal` branch (`already_recorded=True`) rather than the store's
-    `refuse(..., already_recorded=False)` path. It does not by itself exercise the guard Ruling R1 is about —
-    see `test_a_cross_instance_replay_is_refused_every_time_not_deduplicated` for that."""
+    `refuse(..., already_recorded=False)` path. It does not by itself exercise the guard against deduplicating
+    refusals by value equality — see `test_a_cross_instance_replay_is_refused_every_time_not_deduplicated` for
+    that."""
     provider = FakeProvider()
     writer = VerifiedWrite(provider.execute_tool, context=Context(user_prompt=_PROMPT))
     action = _write()
@@ -387,7 +388,7 @@ async def test_a_replayed_write_is_refused_every_time_on_one_instance() -> None:
 
 
 async def test_a_cross_instance_replay_is_refused_every_time_not_deduplicated() -> None:
-    """Ruling R1: `ToolBus.refuse` appends every refusal it is asked to, never deduplicating by value equality.
+    """`ToolBus.refuse` appends every refusal it is asked to, never deduplicating by value equality.
 
     This is the path where the (rejected) `verdict not in context.refusals` guard would have failed: instance
     `b` never performs the write itself, so its own `Gate` never learns the fingerprint succeeded and keeps

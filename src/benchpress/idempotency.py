@@ -4,7 +4,7 @@ A claim is keyed by `(scope, fingerprint)`. The first caller claims it; a twin a
 `in_flight`; once the write succeeds the key is `done` forever. A failed write releases its claim so a retry is sent.
 An in-flight claim older than the lease is taken over, so a crashed holder never blocks a key permanently.
 
-Every claim carries a `holder` token (Ruling R4). `complete(succeeded=False)` — the "release" path — only clears the
+Every claim carries a `holder` token. `complete(succeeded=False)` — the "release" path — only clears the
 in-flight entry when its holder still matches: once a lease has been taken over, the original (stale) holder's own
 release can no longer clobber the new holder's claim. `complete(succeeded=True)` is unconditional: the write really
 happened, whoever holds the lease now, so the key must go `done` and any in-flight entry must clear regardless of
