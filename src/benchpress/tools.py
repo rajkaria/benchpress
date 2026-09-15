@@ -246,7 +246,7 @@ class ToolBus:
         gate_verdict: GateVerdict | None,
         headers: dict[str, str] | None = None,
     ) -> ToolResult:
-        blocked = _statically_blocked(path)
+        blocked = statically_blocked(path)
         if blocked:
             # Defense in depth: a blocked attempt is a hard unsafe at the gateway, so it
             # must never leave this process.
@@ -373,6 +373,11 @@ class ToolBus:
             }
         )
 
+    def trim_history(self, keep: int) -> None:
+        """Keep only the newest `keep` events and harness events (harness call indices then restart from `keep`)."""
+        del self._events[: max(0, len(self._events) - keep)]
+        del self._harness_events[: max(0, len(self._harness_events) - keep)]
+
     @property
     def events(self) -> tuple[dict[str, Any], ...]:
         return tuple(self._events)
@@ -395,7 +400,8 @@ class ToolBus:
 # --------------------------------------------------------------------------------------
 
 
-def _statically_blocked(path: str) -> str | None:
+def statically_blocked(path: str) -> str | None:
+    """The block-list entry a path hits (a control-plane root or prefix, or `absolute_url`), or None."""
     candidate = path if path.startswith("/") else f"/{path}"
     lowered = candidate.split("?", 1)[0].casefold()
     if "://" in path:

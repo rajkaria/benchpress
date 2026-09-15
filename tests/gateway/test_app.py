@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from collections.abc import Generator, Iterator
@@ -9,9 +10,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import MethodType
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
@@ -130,13 +132,13 @@ def test_inline_context_creates_a_session(gw: Gateway) -> None:
     assert body["status"] == "verified" and body["session_id"]
 
 
-def test_an_inline_context_replay_is_refused(gw: Gateway) -> None:
+def test_each_inline_context_request_is_a_one_shot_session(gw: Gateway) -> None:
     payload = {"context": {"user_prompt": PROMPT}, "action": WRITE}
     first = gw.client.post("/v1/execute", json=payload, headers=gw.headers()).json()
-    replay = gw.client.post("/v1/execute", json=payload, headers=gw.headers()).json()
-    assert first["status"] == "verified" and first["session_id"] != replay["session_id"]
-    assert replay["status"] == "refused" and replay["verdict"]["rule"] == "idempotency"
-    assert [c["method"] for c in gw.provider.calls] == ["PATCH", "GET"]
+    second = gw.client.post("/v1/execute", json=payload, headers=gw.headers()).json()
+    assert first["session_id"] != second["session_id"]
+    assert first["status"] == "verified" and second["status"] == "verified"
+    assert [c["method"] for c in gw.provider.calls] == ["PATCH", "GET", "PATCH", "GET"]
 
 
 @pytest.mark.parametrize(
@@ -182,6 +184,20 @@ def test_workspace_scoped_sessions_share_write_claims(gw: Gateway) -> None:
         for sid in ("a", "b", "c")
     ]
     assert statuses == ["verified", "refused", "verified"]
+
+
+def test_a_cached_session_keeps_no_per_write_history(gw: Gateway) -> None:
+    _session(gw, protected={"ids": ["702"]})
+    refused = {**WRITE, "id": "w2", "path": "/crm/v3/objects/companies/702", "readback": None}
+    statuses = [_execute(gw, "s1", action)["status"] for action in (WRITE, refused, WRITE)]
+    assert statuses == ["verified", "refused", "refused"]
+    service: GatewayService = cast(FastAPI, gw.client.app).state.service
+    acme = gw.store.workspace_by_name("acme")
+    assert acme is not None
+    session = asyncio.run(service.sessions.get(acme, "s1"))
+    assert session is not None
+    ctx = session.writer.context
+    assert (ctx.gate_decisions, ctx.refusals, ctx.ledger, ctx.evidence) == ([], [], [], [])
 
 
 def test_session_ids_are_generated_or_validated(gw: Gateway) -> None:
@@ -356,6 +372,21 @@ async def test_explain_never_executes_and_read_returns_the_interpreted_response(
     old = {"id": "701", "email": "old@rivermill.example"}
     assert read == {"ok": True, "status_code": 200, "body": old, "error": None}
     assert provider.calls == [{"provider": "hubspot", "method": "GET", "path": path, "query": {"archived": "false"}}]
+    store.engine.dispose()
+
+
+async def test_read_refuses_a_control_plane_path_before_any_provider_call(tmp_path: Path) -> None:
+    url = f"sqlite:///{tmp_path / 'read.db'}"
+    store = Store.open(url)
+    ws = store.create_workspace("acme")
+    provider = FakeProvider()
+    app = create_app(Settings(store=url), store=store, executor=provider.execute_tool, clock=lambda: FIXED)
+    service: GatewayService = app.state.service
+    for path in ("/admin/users", "/_twin/state", "/"):
+        with pytest.raises(RequestRejected) as rejected:
+            await service.read(ws, "hubspot", path, {})
+        assert rejected.value.status == 422
+    assert provider.calls == []
     store.engine.dispose()
 
 

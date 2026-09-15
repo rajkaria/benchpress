@@ -42,7 +42,8 @@ emails are canonicalised, and `write_scope` and `forbidden` become `DefinitionOf
 `POST /v1/sessions` persists the session (workspace, id, context, idempotency scope) before it answers 201. A taken
 id is 409; an omitted id is generated as `ses_` plus 16 hex digits. Any replica can rebuild a session's writer from
 its row. Each replica caches built sessions, least recently used evicted first, keyed by `(workspace_id, session_id)`
-and sized by `sessions_cache`. The cache holds nothing safety depends on, because claims live in the store.
+and sized by `sessions_cache`. The cache holds nothing safety depends on, because claims live in the store, and a
+cached writer keeps no per-write history (`history_limit=0`), so the cache does not grow with traffic.
 
 `POST /v1/execute` takes exactly one of `session_id` or an inline `context`. An inline context creates a session
 first, and the response names it.
@@ -54,8 +55,6 @@ Every session's `VerifiedWrite` shares one `SqlIdempotencyStore` over the gatewa
 
 - `"{workspace_id}:{session_id}"` for a session created with `idempotency_scope = "session"` (the default)
 - `workspace_id` for a session created with `idempotency_scope = "workspace"`, so all such sessions share claims
-- `workspace_id` for a session created by an inline context, because the caller has no session id to replay under,
-  and resending the same request must be refused rather than written twice
 
 A byte-identical write already done in the scope is refused with rule `idempotency`. An identical write still in
 flight on any replica is refused too, not queued behind the first (in-flight refusal). A failed write releases its
@@ -102,6 +101,9 @@ Before any gate evaluation or provider call, `execute` answers 422 for:
 - an action whose method is `GET`, because reads go through `read` and only writes are executed
 - a request with both or neither of `session_id` and `context`
 
+`read` is not gated, but a path the tool bus statically blocks (a control-plane root or prefix) is 422 before any
+provider call.
+
 ### Isolation and auth
 
 Every lookup is scoped to the caller's workspace. A session or receipt id from another workspace is 404, never 403,
@@ -126,6 +128,8 @@ and `import benchpress` loads none of its dependencies. The library only gains:
 - `benchpress.packs.policy_pack_from_yaml`, which `load_policy_pack` now delegates to
 - `benchpress.tools.interpret_result`, the tool bus's response reader made public
 - `RealAppGateway(trace_limit=...)`, whose default keeps the full trace
+- `VerifiedWrite(history_limit=...)`, whose default keeps every per-write record
+- `benchpress.tools.statically_blocked`, the tool bus's control-plane path check made public
 
 Gateway receipts are `benchpress-write/1` lines; `benchpress-receipt/1` is untouched.
 
@@ -137,8 +141,8 @@ Gateway receipts are `benchpress-write/1` lines; `benchpress-receipt/1` is untou
 - The gateway can only add refusals: policy packs from the directory and the workspace, approval parking, and the
   credential-header rejection. The one rule it does not apply, plan membership, has no meaning without a plan.
 - The gateway never infers or widens a context. What is protected is exactly what the caller stored.
-- Idempotency is stricter across replicas, never looser. Claims live in the shared store, an in-flight twin is
-  refused rather than queued, and inline requests share the workspace's claims.
+- Idempotency is stricter across replicas, never looser. Claims live in the shared store, and an in-flight twin is
+  refused rather than queued.
 - A stored policy change reaches a session another replica has already cached only when that replica rebuilds the
   session. Until then, that session enforces the packs it was built with.
 
@@ -149,5 +153,7 @@ Gateway receipts are `benchpress-write/1` lines; `benchpress-receipt/1` is untou
 - **A queue for in-flight twins.** Rejected: waiting for the first write to finish means polling across replicas, and
   it hides a caller bug (the same write sent twice at once) behind latency. The twin is refused, and the first write's
   receipt says what happened.
-- **A per-request context without sessions.** Kept, as the inline `context` on `execute`, which creates a session so
-  replays stay idempotent.
+- **A per-request context without sessions.** Kept, as the inline `context` on `execute`. It creates a one-shot
+  session with the default `session` scope, so it guards nothing across calls. A caller who needs replay protection
+  across calls creates a session first (optionally with `idempotency_scope = "workspace"`) and sends its
+  `session_id`.

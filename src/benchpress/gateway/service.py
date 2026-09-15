@@ -25,7 +25,7 @@ from benchpress.packs import (
     load_policy_packs,
     policy_pack_from_yaml,
 )
-from benchpress.tools import PROVIDER_API, interpret_result
+from benchpress.tools import PROVIDER_API, interpret_result, statically_blocked
 from benchpress.write_receipts import Clock, write_line
 
 if TYPE_CHECKING:
@@ -112,10 +112,8 @@ class GatewayService:
     async def execute(self, workspace: WorkspaceRow, request: ExecuteRequest) -> ExecuteResponse:
         """Gate, execute and read back one write, then append its one receipt line."""
         if request.context is not None:
-            # An inline context leaves the caller no session id to replay under, so its writes share the workspace's
-            # claims: resending the same request is refused as a duplicate instead of being written again.
-            inline = SessionCreate(context=request.context, idempotency_scope="workspace")
-            session_id = (await self.sessions.create(workspace, inline)).session_id
+            created = await self.sessions.create(workspace, SessionCreate(context=request.context))
+            session_id = created.session_id
         else:
             session_id = cast(str, request.session_id)
         session = await self._session(workspace, session_id)
@@ -150,7 +148,14 @@ class GatewayService:
     async def read(
         self, workspace: WorkspaceRow, provider: str, path: str, query: Mapping[str, str]
     ) -> dict[str, object]:
-        """One provider GET through the executor, interpreted like every tool-bus response. Reads are never gated."""
+        """One provider GET through the executor, interpreted like every tool-bus response.
+
+        Reads are not gated, but a path the tool bus statically blocks (a control-plane root or prefix) is a 422 and
+        never reaches the executor.
+        """
+        blocked = statically_blocked(path)
+        if blocked is not None:
+            raise RequestRejected(422, f"path {path!r} is blocked ({blocked}); reads never reach the control plane")
         tool_input = {"provider": provider, "method": "GET", "path": path, "query": dict(query)}
         result = interpret_result(await self.sessions.executor(PROVIDER_API, tool_input))
         return {"ok": result.ok, "status_code": result.status_code, "body": result.body, "error": result.error}

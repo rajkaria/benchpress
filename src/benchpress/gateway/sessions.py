@@ -39,7 +39,7 @@ class GatewaySession:
 
 
 class SessionRegistry:
-    """Creates session rows and builds (and caches, per replica) the writer for each."""
+    """Creates session rows and builds (and caches, per replica) the writer for each, keeping no per-write history."""
 
     def __init__(
         self,
@@ -97,6 +97,7 @@ class SessionRegistry:
             scope=scope_key,
             workspace=workspace.name,
             session=session_id,
+            history_limit=0,
         )
         built = GatewaySession(workspace, session_id, scope_key, writer)
         if self._generations.get(workspace.id, 0) != generation:
@@ -117,6 +118,7 @@ class SessionRegistry:
             policy_packs=tuple(packs),
             allow_unplanned=True,
             workspace=workspace.name,
+            history_limit=0,
         )
 
     def invalidate(self, workspace_id: str) -> None:

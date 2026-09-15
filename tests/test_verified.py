@@ -5,11 +5,14 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+import pytest
+
 from benchpress.context import Candidate, Context, ReadBack
 from benchpress.idempotency import InMemoryIdempotencyStore
 from benchpress.phases.execute import readback_evidence
 from benchpress.tools import MAX_PROVIDER_CALLS, ToolResult
 from benchpress.verified import VerifiedWrite
+from benchpress.write_receipts import MemoryReceiptSink
 from tests.conftest import make_action
 
 _PROMPT = "Rivermill Studio asked for renewal notices to go to ap@rivermill.example."
@@ -423,3 +426,44 @@ async def test_evaluate_judges_an_action_without_executing_recording_or_claiming
     assert provider.calls == [] and ctx.refusals == [] and ctx.gate_decisions == []
     assert (await writer.run(_write())).status == "verified", "evaluate took no idempotency claim"
     assert writer.evaluate(_write()).rule == "idempotency"
+
+
+async def test_history_limit_zero_keeps_no_per_write_records_and_changes_no_outcome() -> None:
+    def build(history_limit: int | None) -> tuple[VerifiedWrite, MemoryReceiptSink]:
+        ctx = Context(user_prompt=_PROMPT)
+        prospect = Candidate(
+            provider="hubspot", resource_type="company", resource_id="702", display="Rivermill Studio Prospect"
+        )
+        ctx.protected.add_candidate(prospect)
+        sink = MemoryReceiptSink()
+        writer = VerifiedWrite(
+            FakeProvider().execute_tool,
+            context=ctx,
+            receipts=sink,
+            clock=lambda: "2026-09-15T00:00:00.000Z",
+            history_limit=history_limit,
+        )
+        return writer, sink
+
+    actions = [_write(), _write(record="702"), _write(), _write(email="billing@rivermill.example")]
+    trimmed, trimmed_sink = build(0)
+    kept, kept_sink = build(None)
+    trimmed_outcomes = [await trimmed.run(action) for action in actions]
+    kept_outcomes = [await kept.run(action) for action in actions]
+
+    assert [o.status for o in trimmed_outcomes] == ["verified", "refused", "refused", "verified"]
+    assert [(o.status, o.verdict, o.evidence) for o in trimmed_outcomes] == [
+        (o.status, o.verdict, o.evidence) for o in kept_outcomes
+    ]
+    assert all(o.evidence for o in trimmed_outcomes if o.status == "verified")
+    assert trimmed_sink.lines == kept_sink.lines
+    ctx = trimmed.context
+    assert (ctx.gate_decisions, ctx.refusals, ctx.ledger, ctx.evidence) == ([], [], [], [])
+    bus = trimmed._bus  # pyright: ignore[reportPrivateUsage]
+    assert bus.events == () and bus.harness_events == ()
+    kept_ctx = kept.context
+    assert kept_ctx.gate_decisions and kept_ctx.refusals and kept_ctx.ledger and kept_ctx.evidence
+    kept_bus = kept._bus  # pyright: ignore[reportPrivateUsage]
+    assert kept_bus.events and kept_bus.harness_events
+    with pytest.raises(ValueError, match="history_limit"):
+        VerifiedWrite(FakeProvider().execute_tool, history_limit=-1)

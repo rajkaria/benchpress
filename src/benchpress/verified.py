@@ -65,6 +65,9 @@ class VerifiedWrite:
       so replaying the identical action is refused. Fix the cause and send a different action.
     * **Not a benchmark trial.** The tool bus runs without the controller's per-phase budgets or lifetime call
       cap, so a long-lived instance never runs out of calls and `run()` never raises `BudgetExhausted`.
+    * **History is kept by default.** The context and the tool bus record every write (gate decisions, refusals,
+      ledger, evidence, events). A long-lived instance passes `history_limit` to keep only the newest N of each once
+      a `run` has built its outcome and emitted its receipt; no verdict, outcome or receipt reads those records.
     """
 
     def __init__(
@@ -80,7 +83,10 @@ class VerifiedWrite:
         clock: Clock = utc_now,
         workspace: str = "local",
         session: str | None = None,
+        history_limit: int | None = None,
     ) -> None:
+        if history_limit is not None and history_limit < 0:
+            raise ValueError("history_limit must be a non-negative integer or None")
         self._context = context or Context()
         self._gate = Gate(self._context, allow_unplanned=allow_unplanned, policy_packs=policy_packs)
         self._bus = ToolBus(context=self._context, execute=execute, gate=self._gate, budgets=False)
@@ -90,6 +96,7 @@ class VerifiedWrite:
         self._clock = clock
         self._workspace = workspace
         self._session = session
+        self._history_limit = history_limit
 
     @property
     def context(self) -> Context:
@@ -125,7 +132,16 @@ class VerifiedWrite:
                 session=self._session or self._context.trial_id,
             )
             await self._receipts.emit(line)
+        self._trim_history()
         return outcome
+
+    def _trim_history(self) -> None:
+        if self._history_limit is None:
+            return
+        ctx = self._context
+        for records in (ctx.gate_decisions, ctx.refusals, ctx.ledger, ctx.evidence):
+            del records[: max(0, len(records) - self._history_limit)]
+        self._bus.trim_history(self._history_limit)
 
     async def _perform_once(self, action: Action) -> tuple[ToolResult, GateVerdict]:
         """The gate first; then a claim on the store, so an identical write in flight or done anywhere is refused."""
