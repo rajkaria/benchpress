@@ -3,29 +3,37 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import json
+import logging
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Awaitable, Callable, Generator, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import MethodType
 from typing import Any, cast
 
+import anyio
+import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from benchpress.context import Action
-from benchpress.gateway.app import create_app
+from benchpress.gateway.app import (
+    _expire_sweep,  # pyright: ignore[reportPrivateUsage]
+    create_app,
+)
+from benchpress.gateway.approvals import ApprovalQueue
 from benchpress.gateway.config import ConfigError, Settings, UpstreamConfig
 from benchpress.gateway.executors import executor_from_settings
 from benchpress.gateway.schemas import ContextInput, ProtectedInput, SessionCreate
 from benchpress.gateway.service import GatewayService, RequestRejected
 from benchpress.gateway.store import Store
 from benchpress.realapp import DEFAULT_MAX_CALLS, RealAppGateway
-from benchpress.tools import PROVIDER_API, as_mapping
+from benchpress.tools import PROVIDER_API, ToolExecutor, as_mapping
 from tests.test_verified import FakeProvider
 
 FIXED = "2026-09-14T00:00:00.000Z"
@@ -418,3 +426,77 @@ def test_an_upstream_the_real_executor_refuses_is_a_config_error(monkeypatch: py
         executor_from_settings(Settings(upstreams=(UpstreamConfig("nope", "http://127.0.0.1:9"),)))
     with pytest.raises(ConfigError, match="BENCHPRESS_SCRATCH_OK"):
         executor_from_settings(Settings(upstreams=(UpstreamConfig("hubspot", "https://api.hubapi.example"),)))
+
+
+def test_shutdown_closes_every_owned_resource_even_though_it_cancels_the_sweeper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`create_app` with no `store`, `executor` or `http` owns all three and must close them on shutdown.
+
+    The lifespan's own sweeper task group is cancelled during shutdown (Important-1): cleanup used to run
+    inside that same cancelled scope, so a close callback with a genuine checkpoint (like a real upstream
+    client's `aclose`) was cancelled before it finished, silently skipping every close after it.
+    """
+    closed: list[str] = []
+
+    async def fake_executor(tool_name: str, tool_input: dict[str, Any]) -> object:
+        return {"status_code": 200, "body": {}}
+
+    async def fake_close() -> None:
+        await anyio.sleep(0)  # a genuine checkpoint, like RealAppGateway.aclose's
+        closed.append("executor")
+
+    def fake_executor_from_settings(_settings: Settings) -> tuple[ToolExecutor, Callable[[], Awaitable[None]]]:
+        return fake_executor, fake_close
+
+    monkeypatch.setattr("benchpress.gateway.app.executor_from_settings", fake_executor_from_settings)
+
+    created_clients: list[httpx.AsyncClient] = []
+    real_async_client = httpx.AsyncClient
+
+    def tracking_async_client(*args: Any, **kwargs: Any) -> httpx.AsyncClient:
+        client = real_async_client(*args, **kwargs)
+        created_clients.append(client)
+        return client
+
+    monkeypatch.setattr("benchpress.gateway.app.httpx.AsyncClient", tracking_async_client)
+
+    url = f"sqlite:///{tmp_path / 'owned.db'}"
+    app = create_app(Settings(store=url), clock=lambda: FIXED)
+    store = cast(Store, app.state.store)
+    monkeypatch.setattr(store.engine, "dispose", lambda: closed.append("store"))
+
+    with TestClient(app) as client:
+        assert client.get("/healthz").status_code == 200
+
+    assert closed == ["executor", "store"], "the executor and the store must both be closed, in that order"
+    assert len(created_clients) == 1 and created_clients[0].is_closed, "the owned http client must be closed"
+
+
+async def test_expire_sweep_survives_one_failing_iteration_and_keeps_running(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """One sweep failing (a transient DB error, a receipt-append failure inside `_close`) must not kill the
+    sweep for the life of the process: it is logged at WARNING and the loop keeps going until cancelled."""
+    calls = 0
+    succeeded = anyio.Event()
+
+    class FlakyApprovals:
+        async def expire_due(self, workspace_id: str | None = None) -> int:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise RuntimeError("boom: transient failure")
+            succeeded.set()
+            return 0
+
+    caplog.set_level(logging.WARNING, logger="benchpress.gateway")
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(functools.partial(_expire_sweep, cast(ApprovalQueue, FlakyApprovals()), interval=0))
+        with anyio.fail_after(5):
+            await succeeded.wait()
+        tg.cancel_scope.cancel()
+
+    assert calls >= 2, "the sweep must run again after the first iteration raised"
+    warnings = [r for r in caplog.records if r.name == "benchpress.gateway" and r.levelno == logging.WARNING]
+    assert len(warnings) == 1

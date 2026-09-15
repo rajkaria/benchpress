@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -41,12 +43,16 @@ class Clock:
 class Hooks:
     requests: list[httpx.Request] = field(default_factory=list[httpx.Request])
     fail: bool = False
+    raises: Exception | None = None
+    status_code: int = 204
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
         if self.fail:
             raise httpx.ConnectError("hook down")
-        return httpx.Response(204)
+        if self.raises is not None:
+            raise self.raises
+        return httpx.Response(self.status_code)
 
 
 @dataclass
@@ -172,6 +178,34 @@ def test_a_failing_webhook_does_not_block_parking(tmp_path: Path) -> None:
     with approvals(tmp_path) as ap:
         ap.hooks.fail = True
         assert ap.execute().status_code == 202
+
+
+def _one_gateway_warning(caplog: pytest.LogCaptureFixture) -> str:
+    warnings = [r for r in caplog.records if r.name == "benchpress.gateway" and r.levelno == logging.WARNING]
+    assert len(warnings) == 1, f"expected exactly one benchpress.gateway WARNING, got {warnings}"
+    return warnings[0].getMessage()
+
+
+def test_a_non_2xx_webhook_response_does_not_block_parking(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    with approvals(tmp_path) as ap:
+        ap.hooks.status_code = 500
+        with caplog.at_level(logging.WARNING, logger="benchpress.gateway"):
+            assert ap.execute().status_code == 202
+        message = _one_gateway_warning(caplog)
+        assert "s3cret" not in message and PROMPT not in message
+
+
+def test_a_webhook_exception_that_is_not_an_httpx_error_does_not_block_parking(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    with approvals(tmp_path) as ap:
+        ap.hooks.raises = RuntimeError("boom: unexpected webhook failure")
+        with caplog.at_level(logging.WARNING, logger="benchpress.gateway"):
+            assert ap.execute().status_code == 202
+        message = _one_gateway_warning(caplog)
+        assert "s3cret" not in message and "boom" not in message
 
 
 def test_other_workspaces_cannot_see_or_resolve(tmp_path: Path) -> None:

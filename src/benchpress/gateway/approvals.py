@@ -270,7 +270,9 @@ class ApprovalQueue:
             headers["X-Benchpress-Signature"] = f"sha256={signature}"
         try:
             response = await self._http.post(self._webhook_url, content=body, headers=headers, timeout=5.0)
-        except httpx.HTTPError:
+        except Exception:
+            # Any failure to send (a transport error, a bad URL, a client already closed, ...) is logged and
+            # never fails the park; `Exception` never includes the cancellation exception, so that propagates.
             _logger.warning("approval webhook request failed for approval %s", row.id)
             return
         if not (200 <= response.status_code < 300):

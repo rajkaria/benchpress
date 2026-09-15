@@ -8,6 +8,7 @@ is a pure ASGI middleware, so it holds whatever a route reads and however it rea
 from __future__ import annotations
 
 import functools
+import logging
 import time
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
@@ -34,6 +35,8 @@ from benchpress.tools import ToolExecutor
 from benchpress.write_receipts import Clock
 
 __all__ = ["BodySizeLimit", "create_app"]
+
+_logger = logging.getLogger("benchpress.gateway")
 
 
 # ---- body cap ---------------------------------------------------------------------------------
@@ -110,10 +113,18 @@ async def _nothing_to_close() -> None:
 
 
 async def _expire_sweep(approvals: ApprovalQueue, *, interval: float = 30.0) -> None:
-    """Close every approval past its TTL, roughly every `interval` seconds, until cancelled."""
+    """Close every approval past its TTL, roughly every `interval` seconds, until cancelled.
+
+    A single failing sweep (a transient DB error, a receipt-append failure inside `_close`) must not end the
+    sweep for the life of the process: it is logged at WARNING and the loop keeps going. Only cancellation
+    (shutdown) ends it — `Exception` never includes the cancellation exception, so that still propagates.
+    """
     while True:
         await anyio.sleep(interval)
-        await approvals.expire_due()
+        try:
+            await approvals.expire_due()
+        except Exception:
+            _logger.warning("approval expiry sweep failed; will retry on the next interval")
 
 
 def create_app(
@@ -162,18 +173,25 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
-        async with anyio.create_task_group() as sweeper:
-            if settings.approval_rules:
-                sweeper.start_soon(_expire_sweep, approvals)
-            try:
-                yield
-            finally:
-                sweeper.cancel_scope.cancel()
-                await close_executor()
-                if owns_http:
-                    await http_client.aclose()
-                if owns_store:
-                    opened.engine.dispose()
+        # The sweeper's own cancel scope covers this host task too, so cancelling it here (to stop the sweep
+        # before shutdown) must happen *inside* the `async with`, and every close that needs its own
+        # checkpoints to complete (a real upstream client's `aclose`, the http client's, the store engine's
+        # dispose) must happen *after* the task group has exited — otherwise the still-cancelled scope
+        # cancels those closes too, and they get silently skipped rather than run.
+        try:
+            async with anyio.create_task_group() as sweeper:
+                if settings.approval_rules:
+                    sweeper.start_soon(_expire_sweep, approvals)
+                try:
+                    yield
+                finally:
+                    sweeper.cancel_scope.cancel()
+        finally:
+            await close_executor()
+            if owns_http:
+                await http_client.aclose()
+            if owns_store:
+                opened.engine.dispose()
 
     app = FastAPI(title="Benchpress gateway", version=__version__, lifespan=lifespan)
     app.state.service = service
