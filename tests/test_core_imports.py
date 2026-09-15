@@ -14,3 +14,14 @@ def test_import_benchpress_does_not_load_server_dependencies() -> None:
     loaded = set(proc.stdout.strip().split(","))
     offenders = sorted(name for name in loaded if name.split(".")[0] in HEAVY)
     assert offenders == []
+
+
+def test_span_is_a_no_op_without_opentelemetry() -> None:
+    code = (
+        "import sys; sys.modules['opentelemetry'] = None\n"
+        "from benchpress.telemetry import span\n"
+        "with span('x', a=1) as h: h.set('b', 2)\n"
+        "print('ok')"
+    )
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert proc.stdout.strip() == "ok"

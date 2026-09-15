@@ -15,8 +15,9 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 import anyio
+import anyio.to_thread
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -24,9 +25,10 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from benchpress import __version__
 from benchpress.context import utc_now
 from benchpress.gateway.approvals import ApprovalQueue
-from benchpress.gateway.auth import RateLimiter
+from benchpress.gateway.auth import RateLimiter, bearer_token
 from benchpress.gateway.config import Settings
 from benchpress.gateway.executors import executor_from_settings
+from benchpress.gateway.metrics import GatewayMetrics, create_metrics
 from benchpress.gateway.routes import router
 from benchpress.gateway.service import GatewayService, RequestRejected, load_directory_packs, workspace_packs
 from benchpress.gateway.sessions import SessionRegistry
@@ -34,7 +36,7 @@ from benchpress.gateway.store import SqlIdempotencyStore, Store
 from benchpress.tools import ToolExecutor
 from benchpress.write_receipts import Clock
 
-__all__ = ["BodySizeLimit", "create_app"]
+__all__ = ["BodySizeLimit", "HTTPMetrics", "create_app"]
 
 _logger = logging.getLogger("benchpress.gateway")
 
@@ -97,12 +99,71 @@ class BodySizeLimit:
                 await _too_large(scope, receive, send)
 
 
+# ---- HTTP metrics ------------------------------------------------------------------------------
+
+
+class HTTPMetrics:
+    """Counts and times every HTTP request. The outermost middleware, so a 413 from `BodySizeLimit` is
+    still counted (with route `"unmatched"`, since routing never ran).
+
+    Reads `scope["route"].path` only after the inner app has handled the request, so an id embedded in a
+    concrete URL (like a receipt id) never becomes a label value — only the route's template does.
+    """
+
+    def __init__(self, app: ASGIApp, metrics: GatewayMetrics) -> None:
+        self.app = app
+        self.metrics = metrics
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        started = time.perf_counter()
+        status_code = 500
+
+        async def capturing_send(message: Message) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, capturing_send)
+        finally:
+            route = scope.get("route")
+            route_path = route.path if route is not None else "unmatched"
+            self.metrics.http_requests.labels(route=route_path, method=scope["method"], code=str(status_code)).inc()
+            self.metrics.http_seconds.labels(route=route_path).observe(time.perf_counter() - started)
+
+
 # ---- exception mapping ------------------------------------------------------------------------
 
 
 async def _rejected(_request: Request, exc: Exception) -> Response:
     rejected = cast(RequestRejected, exc)
     return JSONResponse(status_code=rejected.status, content={"detail": str(rejected), **rejected.extra})
+
+
+# ---- /metrics ------------------------------------------------------------------------------------
+
+
+async def _metrics_key_required(request: Request, service: GatewayService) -> None:
+    """The same key + rate-limit check `current_workspace` runs, gated on `metrics_auth` instead of `auth`."""
+    token = bearer_token(request.headers.get("authorization"))
+    found = await anyio.to_thread.run_sync(service.store.key_for, token) if token is not None else None
+    if found is None:
+        raise HTTPException(401, "a valid API key is required", headers={"WWW-Authenticate": "Bearer"})
+    _workspace, key = found
+    if not cast(RateLimiter, request.app.state.limiter).allow(key.id):
+        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "1"})
+
+
+async def _metrics_endpoint(request: Request) -> Response:
+    service = cast(GatewayService, request.app.state.service)
+    if service.settings.metrics_auth != "none":
+        await _metrics_key_required(request, service)
+    body, content_type = cast(GatewayMetrics, request.app.state.metrics).render()
+    return Response(content=body, media_type=content_type)
 
 
 # ---- the app ------------------------------------------------------------------------------------
@@ -158,6 +219,7 @@ def create_app(
         packs_for=functools.partial(workspace_packs, opened, directory_packs),
         cache_size=settings.sessions_cache,
     )
+    metrics = create_metrics()
     approvals = ApprovalQueue(
         opened,
         ttl_seconds=settings.approval_ttl_seconds,
@@ -166,9 +228,17 @@ def create_app(
         now=now,
         clock=clock,
         http=http_client,
+        metrics=metrics,
     )
     service = GatewayService(
-        settings, opened, sessions, clock=clock, now=now, approvals=approvals, directory_packs=directory_packs
+        settings,
+        opened,
+        sessions,
+        clock=clock,
+        now=now,
+        approvals=approvals,
+        metrics=metrics,
+        directory_packs=directory_packs,
     )
 
     @asynccontextmanager
@@ -196,8 +266,13 @@ def create_app(
     app = FastAPI(title="Benchpress gateway", version=__version__, lifespan=lifespan)
     app.state.service = service
     app.state.store = opened
+    app.state.metrics = metrics
     app.state.limiter = RateLimiter(settings.requests_per_minute)
+    # `HTTPMetrics` is added last, so it wraps `BodySizeLimit` and stays the outermost middleware: a request
+    # `BodySizeLimit` rejects with 413 is still counted, under route "unmatched".
     app.add_middleware(BodySizeLimit, max_bytes=settings.max_body_bytes)
+    app.add_middleware(HTTPMetrics, metrics=metrics)
     app.add_exception_handler(RequestRejected, _rejected)
     app.include_router(router)
+    app.add_api_route("/metrics", _metrics_endpoint, methods=["GET"])
     return app

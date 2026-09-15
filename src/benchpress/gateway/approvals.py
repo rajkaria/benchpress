@@ -26,6 +26,7 @@ import httpx
 from benchpress.context import Action, GateVerdict
 from benchpress.gate import classify, fingerprint
 from benchpress.gateway.config import ApprovalRuleConfig
+from benchpress.gateway.metrics import GatewayMetrics
 from benchpress.gateway.schemas import ApprovalView
 from benchpress.gateway.store import ApprovalRow, Store, WorkspaceRow
 from benchpress.write_receipts import Clock, receipt_line
@@ -101,6 +102,7 @@ class ApprovalQueue:
         now: Callable[[], float],
         clock: Clock,
         http: httpx.AsyncClient | None = None,
+        metrics: GatewayMetrics | None = None,
     ) -> None:
         self._store = store
         self._ttl_seconds = ttl_seconds
@@ -109,6 +111,7 @@ class ApprovalQueue:
         self._now = now
         self._clock = clock
         self._http = http
+        self._metrics = metrics
 
     # ---- park -----------------------------------------------------------------------------
 
@@ -159,6 +162,8 @@ class ApprovalQueue:
         append = functools.partial(self._store.append_receipt, workspace.id, session_id, line)
         receipt_row = await anyio.to_thread.run_sync(append)
         await self._notify(row, workspace)
+        if self._metrics is not None:
+            self._metrics.approvals.labels(event="requested").inc()
         return row, receipt_row.id
 
     def _requested_receipt_id(self, workspace_id: str, session_id: str, approval_id: str) -> str | None:
@@ -210,6 +215,8 @@ class ApprovalQueue:
         updated = await anyio.to_thread.run_sync(update)
         if not updated:
             return None
+        if self._metrics is not None:
+            self._metrics.approvals.labels(event=status).inc()
         verdict = GateVerdict(action_id=row.action.id, allowed=True, rule="allowed")
         approval_payload = {"id": row.id, "decision": _DECISION_FOR_STATUS[status], "by": by, "note": note}
         line = receipt_line(

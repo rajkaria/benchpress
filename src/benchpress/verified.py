@@ -15,6 +15,7 @@ from benchpress.context import Action, Context, Evidence, GateVerdict, utc_now
 from benchpress.gate import Gate, PolicyRuleSet, fingerprint
 from benchpress.idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from benchpress.phases.execute import is_unreadable, perform_readback, readback_evidence, resource_of
+from benchpress.telemetry import span
 from benchpress.tools import ToolBus, ToolExecutor, ToolResult
 from benchpress.write_receipts import Clock, ReceiptSink
 
@@ -112,12 +113,28 @@ class VerifiedWrite:
         return self._gate.evaluate(action)
 
     async def run(self, action: Action) -> WriteOutcome:
-        result, verdict = await self._perform_once(action)
+        with span(
+            "benchpress.write",
+            **{
+                "benchpress.provider": action.provider,
+                "benchpress.method": action.method,
+                "benchpress.action_id": action.id,
+            },
+        ) as handle:
+            outcome = await self._run_body(action)
+            handle.set("benchpress.status", outcome.status)
+            handle.set("benchpress.rule", outcome.verdict.rule)
+            return outcome
+
+    async def _run_body(self, action: Action) -> WriteOutcome:
+        with span("benchpress.execute"):
+            result, verdict = await self._perform_once(action)
         if not verdict.allowed:
             return await self._finish(WriteOutcome(action, verdict, None, ()))
         if not result.ok:
             return await self._finish(WriteOutcome(action, verdict, result, ()))
-        evidence = await self._readback(action, result.json())
+        with span("benchpress.readback"):
+            evidence = await self._readback(action, result.json())
         self._context.add_evidence(evidence)
         return await self._finish(WriteOutcome(action, verdict, result, evidence))
 

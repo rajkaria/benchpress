@@ -7,6 +7,7 @@ HTTP-shaped thing in this module; each surface maps it to its own error.
 from __future__ import annotations
 
 import functools
+import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
@@ -18,6 +19,7 @@ from benchpress.context import Action, GateVerdict
 from benchpress.gate import PolicyRuleSet
 from benchpress.gateway.approvals import ApprovalClosed, ApprovalNotFound, ApprovalQueue, approval_view, matching_rule
 from benchpress.gateway.config import ConfigError, Settings
+from benchpress.gateway.metrics import GatewayMetrics
 from benchpress.gateway.schemas import (
     ApprovalDecision,
     ApprovalView,
@@ -83,12 +85,14 @@ class GatewayService:
         clock: Clock,
         now: Callable[[], float],
         approvals: ApprovalQueue,
+        metrics: GatewayMetrics,
         directory_packs: Sequence[PolicyPack] = (),
     ) -> None:
         self.settings = settings
         self.store = store
         self.sessions = sessions
         self.approvals = approvals
+        self.metrics = metrics
         self._clock = clock
         self._now = now
         self._directory_packs = tuple(directory_packs)
@@ -157,7 +161,9 @@ class GatewayService:
         approval: Mapping[str, object] | None = None,
     ) -> ExecuteResponse:
         """Run one write and append its one receipt line, optionally carrying the approval that let it through."""
+        started = time.perf_counter()
         outcome = await session.writer.run(action)
+        self.metrics.observe_outcome(outcome, time.perf_counter() - started)
         line = write_line(outcome, at=self._clock(), workspace=workspace.name, session=session_id, approval=approval)
         row = await anyio.to_thread.run_sync(self.store.append_receipt, workspace.id, session_id, line)
         return ExecuteResponse(

@@ -36,6 +36,7 @@ from benchpress.phases.resolve import resolve as _resolve
 from benchpress.phases.verify import repair as _repair
 from benchpress.phases.verify import verify as _verify
 from benchpress.playbooks import Playbook
+from benchpress.telemetry import span
 from benchpress.tools import ToolBus, ToolExecutor
 
 PHASE_ORDER: tuple[str, ...] = (
@@ -96,7 +97,8 @@ async def _run_through(deps: PhaseDeps, last: str) -> None:
     for name in PHASE_ORDER[: PHASE_ORDER.index(last) + 1]:
         if name in deps.completed:
             continue
-        await _PHASES[name](deps)
+        with span("benchpress.phase", **{"benchpress.phase": name}):
+            await _PHASES[name](deps)
         deps.completed.append(name)
 
 
