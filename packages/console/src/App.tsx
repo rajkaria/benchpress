@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createApi, sessionKeyStore, Unauthorized, type Meta, type ReceiptDetail as ReceiptDetailModel, type ReceiptPage } from "./api";
+import {
+  createApi,
+  sessionKeyStore,
+  Unauthorized,
+  type KeyStore,
+  type Meta,
+  type ReceiptDetail as ReceiptDetailModel,
+  type ReceiptPage,
+} from "./api";
 import { KeyPrompt } from "./KeyPrompt";
 import { ReceiptDetail } from "./ReceiptDetail";
 import { ReceiptsList } from "./ReceiptsList";
@@ -24,9 +32,15 @@ function Header({ meta }: { meta: Meta | null }) {
   );
 }
 
+export type AppProps = {
+  /** Injection seams for tests; production always uses the real `fetch` and `sessionKeyStore`. */
+  fetchImpl?: typeof fetch;
+  keyStore?: KeyStore;
+};
+
 /** Owns the hash route, the `/v1/meta` load and the "needs a key" gate every other screen renders behind. */
-export function App() {
-  const api = useMemo(() => createApi(), []);
+export function App({ fetchImpl = fetch, keyStore = sessionKeyStore }: AppProps = {}) {
+  const api = useMemo(() => createApi(fetchImpl, keyStore), [fetchImpl, keyStore]);
   const [route, setRoute] = useState<Route>(currentRoute);
   const [lastListFilters, setLastListFilters] = useState<Filters>(() => {
     const initial = currentRoute();
@@ -59,14 +73,19 @@ export function App() {
       setKeyError(null);
     } catch (error) {
       if (error instanceof Unauthorized) {
+        // A stored key (from an earlier session, or one rejected before a reload) is 401ing right
+        // now: it is not coming back. Clear it so a reload doesn't silently retry the same bad key
+        // forever, and show a bare prompt — the user hasn't typed anything yet, so no error message.
+        keyStore.clear();
         setNeedsKey(true);
+        setKeyError(null);
       } else {
         throw error;
       }
     } finally {
       setMetaChecked(true);
     }
-  }, [api]);
+  }, [api, keyStore]);
 
   useEffect(() => {
     void loadMeta();
@@ -113,7 +132,7 @@ export function App() {
   }
 
   async function handleKeySubmit(key: string) {
-    sessionKeyStore.set(key);
+    keyStore.set(key);
     try {
       const loaded = await api.meta();
       setMeta(loaded);
@@ -121,6 +140,10 @@ export function App() {
       setKeyError(null);
     } catch (error) {
       if (error instanceof Unauthorized) {
+        // The key just submitted is the one that got 401ed: leave it in the store and a reload
+        // would retry it silently and re-show a blank prompt. Clear it so the next attempt starts
+        // from a clean slate, and say why the prompt is back.
+        keyStore.clear();
         setKeyError("That key was not accepted.");
       } else {
         throw error;
