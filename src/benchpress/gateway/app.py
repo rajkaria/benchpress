@@ -15,9 +15,8 @@ from contextlib import asynccontextmanager
 from typing import cast
 
 import anyio
-import anyio.to_thread
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -25,8 +24,9 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from benchpress import __version__
 from benchpress.context import utc_now
 from benchpress.gateway.approvals import ApprovalQueue
-from benchpress.gateway.auth import RateLimiter, bearer_token
+from benchpress.gateway.auth import RateLimiter
 from benchpress.gateway.config import Settings
+from benchpress.gateway.deps import authenticate
 from benchpress.gateway.executors import executor_from_settings
 from benchpress.gateway.metrics import GatewayMetrics, create_metrics
 from benchpress.gateway.routes import router
@@ -147,21 +147,12 @@ async def _rejected(_request: Request, exc: Exception) -> Response:
 # ---- /metrics ------------------------------------------------------------------------------------
 
 
-async def _metrics_key_required(request: Request, service: GatewayService) -> None:
-    """The same key + rate-limit check `current_workspace` runs, gated on `metrics_auth` instead of `auth`."""
-    token = bearer_token(request.headers.get("authorization"))
-    found = await anyio.to_thread.run_sync(service.store.key_for, token) if token is not None else None
-    if found is None:
-        raise HTTPException(401, "a valid API key is required", headers={"WWW-Authenticate": "Bearer"})
-    _workspace, key = found
-    if not cast(RateLimiter, request.app.state.limiter).allow(key.id):
-        raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "1"})
-
-
 async def _metrics_endpoint(request: Request) -> Response:
+    """Requires a valid key (the same lookup and rate limit `current_workspace` applies, Ruling R16) unless
+    `metrics_auth == "none"` — independent of `settings.auth`, so the two can differ."""
     service = cast(GatewayService, request.app.state.service)
     if service.settings.metrics_auth != "none":
-        await _metrics_key_required(request, service)
+        await authenticate(request, service)
     body, content_type = cast(GatewayMetrics, request.app.state.metrics).render()
     return Response(content=body, media_type=content_type)
 
@@ -219,7 +210,7 @@ def create_app(
         packs_for=functools.partial(workspace_packs, opened, directory_packs),
         cache_size=settings.sessions_cache,
     )
-    metrics = create_metrics()
+    metrics = create_metrics(extra_providers=[upstream.provider for upstream in settings.upstreams])
     approvals = ApprovalQueue(
         opened,
         ttl_seconds=settings.approval_ttl_seconds,

@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from collections.abc import Iterator
 from typing import Any
 
 import pytest
-from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
+import benchpress.telemetry as telemetry
 from benchpress.context import Context
 from benchpress.loop import PHASE_ORDER, run_phases
 from benchpress.telemetry import span
@@ -18,16 +20,19 @@ from benchpress.verified import VerifiedWrite
 from tests.test_loop import _deps  # pyright: ignore[reportPrivateUsage]
 from tests.test_verified import _PROMPT, FakeProvider, _write  # pyright: ignore[reportPrivateUsage]
 
-_EXPORTER = InMemorySpanExporter()
-_PROVIDER = TracerProvider()
-_PROVIDER.add_span_processor(SimpleSpanProcessor(_EXPORTER))
-trace.set_tracer_provider(_PROVIDER)
 
-
-@pytest.fixture(autouse=True)
-def spans() -> Iterator[InMemorySpanExporter]:
-    _EXPORTER.clear()
-    yield _EXPORTER
+@pytest.fixture
+def spans(monkeypatch: pytest.MonkeyPatch) -> Iterator[InMemorySpanExporter]:
+    """A `TracerProvider` local to this test, wired in by monkeypatching `_tracer` rather than by calling
+    `trace.set_tracer_provider` globally (Ruling R17) — the real SDK global is process-wide and un-resettable,
+    so setting it at import time would leak real spans into every later test in the session.
+    """
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer("benchpress")
+    monkeypatch.setattr(telemetry, "_tracer", lambda: tracer)
+    yield exporter
 
 
 def test_span_handle_sets_attributes(spans: InMemorySpanExporter) -> None:
@@ -61,3 +66,24 @@ async def test_every_loop_phase_is_a_span(spans: InMemorySpanExporter) -> None:
         if s.name == "benchpress.phase"
     ]
     assert phases == list(PHASE_ORDER)
+
+
+def test_span_emits_through_a_globally_installed_provider() -> None:
+    """No monkeypatching here: a fresh process installs a real SDK provider globally, the way a host
+    application would, and `span(...)`'s lazy `trace.get_tracer("benchpress")` call must reach it."""
+    code = (
+        "from opentelemetry import trace\n"
+        "from opentelemetry.sdk.trace import TracerProvider\n"
+        "from opentelemetry.sdk.trace.export import SimpleSpanProcessor\n"
+        "from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter\n"
+        "from benchpress.telemetry import span\n"
+        "exporter = InMemorySpanExporter()\n"
+        "provider = TracerProvider()\n"
+        "provider.add_span_processor(SimpleSpanProcessor(exporter))\n"
+        "trace.set_tracer_provider(provider)\n"
+        "with span('x', a=1) as h:\n"
+        "    h.set('b', 2)\n"
+        "print(','.join(s.name for s in exporter.get_finished_spans()))\n"
+    )
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert proc.stdout.strip() == "x"

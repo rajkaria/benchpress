@@ -23,6 +23,7 @@ __all__ = [
     "ServiceDep",
     "WorkspaceDep",
     "actor",
+    "authenticate",
     "current_workspace",
 ]
 
@@ -31,12 +32,12 @@ def _service(request: Request) -> GatewayService:
     return cast(GatewayService, request.app.state.service)
 
 
-async def current_workspace(request: Request) -> WorkspaceRow:
-    """The caller's workspace. The API key row is kept on `request.state.key` (None under `auth = "none"`)."""
-    service = _service(request)
-    if service.settings.auth == "none":
-        request.state.key = None
-        return await service.default_workspace()
+async def authenticate(request: Request, service: GatewayService) -> tuple[WorkspaceRow, ApiKeyRow]:
+    """A valid bearer key and its workspace (401 without one), then the per-key rate limit (429 over it).
+
+    Shared by `current_workspace` (gated on `settings.auth`) and the `/metrics` route (gated on
+    `settings.metrics_auth`), so both enforce the identical key lookup and rate limit, never two copies of it.
+    """
     token = bearer_token(request.headers.get("authorization"))
     found = await anyio.to_thread.run_sync(service.store.key_for, token) if token is not None else None
     if found is None:
@@ -44,6 +45,16 @@ async def current_workspace(request: Request) -> WorkspaceRow:
     workspace, key = found
     if not cast(RateLimiter, request.app.state.limiter).allow(key.id):
         raise HTTPException(429, "rate limit exceeded", headers={"Retry-After": "1"})
+    return workspace, key
+
+
+async def current_workspace(request: Request) -> WorkspaceRow:
+    """The caller's workspace. The API key row is kept on `request.state.key` (None under `auth = "none"`)."""
+    service = _service(request)
+    if service.settings.auth == "none":
+        request.state.key = None
+        return await service.default_workspace()
+    workspace, key = await authenticate(request, service)
     request.state.key = key
     return workspace
 
