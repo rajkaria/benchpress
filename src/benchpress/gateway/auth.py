@@ -56,11 +56,12 @@ def ensure_bootstrap(store: Store, env: Mapping[str, str]) -> str | None:
 
     The key's plaintext comes from `BENCHPRESS_BOOTSTRAP_KEY` when set (validated before anything is
     written, so a bad value never leaves a half-created workspace behind); otherwise one is generated.
-    Returns the plaintext only when it was generated, so the caller can print it exactly once.
+    An empty value counts as unset. Returns the plaintext only when it was generated, so the caller can
+    print it exactly once.
     """
     if store.workspaces():
         return None
-    bootstrap_key = env.get("BENCHPRESS_BOOTSTRAP_KEY")
+    bootstrap_key = env.get("BENCHPRESS_BOOTSTRAP_KEY") or None
     if bootstrap_key is not None and (
         not bootstrap_key.startswith("bp_") or len(bootstrap_key) < _MIN_BOOTSTRAP_KEY_LENGTH
     ):

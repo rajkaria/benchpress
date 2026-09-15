@@ -50,6 +50,11 @@ def test_bootstrap_key_must_look_like_a_key(store: Store) -> None:
         ensure_bootstrap(store, {"BENCHPRESS_BOOTSTRAP_KEY": "short"})
 
 
+def test_bootstrap_empty_string_treated_as_unset(store: Store) -> None:
+    generated = ensure_bootstrap(store, {"BENCHPRESS_BOOTSTRAP_KEY": ""})
+    assert generated is not None and store.key_for(generated) is not None
+
+
 def test_workspace_create_prints_a_key_once(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     from benchpress import cli
 
