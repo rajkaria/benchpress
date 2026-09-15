@@ -18,17 +18,20 @@ from benchpress.gateway.store.engine import current_revision, make_engine, norma
 from benchpress.gateway.store.repo import (
     ApiKeyRow,
     ApprovalRow,
+    ParsedWrite,
     PolicyRow,
     ReceiptRow,
     SessionExists,
     SqlIdempotencyStore,
     Store,
     WorkspaceRow,
+    parse_write_line,
 )
 
 __all__ = [
     "ApiKeyRow",
     "ApprovalRow",
+    "ParsedWrite",
     "PolicyRow",
     "ReceiptRow",
     "SessionExists",
@@ -38,5 +41,6 @@ __all__ = [
     "current_revision",
     "make_engine",
     "normalize_url",
+    "parse_write_line",
     "upgrade",
 ]

@@ -10,14 +10,15 @@ from __future__ import annotations
 import functools
 import logging
 import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import cast
+from pathlib import Path
+from typing import Annotated, cast
 
 import anyio
 import httpx
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -26,17 +27,20 @@ from benchpress.context import utc_now
 from benchpress.gateway.approvals import ApprovalQueue
 from benchpress.gateway.auth import RateLimiter
 from benchpress.gateway.config import Settings
-from benchpress.gateway.deps import authenticate
+from benchpress.gateway.console import CONSOLE_DIST, mount_console
+from benchpress.gateway.deps import authenticate, current_workspace
 from benchpress.gateway.executors import executor_from_settings
 from benchpress.gateway.metrics import GatewayMetrics, create_metrics
+from benchpress.gateway.receipt_sources import DiskReceiptSource, ReceiptSource, StoreReceiptSource
 from benchpress.gateway.routes import router
+from benchpress.gateway.schemas import ReceiptDetail, ReceiptFilters, ReceiptPage
 from benchpress.gateway.service import GatewayService, RequestRejected, load_directory_packs, workspace_packs
 from benchpress.gateway.sessions import SessionRegistry
 from benchpress.gateway.store import SqlIdempotencyStore, Store
 from benchpress.tools import ToolExecutor
 from benchpress.write_receipts import Clock
 
-__all__ = ["BodySizeLimit", "HTTPMetrics", "create_app"]
+__all__ = ["BodySizeLimit", "HTTPMetrics", "create_app", "create_ui_app", "receipts_router"]
 
 _logger = logging.getLogger("benchpress.gateway")
 
@@ -157,6 +161,87 @@ async def _metrics_endpoint(request: Request) -> Response:
     return Response(content=body, media_type=content_type)
 
 
+# ---- receipts router (shared by `create_app` and `create_ui_app`) ------------------------------------
+
+
+def receipts_router(source_for: Callable[[Request], Awaitable[ReceiptSource]]) -> APIRouter:
+    """The three `/v1/receipts` routes, parameterized over where a `ReceiptSource` comes from.
+
+    `create_app` passes a `source_for` that authenticates and returns a `StoreReceiptSource`;
+    `create_ui_app` passes one that always returns its single `DiskReceiptSource`. Ruling R2: every route
+    here names its path parameter `receipt_id`, in both apps.
+
+    `source_for` is captured as a plain `Depends(source_for)` default (not `Annotated[..., Depends(...)]`):
+    this module runs under `from __future__ import annotations`, which turns every annotation into a
+    string FastAPI resolves later against the module's globals — and `source_for` is this factory's own
+    parameter, never a module global, so an `Annotated` alias referencing it would fail to resolve. A
+    default value is a normal expression evaluated right here, so the closure over `source_for` works.
+    """
+    router = APIRouter()
+
+    @router.get("/v1/receipts")
+    async def list_receipts(
+        filters: Annotated[ReceiptFilters, Query()], source: ReceiptSource = Depends(source_for)  # noqa: B008
+    ) -> ReceiptPage:
+        return await source.list(filters)
+
+    @router.get("/v1/receipts/{receipt_id}")
+    async def get_receipt(
+        receipt_id: str, source: ReceiptSource = Depends(source_for)  # noqa: B008
+    ) -> ReceiptDetail:
+        detail = await source.get(receipt_id)
+        if detail is None:
+            raise HTTPException(404, "no such receipt in this workspace")
+        return detail
+
+    @router.get("/v1/receipts/{receipt_id}/html", response_class=HTMLResponse)
+    async def get_receipt_html(
+        receipt_id: str, source: ReceiptSource = Depends(source_for)  # noqa: B008
+    ) -> HTMLResponse:
+        page = await source.html(receipt_id)
+        if page is None:
+            raise HTTPException(404, "no HTML page for this receipt")
+        return HTMLResponse(page)
+
+    return router
+
+
+async def _store_receipt_source(request: Request) -> ReceiptSource:
+    """`receipts_router`'s source for `create_app`: authenticate, then read that workspace's store rows."""
+    workspace = await current_workspace(request)
+    service = cast(GatewayService, request.app.state.service)
+    return StoreReceiptSource(service.store, workspace)
+
+
+# ---- the read-only local UI app ------------------------------------------------------------------
+
+
+def create_ui_app(root: Path, *, dist: Path = CONSOLE_DIST) -> FastAPI:
+    """A read-only local console over the plain receipt files under `root`: no auth, no store, no metrics,
+    no body cap — it only ever serves `GET` requests. Meant for `benchpress ui`, browsing whatever a demo
+    run, a shim's guard log, or a `VerifiedWrite` JSONL sink already wrote to disk.
+    """
+    source = DiskReceiptSource(root)
+
+    async def _disk_receipt_source(_request: Request) -> ReceiptSource:
+        return source
+
+    app = FastAPI(title="Benchpress UI", version=__version__)
+
+    @app.get("/healthz")
+    async def healthz() -> dict[str, str]:
+        return {"status": "ok", "version": __version__}
+
+    @app.get("/v1/meta")
+    async def meta() -> dict[str, str]:
+        return {"mode": "local", "version": __version__, "root": str(root)}
+
+    app.include_router(receipts_router(_disk_receipt_source))
+    # `mount_console` is last: see the comment on its call in `create_app`.
+    mount_console(app, dist)
+    return app
+
+
 # ---- the app ------------------------------------------------------------------------------------
 
 
@@ -265,5 +350,11 @@ def create_app(
     app.add_middleware(HTTPMetrics, metrics=metrics)
     app.add_exception_handler(RequestRejected, _rejected)
     app.include_router(router)
+    app.include_router(receipts_router(_store_receipt_source))
     app.add_api_route("/metrics", _metrics_endpoint, methods=["GET"])
+    if settings.console:
+        # `mount_console` must be the LAST registration: a static mount at "/" answers every request that
+        # no earlier route claimed, and Starlette tries routes in registration order, so it would shadow
+        # any route registered after it. Task 11 registers `/mcp` before this line for the same reason.
+        mount_console(app)
     return app

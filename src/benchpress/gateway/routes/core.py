@@ -1,23 +1,15 @@
-"""Health, sessions, execute, receipts and policy routes."""
+"""Health, sessions, execute and policy routes. (Receipts routes live in `gateway.app.receipts_router`,
+shared with `create_ui_app`.)
+"""
 
 from __future__ import annotations
 
-from typing import Annotated
-
-from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse, Response
 
 from benchpress import __version__
-from benchpress.gateway.deps import PolicyName, ReceiptSourceDep, ServiceDep, WorkspaceDep
-from benchpress.gateway.schemas import (
-    ExecuteRequest,
-    ExecuteResponse,
-    ReceiptDetail,
-    ReceiptFilters,
-    ReceiptPage,
-    SessionCreate,
-    SessionCreated,
-)
+from benchpress.gateway.deps import PolicyName, ServiceDep, WorkspaceDep
+from benchpress.gateway.schemas import ExecuteRequest, ExecuteResponse, SessionCreate, SessionCreated
 from benchpress.gateway.service import RequestRejected
 
 __all__ = ["router"]
@@ -50,27 +42,6 @@ async def execute(
     if result.status == "needs_approval":
         response.status_code = 202
     return result
-
-
-@router.get("/v1/receipts")
-async def list_receipts(filters: Annotated[ReceiptFilters, Query()], source: ReceiptSourceDep) -> ReceiptPage:
-    return await source.list(filters)
-
-
-@router.get("/v1/receipts/{receipt_id}")
-async def get_receipt(receipt_id: str, source: ReceiptSourceDep) -> ReceiptDetail:
-    detail = await source.get(receipt_id)
-    if detail is None:
-        raise HTTPException(404, "no such receipt in this workspace")
-    return detail
-
-
-@router.get("/v1/receipts/{receipt_id}/html", response_class=HTMLResponse)
-async def get_receipt_html(receipt_id: str, source: ReceiptSourceDep) -> HTMLResponse:
-    page = await source.html(receipt_id)
-    if page is None:
-        raise HTTPException(404, "no HTML page for this receipt")
-    return HTMLResponse(page)
 
 
 @router.get("/v1/policies")

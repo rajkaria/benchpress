@@ -14,7 +14,7 @@ import json
 import re
 import secrets
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
@@ -33,12 +33,14 @@ from benchpress.idempotency import ClaimResult
 __all__ = [
     "ApiKeyRow",
     "ApprovalRow",
+    "ParsedWrite",
     "PolicyRow",
     "ReceiptRow",
     "SessionExists",
     "SqlIdempotencyStore",
     "Store",
     "WorkspaceRow",
+    "parse_write_line",
 ]
 
 
@@ -154,6 +156,49 @@ def _approval_row(row: Approval) -> ApprovalRow:
 
 def _policy_row(row: Policy) -> PolicyRow:
     return PolicyRow(workspace_id=row.workspace_id, name=row.name, body=row.body, updated_at=row.updated_at)
+
+
+@dataclass(frozen=True)
+class ParsedWrite:
+    """The fields a `benchpress-write/1` line carries, once its `action` sub-object is unpacked.
+
+    Shared by `Store.append_receipt` (the gateway's own store) and `DiskReceiptSource` (`benchpress ui`'s
+    read of a plain JSONL file), so a write line is parsed into a receipt summary exactly one way.
+    """
+
+    event: str
+    at: str
+    session: str
+    provider: str
+    method: str
+    path: str
+    status: str | None
+    rule: str
+    resource: str
+    target_refs: tuple[str, ...]
+
+
+def parse_write_line(payload: Mapping[str, Any]) -> ParsedWrite:
+    """Parse an already-`json.loads`-ed `benchpress-write/1` line into its receipt-summary fields.
+
+    `resource` is `target_refs[0]` when the action names any, else the action's `path` — the same rule
+    `StoreReceiptSource` has always used.
+    """
+    action = cast(Mapping[str, Any], payload["action"])
+    target_refs = tuple(str(ref) for ref in (action.get("target_refs") or ()))
+    resource = target_refs[0] if target_refs else str(action["path"])
+    return ParsedWrite(
+        event=str(payload["event"]),
+        at=str(payload["at"]),
+        session=str(payload["session"]),
+        provider=str(action["provider"]),
+        method=str(action["method"]),
+        path=str(action["path"]),
+        status=cast("str | None", payload.get("status")),
+        rule=str(cast(Mapping[str, Any], payload["verdict"])["rule"]),
+        resource=resource,
+        target_refs=target_refs,
+    )
 
 
 _ROW_ID = re.compile(r"[0-9]{1,19}")
@@ -298,24 +343,20 @@ class Store:
     # ---- receipts -----------------------------------------------------------------------
 
     def append_receipt(self, workspace_id: str, session_id: str, line: str) -> ReceiptRow:
-        payload = json.loads(line)
-        action = payload["action"]
-        target_refs = tuple(action.get("target_refs") or ())
-        resource = target_refs[0] if target_refs else action["path"]
-        refs = "\n".join(target_refs)
+        parsed = parse_write_line(json.loads(line))
         with OrmSession(self.engine) as db, db.begin():
             row = Receipt(
                 workspace_id=workspace_id,
                 session_id=session_id,
-                event=payload["event"],
-                at=payload["at"],
-                provider=action["provider"],
-                method=action["method"],
-                path=action["path"],
-                status=payload.get("status"),
-                rule=payload["verdict"]["rule"],
-                resource=resource,
-                refs=refs,
+                event=parsed.event,
+                at=parsed.at,
+                provider=parsed.provider,
+                method=parsed.method,
+                path=parsed.path,
+                status=parsed.status,
+                rule=parsed.rule,
+                resource=parsed.resource,
+                refs="\n".join(parsed.target_refs),
                 line=line,
             )
             db.add(row)

@@ -1,7 +1,8 @@
-"""Shared FastAPI dependencies for the gateway's routes: the service, auth, and receipt sources.
+"""Shared FastAPI dependencies for the gateway's routes: the service and auth.
 
 Every route authenticates through `WorkspaceDep`, fetches the service through `ServiceDep`, and returns its
-model; the behaviour lives in `GatewayService`, not here.
+model; the behaviour lives in `GatewayService`, not here. `gateway.app.receipts_router` calls
+`current_workspace` directly to build its own `ReceiptSource` dependency.
 """
 
 from __future__ import annotations
@@ -13,13 +14,11 @@ from fastapi import Depends, HTTPException, Request
 from fastapi import Path as PathParam
 
 from benchpress.gateway.auth import RateLimiter, bearer_token
-from benchpress.gateway.receipt_sources import ReceiptSource, StoreReceiptSource
 from benchpress.gateway.service import GatewayService
 from benchpress.gateway.store import ApiKeyRow, WorkspaceRow
 
 __all__ = [
     "PolicyName",
-    "ReceiptSourceDep",
     "ServiceDep",
     "WorkspaceDep",
     "actor",
@@ -61,13 +60,6 @@ async def current_workspace(request: Request) -> WorkspaceRow:
 
 ServiceDep = Annotated[GatewayService, Depends(_service)]
 WorkspaceDep = Annotated[WorkspaceRow, Depends(current_workspace)]
-
-
-async def _receipt_source(request: Request, workspace: WorkspaceDep) -> ReceiptSource:
-    return StoreReceiptSource(_service(request).store, workspace)
-
-
-ReceiptSourceDep = Annotated[ReceiptSource, Depends(_receipt_source)]
 PolicyName = Annotated[str, PathParam(max_length=64)]
 
 

@@ -11,7 +11,7 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from benchpress.api import DEFAULT_SYSTEM_PROMPT
 from benchpress.controller import run_trial
@@ -21,6 +21,12 @@ from benchpress.playbooks import Playbook
 from benchpress.receipt_html import write_receipt_html
 from benchpress.rehearse import ModelFactory, Rehearsal, StageFactory, rehearse, replay
 from benchpress.report import receipt_summary
+from benchpress.tools import ToolExecutor
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+    from benchpress.gateway.config import Settings
 
 
 class GatewayLike(Protocol):
@@ -148,8 +154,7 @@ async def _replay(args: argparse.Namespace) -> int:
     return 0 if receipt.status == "completed" else 1
 
 
-def main(argv: list[str] | None = None) -> int:
-    _load_env()
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="benchpress", description="the reliability layer for agents with write access"
     )
@@ -233,6 +238,25 @@ def main(argv: list[str] | None = None) -> int:
     ws_key.add_argument("name")
     ws_key.add_argument("--name", dest="key_name", default="key", help="name for the new key (default: key)")
     ws_key.add_argument("--store", default=os.environ.get("BENCHPRESS_STORE", "sqlite:///benchpress.db"))
+    serve = sub.add_parser("serve", help="run the benchpress gateway (needs the server extra)")
+    serve.add_argument("--config", metavar="PATH", help="benchpress.toml (default: $BENCHPRESS_CONFIG, if set)")
+    serve.add_argument("--host")
+    serve.add_argument("--port", type=int)
+    serve.add_argument("--store")
+    serve.add_argument("--policy", metavar="DIR", help="policy pack directory")
+    serve.add_argument("--auth", choices=("api_key", "none"))
+    serve.add_argument("--executor", metavar="module:callable", help="called with no arguments for a ToolExecutor")
+    serve.add_argument("--no-console", action="store_true", help="do not serve the console at /")
+    ui = sub.add_parser("ui", help="a read-only local console over on-disk receipts (needs the server extra)")
+    ui.add_argument("--dir", default=".", help="receipts directory to browse (default: the current directory)")
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8788)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    _load_env()
+    parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "mcp-guard":
         try:
@@ -311,7 +335,96 @@ def main(argv: list[str] | None = None) -> int:
             out = Path(args.html) if args.html else path.with_suffix(".html")
             print(f"\nreceipt page: {write_receipt_html(path, out)}")
         return 0
+    if args.command == "serve":
+        return _serve(args)
+    if args.command == "ui":
+        return _ui(args)
     return 1
+
+
+def _serve_overrides(args: argparse.Namespace) -> dict[str, object]:
+    """`serve`'s CLI flags as `load_settings` overrides: only a flag the caller actually passed appears here,
+    so an unset flag leaves `benchpress.toml`/the environment/the defaults in charge of that setting."""
+    overrides: dict[str, object] = {}
+    if args.host is not None:
+        overrides["host"] = args.host
+    if args.port is not None:
+        overrides["port"] = args.port
+    if args.store is not None:
+        overrides["store"] = args.store
+    if args.policy is not None:
+        overrides["policy_dir"] = args.policy
+    if args.auth is not None:
+        overrides["auth"] = args.auth
+    if args.no_console:
+        overrides["console"] = False
+    return overrides
+
+
+def build_server(args: argparse.Namespace, env: Mapping[str, str]) -> tuple[FastAPI, Settings]:
+    """Build the gateway from `benchpress.toml` + `env` + `args`' overrides, bootstrapping its first
+    workspace and API key. Prints the bootstrap key to stderr when one was generated (never on a later
+    call against the same store, since by then a workspace already exists).
+
+    Raises `ImportError` when the `server` extra isn't installed, and `ConfigError` for settings that
+    don't add up (an unresolvable `env:` reference, `auth = "none"` off loopback, a bad upstream, ...);
+    the caller (`_serve`) turns both into a stderr message and exit code 2, never a traceback.
+    """
+    from benchpress.gateway.app import create_app
+    from benchpress.gateway.auth import ensure_bootstrap
+    from benchpress.gateway.config import load_settings
+    from benchpress.gateway.store import Store
+
+    config_path = Path(args.config) if args.config else None
+    settings = load_settings(config_path, env=env, overrides=_serve_overrides(args))
+    store = Store.open(settings.store)
+    executor: ToolExecutor | None = None
+    if args.executor:
+        executor = cast(ToolExecutor, _import_callable(args.executor, "--executor")())
+    bootstrap_key = ensure_bootstrap(store, env)
+    if bootstrap_key is not None:
+        print(f"benchpress serve: bootstrapped workspace 'default'; API key (shown once): {bootstrap_key}",
+              file=sys.stderr)
+    app = create_app(settings, store=store, executor=executor)
+    return app, settings
+
+
+def _serve(args: argparse.Namespace) -> int:
+    from benchpress.gateway.config import ConfigError
+
+    try:
+        app, settings = build_server(args, os.environ)
+    except ImportError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    except ConfigError as exc:
+        print(f"benchpress serve: {exc}", file=sys.stderr)
+        return 2
+    print(f"benchpress gateway: http://{settings.host}:{settings.port} (console /, API /v1, MCP /mcp/)",
+          file=sys.stderr)
+    import uvicorn
+
+    uvicorn.run(app, host=settings.host, port=settings.port)
+    return 0
+
+
+def _ui(args: argparse.Namespace) -> int:
+    from benchpress.gateway.config import is_loopback
+
+    if not is_loopback(args.host):
+        print("benchpress ui serves local receipts without auth, so it binds to loopback only", file=sys.stderr)
+        return 2
+    try:
+        from benchpress.gateway.app import create_ui_app
+    except ImportError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    app = create_ui_app(Path(args.dir))
+    print(f"benchpress ui: http://{args.host}:{args.port}", file=sys.stderr)
+    import uvicorn
+
+    uvicorn.run(app, host=args.host, port=args.port)
+    return 0
 
 
 if __name__ == "__main__":
