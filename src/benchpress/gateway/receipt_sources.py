@@ -112,7 +112,10 @@ def _jsonl_entry(payload: dict[str, Any], receipt_id: str) -> _DiskEntry | None:
     if payload.get("protocol") == _WRITE_PROTOCOL:
         try:
             parsed = parse_write_line(payload)
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, AttributeError, ValueError):
+            # A required key is missing (KeyError), `action` isn't subscriptable (TypeError) or has no
+            # `.get` (AttributeError, e.g. `action: null` or a bare string) — a malformed write line is
+            # skipped like any other unreadable one, never raised.
             return None
         summary = ReceiptSummary(
             id=receipt_id, kind="write", at=parsed.at, event=parsed.event, session=parsed.session,
@@ -182,8 +185,8 @@ class DiskReceiptSource:
             relative = path.relative_to(self._root).as_posix()
             try:
                 text = path.read_text(encoding="utf-8")
-            except OSError:
-                continue  # unreadable file: skipped, never raised
+            except (OSError, UnicodeDecodeError):
+                continue  # unreadable file (missing, permissions, binary/non-UTF-8): skipped, never raised
             if path.name.endswith(".jsonl"):
                 for line_number, raw_line in enumerate(text.splitlines(), start=1):
                     stripped = raw_line.strip()

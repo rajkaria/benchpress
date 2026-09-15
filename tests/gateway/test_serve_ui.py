@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 from typing import Any
 
@@ -86,6 +87,42 @@ async def test_ui_lists_write_guard_and_run_receipts(tmp_path: Path) -> None:
         assert client.get(f"/v1/receipts/{by_kind['write']['id']}/html").status_code == 404
         assert [r["kind"] for r in client.get("/v1/receipts?event=guard").json()["receipts"]] == ["guard"]
         assert client.get("/v1/receipts/0000000000000000").status_code == 404
+
+
+async def test_ui_skips_unreadable_files_and_malformed_write_lines(tmp_path: Path) -> None:
+    """Brief rule: 'an unreadable file or line is skipped, never raised' — for a non-UTF-8 file, and for a
+    `benchpress-write/1` line whose `action` isn't a mapping, not just for bad JSON or a missing key."""
+    root = tmp_path / "receipts"
+    root.mkdir()
+    writer = VerifiedWrite(make_echo_executor(), context=Context(user_prompt=_PROMPT),
+                           receipts=JsonlReceiptSink(root / "writes.jsonl"), clock=lambda: "2026-09-14T00:00:01.000Z")
+    await writer.run(_write())
+
+    # (a) non-UTF-8 / binary files, one of each extension the scanner reads.
+    (root / "bad.jsonl").write_bytes(b"\xff\xfe\x00\x01not valid utf-8\x80\x81")
+    (root / "bad.json").write_bytes(b"\xff\xfe\x00\x01not valid utf-8\x80\x81")
+
+    # (b) valid JSON, valid `benchpress-write/1` protocol tag, but `action` is not a mapping.
+    malformed_action = [
+        {"protocol": "benchpress-write/1", "event": "write", "at": "2026-09-14T00:00:02.000Z", "session": "s1",
+         "action": None, "verdict": {"rule": "allowed"}, "status": "verified"},
+        {"protocol": "benchpress-write/1", "event": "write", "at": "2026-09-14T00:00:03.000Z", "session": "s1",
+         "action": "not-a-mapping", "verdict": {"rule": "allowed"}, "status": "verified"},
+    ]
+    (root / "malformed.jsonl").write_text(
+        "\n".join(json.dumps(line) for line in malformed_action) + "\n", encoding="utf-8"
+    )
+
+    # a valid JSON line whose top level isn't an object at all.
+    (root / "scalars.jsonl").write_text("[1, 2]\n\"just a string\"\n", encoding="utf-8")
+
+    with TestClient(create_ui_app(root)) as client:
+        page = client.get("/v1/receipts")
+        assert page.status_code == 200
+        receipts = page.json()["receipts"]
+        assert [r["kind"] for r in receipts] == ["write"]
+        detail = client.get(f"/v1/receipts/{receipts[0]['id']}")
+        assert detail.status_code == 200 and detail.json()["kind"] == "write"
 
 
 def test_ui_refuses_non_loopback(capsys: pytest.CaptureFixture[str]) -> None:
